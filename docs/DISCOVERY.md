@@ -28,6 +28,26 @@ No fue posible abrir directamente:
 
 Por eso **costos, comisiones y todo lo relativo a Dropi quedan en `DOCUMENTED`**, nunca en `VERIFIED`.
 
+### Dos vocabularios, y por qué conviven
+
+Este documento y `STATUS.md` usan los términos en inglés **tal como los define §186 y §235 del
+estándar** (`VERIFIED`, `DOCUMENTED`, `UNVERIFIED`, `PLACEHOLDER`, `PARTIAL`). No se renombran
+porque son las palabras del propio estándar.
+
+`REQUIREMENTS.md`, `ARCHITECTURE.md` y `STRATEGY.md` usan la clasificación en español solicitada
+después, que añade dos niveles que el estándar no tenía. Equivalencia:
+
+| Estándar (§186/§235) | Clasificación extendida | Significado |
+| --- | --- | --- |
+| `VERIFIED` | `VERIFICADO` | Comprobado por ejecución o documentación oficial |
+| `DOCUMENTED` | `DOCUMENTADO` | Fuente secundaria, sin comprobar |
+| — | **`INFERIDO`** | Deducción propia sobre datos verificados. Señalada, no presentada como hecho |
+| `UNVERIFIED` | `NO VERIFICADO` | No se pudo comprobar |
+| `PLACEHOLDER` | **`PENDIENTE`** | Decisión que depende de información que todavía no existe |
+
+Los dos niveles añadidos son los más útiles: `INFERIDO` separa mi razonamiento de los hechos, y
+`PENDIENTE` separa "no lo sé" de "falta decidirlo".
+
 ---
 
 ## 1. Plataforma de themes — `VERIFIED`
