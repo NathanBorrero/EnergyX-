@@ -11,25 +11,25 @@ import {
  * ⚠️ DATOS DE PRUEBA, NO DE NATHAN & ESTEBAN.
  * Nombres, precios y SKU existen solo para ejercitar la función.
  */
-const ENTRADA_MINIMA = { name: 'Modelo de prueba' };
+const ENTRADA_MINIMA = { title: 'Modelo de prueba' };
 
 const ENTRADA_COMPLETA = {
-  name: 'Modelo de prueba',
+  title: 'Modelo de prueba',
   description: 'Descripción de prueba.',
   url: 'https://example.test/products/modelo-de-prueba',
-  images: ['https://example.test/a.jpg', 'https://example.test/b.jpg'],
+  images: [{ url: 'https://example.test/a.jpg' }, { url: 'https://example.test/b.jpg' }],
   brand: 'Marca de prueba',
   productGroupID: 'TEST-PARENT-1',
   currency: 'COP',
   variants: [
     {
-      options: { Color: 'Negro', Talla: '42' },
+      selectedOptions: [{ name: 'Color', value: 'Negro' }, { name: 'Talla', value: '42' }],
       sku: 'TEST-NE-42',
       price: '100000.00',
       availableForSale: true,
     },
     {
-      options: { Color: 'Negro', Talla: '43' },
+      selectedOptions: [{ name: 'Color', value: 'Negro' }, { name: 'Talla', value: '43' }],
       sku: 'TEST-NE-43',
       price: '100000.00',
       availableForSale: false,
@@ -46,13 +46,13 @@ describe('buildProductGroupJsonLd — forma básica', () => {
   });
 
   test('sin nombre no hay nada que declarar, devuelve null', () => {
-    for (const bad of [null, undefined, {}, { name: '' }, { name: '   ' }]) {
+    for (const bad of [null, undefined, {}, { title: '' }, { title: '   ' }]) {
       assert.equal(buildProductGroupJsonLd(bad), null);
     }
   });
 
   test('recorta espacios del nombre', () => {
-    assert.equal(buildProductGroupJsonLd({ name: '  Modelo  ' }).name, 'Modelo');
+    assert.equal(buildProductGroupJsonLd({ title: '  Modelo  ' }).name, 'Modelo');
   });
 });
 
@@ -69,35 +69,35 @@ describe('buildProductGroupJsonLd — NO FABRICAR es la regla', () => {
 
   test('sin precio no se emite offers', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { Talla: '42' }, availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], availableForSale: true }],
     });
     assert.equal('offers' in n.hasVariant[0], false);
   });
 
   test('sin moneda no se emite offers, aunque haya precio', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
-      variants: [{ options: { Talla: '42' }, price: '100000.00', availableForSale: true }],
+      title: 'X',
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '100000.00', availableForSale: true }],
     });
     assert.equal('offers' in n.hasVariant[0], false);
   });
 
   test('sin availableForSale no se declara disponibilidad', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { Talla: '42' }, price: '100000.00' }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '100000.00' }],
     });
     assert.equal('availability' in n.hasVariant[0].offers, false);
   });
 
   test('sin SKU ni GTIN no se emiten', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { Talla: '42' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '1.00', availableForSale: true }],
     });
     assert.equal('sku' in n.hasVariant[0], false);
     assert.equal('gtin' in n.hasVariant[0], false);
@@ -110,16 +110,16 @@ describe('buildProductGroupJsonLd — NO FABRICAR es la regla', () => {
   });
 
   test('una lista de imágenes vacía no emite image', () => {
-    assert.equal('image' in buildProductGroupJsonLd({ name: 'X', images: [] }), false);
-    assert.equal('image' in buildProductGroupJsonLd({ name: 'X', images: ['', '  '] }), false);
+    assert.equal('image' in buildProductGroupJsonLd({ title: 'X', images: [] }), false);
+    assert.equal('image' in buildProductGroupJsonLd({ title: 'X', images: [{ url: '' }, { url: '  ' }] }), false);
   });
 
   test('un precio no numérico se descarta en lugar de emitirse', () => {
     for (const price of ['gratis', 'COP 100', '1,00', {}, [], true, NaN, -5]) {
       const n = buildProductGroupJsonLd({
-        name: 'X',
+        title: 'X',
         currency: 'COP',
-        variants: [{ options: { Talla: '42' }, price, availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price, availableForSale: true }],
       });
       const v = n.hasVariant?.[0];
       assert.equal(v?.offers, undefined, `no debió emitir offers con ${String(price)}`);
@@ -129,9 +129,9 @@ describe('buildProductGroupJsonLd — NO FABRICAR es la regla', () => {
   test('acepta precio numérico y precio en cadena', () => {
     for (const price of [100000, '100000', '100000.50', 0]) {
       const n = buildProductGroupJsonLd({
-        name: 'X',
+        title: 'X',
         currency: 'COP',
-        variants: [{ options: { Talla: '42' }, price, availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price, availableForSale: true }],
       });
       assert.ok(n.hasVariant[0].offers, `debió emitir offers con ${String(price)}`);
     }
@@ -152,18 +152,18 @@ describe('buildProductGroupJsonLd — variantes y variesBy', () => {
 
   test('un producto de una sola opción declara un solo eje', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { Talla: '42' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '1.00', availableForSale: true }],
     });
     assert.deepEqual(n.variesBy, [VARIES_BY.SIZE]);
   });
 
   test('tolera el nombre de opción sin acento y en otra caja', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { COLOR: 'Negro', talla: '42' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'COLOR', value: 'Negro' }, { name: 'talla', value: '42' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(n.hasVariant[0].color, 'Negro');
     assert.equal(n.hasVariant[0].size, '42');
@@ -171,10 +171,10 @@ describe('buildProductGroupJsonLd — variantes y variesBy', () => {
 
   test('una opción no reconocida no se emite ni ensucia variesBy', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       variants: [
-        { options: { Talla: '42', Inventada: 'Valor' }, price: '1.00', availableForSale: true },
+        { selectedOptions: [{ name: 'Talla', value: '42' }, { name: 'Inventada', value: 'Valor' }], price: '1.00', availableForSale: true },
       ],
     });
     assert.deepEqual(n.variesBy, [VARIES_BY.SIZE]);
@@ -183,10 +183,10 @@ describe('buildProductGroupJsonLd — variantes y variesBy', () => {
 
   test('admite un mapa de opciones propio', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       optionMap: { acabado: { variesBy: VARIES_BY.PATTERN, property: 'pattern' } },
-      variants: [{ options: { Acabado: 'Liso' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Acabado', value: 'Liso' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(n.hasVariant[0].pattern, 'Liso');
     assert.deepEqual(n.variesBy, [VARIES_BY.PATTERN]);
@@ -214,7 +214,7 @@ describe('buildProductGroupJsonLd — disponibilidad', () => {
 describe('buildProductGroupJsonLd — entrada defectuosa (§216)', () => {
   test('variantes basura se ignoran sin romper', () => {
     const n = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       variants: [null, undefined, 'texto', 42, {}, { options: null }],
     });
@@ -224,17 +224,17 @@ describe('buildProductGroupJsonLd — entrada defectuosa (§216)', () => {
 
   test('variants que no es lista no rompe', () => {
     for (const variants of [null, undefined, 'no', 7, {}]) {
-      assert.ok(buildProductGroupJsonLd({ name: 'X', variants }));
+      assert.ok(buildProductGroupJsonLd({ title: 'X', variants }));
     }
   });
 
   test('una variante sin seña distintiva no se incluye', () => {
-    const n = buildProductGroupJsonLd({ name: 'X', currency: 'COP', variants: [{ options: {} }] });
+    const n = buildProductGroupJsonLd({ title: 'X', currency: 'COP', variants: [{ selectedOptions: [] }] });
     assert.equal(n.hasVariant, undefined);
   });
 
   test('nunca lanza, para cualquier entrada', () => {
-    const entradas = [null, undefined, 0, '', [], {}, { name: 1 }, { name: 'X', images: 'no' }];
+    const entradas = [null, undefined, 0, '', [], {}, { title: 1 }, { title: 'X', images: 'no' }];
     for (const e of entradas) {
       assert.doesNotThrow(() => buildProductGroupJsonLd(e));
     }
@@ -244,7 +244,7 @@ describe('buildProductGroupJsonLd — entrada defectuosa (§216)', () => {
 describe('serializeJsonLd — seguridad', () => {
   test('escapa "<" para que un dato no pueda cerrar la etiqueta script', () => {
     const n = buildProductGroupJsonLd({
-      name: 'Modelo </script><script>alert(1)</script>',
+      title: 'Modelo </script><script>alert(1)</script>',
     });
     const out = serializeJsonLd(n);
     assert.equal(out.includes('</script>'), false);
@@ -252,7 +252,7 @@ describe('serializeJsonLd — seguridad', () => {
   });
 
   test('sigue siendo JSON válido tras escapar', () => {
-    const n = buildProductGroupJsonLd({ name: 'Modelo <con> símbolos' });
+    const n = buildProductGroupJsonLd({ title: 'Modelo <con> símbolos' });
     const parsed = JSON.parse(serializeJsonLd(n));
     assert.equal(parsed.name, 'Modelo <con> símbolos');
   });

@@ -101,9 +101,9 @@ describe('HALLAZGO 2 — la definición de "comprable" vivía duplicada', () => 
       };
       const m = createVariantMatrix([variant]);
       const j = buildProductGroupJsonLd({
-        name: 'X',
+        title: 'X',
         currency: 'COP',
-        variants: [{ options: { Talla: '42' }, price: '1.00', ...(availableForSale === undefined ? {} : { availableForSale }) }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '1.00', ...(availableForSale === undefined ? {} : { availableForSale }) }],
       });
       const matrixSaysBuyable = m.statusFor('Talla', '42') === VALUE_STATUS.AVAILABLE;
       const jsonldAvailability = j.hasVariant[0].offers.availability;
@@ -172,9 +172,9 @@ describe('HALLAZGO 4 — el ancho sobrescribía la talla en los datos estructura
    */
   test('con el mapa por defecto, "ancho" se omite y la talla sobrevive', () => {
     const j = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
-      variants: [{ options: { Talla: '42', Ancho: 'D' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }, { name: 'Ancho', value: 'D' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(j.hasVariant[0].size, '42');
     assert.deepEqual(j.variesBy, [VARIES_BY.SIZE]);
@@ -183,10 +183,10 @@ describe('HALLAZGO 4 — el ancho sobrescribía la talla en los datos estructura
 
   test('un mapa explícito que colisiona no pierde la primera propiedad, y lo declara', () => {
     const j = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       optionMap: { ancho: { variesBy: VARIES_BY.SIZE, property: 'size' } },
-      variants: [{ options: { Talla: '42', Ancho: 'D' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }, { name: 'Ancho', value: 'D' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(j.hasVariant[0].size, '42'); // gana la primera por orden
     assert.deepEqual(collisionsIn(j), ['Ancho -> size']);
@@ -194,10 +194,10 @@ describe('HALLAZGO 4 — el ancho sobrescribía la talla en los datos estructura
 
   test('las colisiones no contaminan el JSON-LD serializado', () => {
     const j = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       optionMap: { ancho: { variesBy: VARIES_BY.SIZE, property: 'size' } },
-      variants: [{ options: { Talla: '42', Ancho: 'D' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }, { name: 'Ancho', value: 'D' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(JSON.stringify(j).includes('__collisions'), false);
   });
@@ -210,10 +210,10 @@ describe('HALLAZGO 4 — el ancho sobrescribía la talla en los datos estructura
 
   test('propiedades distintas no se consideran colisión', () => {
     const j = buildProductGroupJsonLd({
-      name: 'X',
+      title: 'X',
       currency: 'COP',
       variants: [
-        { options: { Color: 'Negro', Talla: '42', Material: 'Cuero' }, price: '1.00', availableForSale: true },
+        { selectedOptions: [{ name: 'Color', value: 'Negro' }, { name: 'Talla', value: '42' }, { name: 'Material', value: 'Cuero' }], price: '1.00', availableForSale: true },
       ],
     });
     assert.deepEqual(collisionsIn(j), []);
@@ -238,14 +238,14 @@ describe('foldKey — una sola normalización para todos los módulos', () => {
 describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
   test('S1 · un dato de producto no puede cerrar la etiqueta script', () => {
     const out = serializeJsonLd(
-      buildProductGroupJsonLd({ name: 'x</script><img src=x onerror=alert(1)>' }),
+      buildProductGroupJsonLd({ title: 'x</script><img src=x onerror=alert(1)>' }),
     );
     assert.equal(out.includes('</script>'), false);
     assert.equal(out.includes('<img'), false);
   });
 
   test('S2 · los separadores de línea Unicode se escapan', () => {
-    const out = serializeJsonLd(buildProductGroupJsonLd({ name: 'a b c' }));
+    const out = serializeJsonLd(buildProductGroupJsonLd({ title: 'a b c' }));
     assert.equal(out.includes(' '), false);
     assert.equal(out.includes(' '), false);
     assert.equal(out.includes('\\u2028'), true);
@@ -255,10 +255,10 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
 
   test('S3 · un optionMap con __proto__ no contamina nada y se rechaza', () => {
     const j = buildProductGroupJsonLd({
-      name: 'x',
+      title: 'x',
       currency: 'COP',
       optionMap: { talla: { variesBy: VARIES_BY.SIZE, property: '__proto__' } },
-      variants: [{ options: { Talla: 'inyectado' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: 'inyectado' }], price: '1.00', availableForSale: true }],
     });
     assert.equal({}.inyectado, undefined);
     assert.equal(Object.getPrototypeOf(j.hasVariant[0]), Object.prototype);
@@ -267,10 +267,10 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
 
   test('S4 · "constructor" no se escribe en el grafo', () => {
     const j = buildProductGroupJsonLd({
-      name: 'x',
+      title: 'x',
       currency: 'COP',
       optionMap: { talla: { variesBy: VARIES_BY.SIZE, property: 'constructor' } },
-      variants: [{ options: { Talla: 'X' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: 'X' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(Object.prototype.hasOwnProperty.call(j.hasVariant[0], 'constructor'), false);
     assert.deepEqual(rejectedIn(j), ['Talla -> constructor']);
@@ -279,10 +279,10 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
   test('S4b · tampoco se permiten las claves del propio JSON-LD', () => {
     for (const property of ['@type', '@context', '@id', 'prototype', '1bad', 'con-guion', '']) {
       const j = buildProductGroupJsonLd({
-        name: 'x',
+        title: 'x',
         currency: 'COP',
         optionMap: { talla: { variesBy: VARIES_BY.SIZE, property } },
-        variants: [{ options: { Talla: 'X' }, price: '1.00', availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: 'X' }], price: '1.00', availableForSale: true }],
       });
       assert.equal(j.hasVariant[0]['@type'], 'Product', `${property} alteró @type`);
       assert.equal(rejectedIn(j).length, 1, `${property} debió rechazarse`);
@@ -304,9 +304,9 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
   test('S6 · un precio malformado no se emite', () => {
     for (const price of ['00042', '1e9', '+1.00', '-1.00', '1.', '.5', ' 1 . 0 ', '1,00']) {
       const j = buildProductGroupJsonLd({
-        name: 'x',
+        title: 'x',
         currency: 'COP',
-        variants: [{ options: { Talla: '42' }, price, availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price, availableForSale: true }],
       });
       assert.equal(j.hasVariant[0].offers, undefined, `emitió oferta con ${JSON.stringify(price)}`);
     }
@@ -315,9 +315,9 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
   test('S6b · los precios bien formados siguen pasando', () => {
     for (const price of ['0', '0.5', '1', '1.00', '100000.50', 79999]) {
       const j = buildProductGroupJsonLd({
-        name: 'x',
+        title: 'x',
         currency: 'COP',
-        variants: [{ options: { Talla: '42' }, price, availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price, availableForSale: true }],
       });
       assert.ok(j.hasVariant[0].offers, `rechazó ${JSON.stringify(price)}`);
     }
@@ -326,9 +326,9 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
   test('S7 · una moneda malformada impide la oferta en lugar de emitirse', () => {
     for (const currency of ['COP"><script>', 'PESOS', 'CO', '', '123', 'C0P']) {
       const j = buildProductGroupJsonLd({
-        name: 'x',
+        title: 'x',
         currency,
-        variants: [{ options: { Talla: '42' }, price: '1.00', availableForSale: true }],
+        variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '1.00', availableForSale: true }],
       });
       assert.equal(j.hasVariant[0].offers, undefined, `aceptó ${JSON.stringify(currency)}`);
     }
@@ -336,19 +336,19 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
 
   test('S7b · una moneda válida en minúscula se normaliza a mayúscula', () => {
     const j = buildProductGroupJsonLd({
-      name: 'x',
+      title: 'x',
       currency: 'cop',
-      variants: [{ options: { Talla: '42' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: '42' }], price: '1.00', availableForSale: true }],
     });
     assert.equal(j.hasVariant[0].offers.priceCurrency, 'COP');
   });
 
   test('ni __collisions ni __rejected aparecen en el JSON serializado', () => {
     const j = buildProductGroupJsonLd({
-      name: 'x',
+      title: 'x',
       currency: 'COP',
       optionMap: { talla: { variesBy: VARIES_BY.SIZE, property: 'constructor' } },
-      variants: [{ options: { Talla: 'X', Color: 'Negro' }, price: '1.00', availableForSale: true }],
+      variants: [{ selectedOptions: [{ name: 'Talla', value: 'X' }, { name: 'Color', value: 'Negro' }], price: '1.00', availableForSale: true }],
     });
     const out = serializeJsonLd(j);
     assert.equal(out.includes('__rejected'), false);

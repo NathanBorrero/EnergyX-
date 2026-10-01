@@ -18,6 +18,8 @@ se pierde la conversión en calzado. Esa se puede construir y probar ya:
 | [`lib/product-jsonld.js`](lib/product-jsonld.js) | Datos estructurados `ProductGroup` + `hasVariant` para footwear | No hay evidencia de que Shopify los genere. Pura transformación de datos |
 | [`lib/analytics-taxonomy.js`](lib/analytics-taxonomy.js) | Qué se mide, de dónde sale, qué permiso requiere, y la aritmética que separa la métrica bonita de la real | Con contra entrega, pedido creado ≠ venta. Pura |
 | [`lib/shopify-semantics.js`](lib/shopify-semantics.js) | La normalización de opciones y la definición de «comprable», una sola vez | Nació de la auditoría: estaba duplicada en dos módulos con dos implementaciones distintas |
+| [`lib/product-contract.js`](lib/product-contract.js) | La forma canónica de un producto, y su validación | Una sola forma elimina la segunda traducción desde Shopify, que es donde divergen |
+| [`lib/shopify-adapter.js`](lib/shopify-adapter.js) | Respuesta de Shopify → producto canónico. Admin API y Storefront API | Único sitio que conoce la forma de Shopify. Si cambia, se cambia aquí |
 
 Ambos son ESM sin dependencias y sin tocar el DOM. Funcionan igual dentro de un theme Liquid, en
 React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
@@ -36,7 +38,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 142 pruebas
+npm test          # 170 pruebas
 npm run test:watch
 ```
 

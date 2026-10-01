@@ -210,29 +210,12 @@ function buildOffer(variant, currency, url) {
 }
 
 /**
- * @typedef {object} JsonLdVariantInput
- * @property {Record<string, string>} [options] Opciones de la variante: { Color: 'Negro', Talla: '42' }
- * @property {string} [sku]
- * @property {string} [gtin]
- * @property {string|number} [price]
- * @property {boolean} [availableForSale]
- * @property {string} [image]
- * @property {string} [url]
- * @property {string} [itemCondition]
- * @property {string} [priceValidUntil]
- */
-
-/**
- * @typedef {object} JsonLdProductInput
- * @property {string} name Lo único imprescindible.
- * @property {string} [description]
- * @property {string} [url]
- * @property {string[]} [images]
- * @property {string} [brand]
- * @property {string} [productGroupID] "parent sku" del grupo.
- * @property {string} [currency] Código ISO, p. ej. 'COP'.
- * @property {JsonLdVariantInput[]} [variants]
- * @property {Record<string, {variesBy: string, property: string}>} [optionMap]
+ * Entrada: el producto canónico de `product-contract.js`, más un mapa de opciones
+ * opcional. No define su propia forma: ese era el defecto que esto corrige.
+ *
+ * @typedef {import('./product-contract.js').Product & {
+ *   optionMap?: Record<string, {variesBy: string, property: string}>
+ * }} JsonLdProductInput
  */
 
 /**
@@ -246,7 +229,7 @@ function buildOffer(variant, currency, url) {
  * @returns {Record<string, unknown>|null}
  */
 export function buildProductGroupJsonLd(input) {
-  if (!input || !hasText(input.name)) return null;
+  if (!input || !hasText(input.title)) return null;
 
   const optionMap = { ...DEFAULT_OPTION_MAP, ...(input.optionMap ?? {}) };
 
@@ -254,15 +237,18 @@ export function buildProductGroupJsonLd(input) {
   const node = {
     '@context': 'https://schema.org',
     '@type': 'ProductGroup',
-    name: input.name.trim(),
+    name: input.title.trim(),
   };
 
   setIfPresent(node, 'description', input.description);
   setIfPresent(node, 'url', input.url);
+  // Las imágenes del contrato son objetos `{url, altText}`; schema.org quiere URLs.
   setIfPresent(
     node,
     'image',
-    Array.isArray(input.images) ? input.images.filter(hasText) : undefined,
+    Array.isArray(input.images)
+      ? input.images.map((i) => (typeof i === 'string' ? i : i?.url)).filter(hasText)
+      : undefined,
   );
   setIfPresent(node, 'productGroupID', input.productGroupID);
 
@@ -285,8 +271,17 @@ export function buildProductGroupJsonLd(input) {
     /** @type {Record<string, unknown>} */
     const v = { '@type': 'Product' };
 
-    const options = variant.options ?? {};
-    const optionNames = Object.keys(options);
+    // `selectedOptions` es la forma canónica, la misma que consume variant-matrix.
+    const selected = Array.isArray(variant.selectedOptions) ? variant.selectedOptions : [];
+    const options = /** @type {Record<string, string>} */ ({});
+    const optionNames = [];
+    for (const entry of selected) {
+      if (!entry || typeof entry !== 'object') continue;
+      const name = entry.name;
+      if (typeof name !== 'string' || name.trim() === '') continue;
+      options[name] = entry.value;
+      optionNames.push(name);
+    }
 
     // Nombre de la variante: el del grupo más sus opciones. Es composición de
     // datos existentes, no invención.
@@ -319,9 +314,13 @@ export function buildProductGroupJsonLd(input) {
 
     setIfPresent(v, 'sku', variant.sku);
     setIfPresent(v, 'gtin', variant.gtin);
-    setIfPresent(v, 'image', variant.image);
+    setIfPresent(
+      v,
+      'image',
+      typeof variant.image === 'string' ? variant.image : variant.image?.url,
+    );
 
-    const offer = buildOffer(variant, input.currency, variant.url ?? input.url);
+    const offer = buildOffer(variant, input.currency, input.url);
     if (offer) v.offers = offer;
 
     // Una variante sin ninguna seña distintiva no aporta nada al grafo.

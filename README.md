@@ -1,7 +1,7 @@
 # Nathan & Esteban
 
 > **Estado: lógica de storefront en construcción.** La arquitectura sigue pendiente de la dirección
-> de arte, pero la lógica que no depende de ella ya está escrita y probada: **142 pruebas, cero
+> de arte, pero la lógica que no depende de ella ya está escrita y probada: **170 pruebas, cero
 > dependencias**.
 
 **Objetivo del proyecto:** construir **la página web / storefront de Nathan & Esteban**, una
@@ -31,6 +31,7 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 | [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md) | Lo comprobado **por ejecución real** contra Shopify, incluidas las correcciones a afirmaciones previas y el residuo que no se pudo limpiar. |
 | [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, comparadas en diez dimensiones. Análisis, sin decisión. |
 | [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado, qué está probado y qué depende de quién. |
+| [`docs/PROJECT-MAP.md`](docs/PROJECT-MAP.md) | **Mapa único**: jerarquía de verdad, estado por fase, decisiones ya verificadas y el único bloqueo real. Empieza aquí. |
 | [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, listo para ejecutarse cuando exista la tienda de N&E. |
 | [`src/`](src/) | Lógica de storefront que sobrevive a la decisión de arquitectura: disponibilidad de variantes y recomendación de talla. |
 
@@ -40,7 +41,7 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 npm test
 ```
 
-Ciento cuarenta y dos pruebas, runner nativo de Node, sin dependencias.
+Ciento setenta pruebas, runner nativo de Node, sin dependencias.
 
 ## Antes de escribir el storefront
 
