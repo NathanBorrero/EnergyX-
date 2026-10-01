@@ -634,19 +634,29 @@ luego pasarela externa para tarjeta y contra entrega como método manual.
 `update-collection`, `add-to-collection`, `set-inventory`, `create-discount`, productos digitales,
 y `graphql_mutation`.
 
-### Lo que la conexión **no** puede hacer — límite duro
+### Lo que la conexión puede hacer con themes
 
-Verificado por búsqueda exhaustiva del registro de herramientas: **no existe ninguna herramienta de
-gestión de themes**. No se puede leer ni escribir archivos de theme, ni publicar un theme, ni
-desplegar una app Hydrogen, ni desplegar extensiones de checkout o app embeds.
+> **CORREGIDO el 2026-10-01.** Aquí afirmé antes que no existía ninguna herramienta de gestión de
+> themes y que el build no podía pasar por esta conexión. **Era incorrecto.** Lo descubrí al
+> ejecutar, no al leer. La verificación completa está en
+> [`VERIFICATION-LOG.md`](VERIFICATION-LOG.md) §8.
 
-La única herramienta adyacente, `get-new-store-previews`, lo dice explícitamente:
-*"this tool cannot edit themes"* y *"previews can only be claimed as brand-new stores"*.
+Comprobado por ejecución:
 
-→ **El camino de build y deploy no pasa por esta conexión.** Pasa por:
-Shopify CLI (**no instalado** en este entorno) + theme access token, o la **integración de GitHub
-de Shopify** — que encajaría de forma natural con este repositorio. Para Hydrogen: Oxygen vía CLI o
-GitHub Action, o Vercel/Netlify/Cloudflare si se autoaloja.
+| Operación | Resultado |
+| --- | --- |
+| `themes` y `theme { files }` | ✅ Lectura funciona |
+| **`themeFilesUpsert`** en theme **no publicado** | ✅ **Escritura funciona** |
+| `themeFilesUpsert` en el theme `MAIN` | ❌ Bloqueado por política de seguridad |
+| **`themeFilesDelete`** | ❌ **Bloqueado** por política de seguridad |
+| `scriptTags` | ❌ Scope `read_script_tags` no concedido |
+
+**La asimetría es lo decisivo: se puede crear y sobrescribir, pero no borrar.** Construir un theme
+archivo a archivo por API sin poder deshacer es frágil.
+
+→ **La vía de despliegue debe ser la integración de GitHub de Shopify**, donde git controla altas y
+bajas. La escritura por API queda como herramienta puntual, no como método de construcción. Para
+Hydrogen: Oxygen vía CLI o GitHub Action, o Vercel/Netlify/Cloudflare si se autoaloja.
 
 ### `switch-shop` — no ejecutado a propósito
 

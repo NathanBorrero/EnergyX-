@@ -28,7 +28,8 @@ de ejecución y este informe.
 | --- | --- | --- |
 | Arquitectura | `PLACEHOLDER` | Stack no decidido. Opciones y restricciones ya investigadas y verificadas en `DISCOVERY.md` §10; la elección requiere §1–172. Decisión crítica abierta (D2). |
 | Shopify — tienda | `VERIFIED`, pero **es la tienda equivocada** | Conectado a **Magisik** (`magisik.store`), plan **Basic**, COP, Colombia. 4 productos, todos de belleza, **cero footwear**. No es Nathan & Esteban. Ver `DISCOVERY.md` §13. |
-| Shopify — deploy | `UNVERIFIED` | La conexión **no tiene herramientas de theme ni de despliegue**. Requiere Shopify CLI (no instalado) o la integración de GitHub. |
+| Shopify — deploy | `PARTIAL` | **Corregido:** la conexión **sí escribe** archivos de theme no publicado (`themeFilesUpsert` ejecutado con éxito), pero **no puede borrarlos** ni escribir en el theme `MAIN`. Esa asimetría hace de la integración de GitHub la vía de despliegue. Ver `VERIFICATION-LOG.md` §8. |
+| Modelo de datos footwear | `VERIFIED` (mecanismo) | Probado por ejecución en el entorno de pruebas: opciones, matriz de variantes, disponibilidad, swatches y guía de tallas. Receta en `shopify/`. Los **datos** siguen siendo `PLACEHOLDER`. |
 | Shopify — plataforma | `VERIFIED` | Capacidades, límites y matriz de planes leídos de documentación oficial. Ver `DISCOVERY.md` §1–§7. |
 | Dropi | `DOCUMENTED` | Ver §4. Nada comprobado contra una cuenta real. |
 | Ecommerce | `PLACEHOLDER` | Sin implementación. |

@@ -219,16 +219,27 @@ consulta real de búsqueda), esto se revisa **antes** de cargar el catálogo, po
 
 | Límite | Valor | Nivel |
 | --- | --- | --- |
-| Variantes por producto | **2.048** (desde el 15 de octubre de 2025; antes 100) | `VERIFICADO` |
-| Apps que no usen las APIs GraphQL de producto vigentes | Pueden romperse o degradarse con más de 100 variantes | `VERIFICADO` |
+| Variantes por producto | **2.048** (desde el 15 de octubre de 2025; antes 100) | `VERIFICADO` en vivo: `resourceLimits.maxProductVariants` |
+| **Opciones por producto** | **3** | `VERIFICADO` en vivo **y por prueba negativa**: `OPTIONS_OVER_LIMIT` |
+| Ubicaciones de inventario | 10 | `VERIFICADO` en vivo |
+| Apps que no usen las APIs GraphQL de producto vigentes | Pueden romperse o degradarse con más de 100 variantes | `VERIFICADO` (documentación) |
 
-Para footwear esto es holgado: 15 colores × 20 tallas = 300 variantes, muy por debajo del límite.
+Las variantes van holgadas: 15 colores × 20 tallas = 300, muy por debajo de 2.048.
+
+**Las opciones no.** Color + Talla consume 2 de 3, dejando **una sola** libre. Si N&E necesitara
+además Ancho y Material, es imposible en un solo producto, y las combined listings que serían la
+salida son solo Plus. Intenté añadir una cuarta opción y la API la rechazó con
+`OPTIONS_OVER_LIMIT`. Evidencia en [`VERIFICATION-LOG.md`](VERIFICATION-LOG.md) §3.
+
+→ **Gastar la tercera opción es una decisión irreversible del proyecto.** La candidata con más
+impacto en RTO es **Ancho/horma**.
 
 ### 8.3 Mecanismos nativos para la página de producto
 
 | Necesidad | Mecanismo nativo | Nivel |
 | --- | --- | --- |
-| Saber si una combinación existe y está disponible | `product_option_value.available` | `VERIFICADO` |
+| Saber si una combinación existe y está disponible | **Calcular desde `variants[].selectedOptions`.** Ver la advertencia de abajo | `VERIFICADO` por ejecución |
+| Swatches de color con **foto del material** | Metaobject estándar `shopify--color-pattern`, campo `image`. No es automático: hay que vincularlo | `VERIFICADO` por ejecución |
 | Actualizar la página al cambiar variante sin recargar | **Section Rendering API** | `VERIFICADO` |
 | Evitar sobrecarga con muchas variantes | Guía oficial "Avoid over-fetching product variants" y "Avoid deeply nested Liquid loops" | `VERIFICADO` |
 | Guía de tallas estructurada y reutilizable | **Metaobjects** — el ejemplo oficial de la documentación es literalmente una guía de tallas (`size_chart`, `access: { storefront: PUBLIC_READ }`) | `VERIFICADO` |
@@ -236,13 +247,28 @@ Para footwear esto es holgado: 15 colores × 20 tallas = 300 variantes, muy por 
 | Datos sueltos de producto (materiales, horma, drop) | Metafields con `metafield_tag` | `VERIFICADO` |
 
 **Esto cierra la pregunta de la guía de tallas sin construir nada:** metaobject de tipo `size_chart`
-+ referencia desde el producto. No hace falta sistema propio, ni app, ni base de datos.
++ referencia desde el producto. No hace falta sistema propio, ni app, ni base de datos. Mecanismo
+**ejecutado y verificado**; la receta lista para N&E está en
+[`../shopify/footwear-data-model.graphql`](../shopify/footwear-data-model.graphql).
+
+### 8.3.bis ⚠️ Trampa verificada: `hasVariants` no dice si una combinación existe
+
+Probado con una matriz incompleta (un color disponible solo en 2 de 4 tallas):
+
+`optionValues[].hasVariants` devolvió `true` para **todas** las tallas, incluidas las que no existen
+para ese color. El campo indica si ese **valor de opción** lo usa alguna variante del producto, **no
+si la combinación Color × Talla concreta existe**.
+
+**Consecuencia:** un selector que use `hasVariants` ofrecerá tallas inexistentes. El conjunto de
+combinaciones válidas se calcula **desde `variants[].selectedOptions`**, y la compra se decide con
+`availableForSale`. Evidencia en [`VERIFICATION-LOG.md`](VERIFICATION-LOG.md) §4.
 
 ### 8.4 Inventario
 
 | Mecanismo | Detalle | Nivel |
 | --- | --- | --- |
-| `variant.inventory_policy` | `deny` = dejar de vender sin stock · `continue` = seguir vendiendo | `VERIFICADO` |
+| `variant.inventory_policy` | `deny` = dejar de vender sin stock · `continue` = seguir vendiendo. **`DENY` es el valor por defecto** | `VERIFICADO` por ejecución |
+| Semántica de disponibilidad | rastreado + cantidad 0 + `DENY` ⇒ `availableForSale: false` | `VERIFICADO` por ejecución |
 | `variant.inventory_quantity` | Si no se rastrea inventario, devuelve unidades vendidas | `VERIFICADO` |
 | `variant.incoming` / `variant.inventory_management` | Inventario entrante y servicio de gestión | `VERIFICADO` |
 | Estados de inventario | `incoming`, `on_hand`, `available`, `committed`, `reserved`, `damaged`, `safety_stock`, `quality_control`. Solo `available` es vendible | `VERIFICADO` |

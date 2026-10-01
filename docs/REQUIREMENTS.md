@@ -69,10 +69,14 @@ como storefront.
 | --- | --- | --- |
 | Plan objetivo **Advanced** → sin UI dentro del checkout ni branding del checkout (son solo Plus) | `VERIFICADO` | `DISCOVERY.md` §14 |
 | **Combined listings son solo Plus** → en Advanced, cada modelo de zapato es **un producto** con opciones Color + Talla | `VERIFICADO` | `ARCHITECTURE.md` §8 |
-| Límite de **2.048 variantes por producto** | `VERIFICADO` | `ARCHITECTURE.md` §8 |
+| Límite de **2.048 variantes por producto** | `VERIFICADO` en vivo | `ARCHITECTURE.md` §8 |
+| **Máximo 3 opciones por producto** → Color + Talla deja una libre; una cuarta se rechaza con `OPTIONS_OVER_LIMIT` | `VERIFICADO` por prueba negativa | `VERIFICATION-LOG.md` §3 |
+| **`hasVariants` no indica si una combinación Color × Talla existe** → el selector se calcula desde `variants[].selectedOptions` | `VERIFICADO` por ejecución | `VERIFICATION-LOG.md` §4 |
+| **Sin billeteras digitales** (`supportedDigitalWallets` vacío) → no hay checkout acelerado | `VERIFICADO` en vivo | `VERIFICATION-LOG.md` §2 |
+| La conexión **sí escribe** archivos de theme no publicado, pero **no puede borrarlos** | `VERIFICADO` por ejecución | `VERIFICATION-LOG.md` §8 |
 | **Shopify Functions sí** en Advanced; market overrides sí | `VERIFICADO` | `DISCOVERY.md` §14 |
 | N&E **no tiene tienda todavía** → el catálogo se crea, no se lee | `VERIFICADO` | `DISCOVERY.md` §14 |
-| La conexión MCP **no tiene herramientas de theme ni de despliegue** | `VERIFICADO` | `DISCOVERY.md` §13 |
+| ~~La conexión MCP no tiene herramientas de theme~~ → **corregido**: sí escribe themes no publicados | `VERIFICADO` por ejecución | `VERIFICATION-LOG.md` §8 |
 | No modificar Magisik; no cambiar de tienda ni revocar la conexión sin autorización explícita | Propietario | `VERIFICADO` |
 | Script tags mueren el **1 de marzo de 2027** | `VERIFICADO` | `DISCOVERY.md` §3 |
 | El ID de carrito lleva secret key → headless con datos privados exige servidor | `VERIFICADO` | `DISCOVERY.md` §2 |
@@ -87,7 +91,7 @@ como storefront.
 | # | Desconocido | Por qué bloquea | Origen esperado |
 | --- | --- | --- | --- |
 | U1 | **Dirección de arte concreta**: paleta, tipografía, ritmo, tratamiento fotográfico, referencias y qué principio tomar de cada una | Sin esto, cualquier propuesta visual es invención (§187) y el gate de originalidad no tiene criterio contra el que medirse | §1–172 |
-| U2 | **Papel real del 3D en la experiencia** | Decide `<model-viewer>` nativo vs WebGL propio, y con ello cuál de las cuatro arquitecturas gana | §1–172 |
+| U2 | **Papel real del 3D en la experiencia** — la pregunta precisa es *¿qué debe sentir y entender el comprador que hoy no puede?* El 3D responde al concepto creativo, **no se pre-decide como visor de producto** | Decide `<model-viewer>` nativo vs WebGL propio, y con ello cuál de las cuatro arquitecturas gana | §1–172 / propietario |
 | U3 | **Peso relativo de los 13 criterios** (originalidad, premium, 3D, motion, Shopify, Dropi, performance, seguridad, SEO, accesibilidad, mantenibilidad, conversión, costo) | Sin ponderación no hay decisión defendible, solo preferencia | §1–172 |
 | U4 | **Quién mantiene el sistema tras el lanzamiento** | §233. Un desarrollador solo con Hydrogen/React Router es un riesgo distinto que un equipo | §1–172 o propietario |
 

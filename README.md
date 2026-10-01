@@ -27,6 +27,8 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos conocidos y desconocidos, decisiones reversibles vs irreversibles, y auditoría de contradicciones entre todas las instrucciones. |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Comparación objetiva de alternativas, y modelos de seguridad, rendimiento, producto/variantes/inventario, carrito→checkout y Shopify→Dropi. |
 | [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analytics, testing, despliegue, riesgos y costos. |
+| [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md) | Lo comprobado **por ejecución real** contra Shopify, incluidas las correcciones a afirmaciones previas y el residuo que no se pudo limpiar. |
+| [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, listo para ejecutarse cuando exista la tienda de N&E. |
 
 ## Antes de escribir código
 

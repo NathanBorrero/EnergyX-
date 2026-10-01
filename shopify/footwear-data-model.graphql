@@ -1,0 +1,409 @@
+# =============================================================================
+# Nathan & Esteban — Modelo de datos de footwear en Shopify
+#
+# Estado: validado contra el esquema del Admin API y probado por ejecución en el
+#         entorno de pruebas (Magisik). NO ejecutado contra la tienda de N&E,
+#         que todavía no existe.
+#
+# Evidencia: docs/VERIFICATION-LOG.md
+#
+# REGLA: ningún valor de negocio está inventado. Donde falta el dato real
+#        aparece PLACEHOLDER de forma explícita (§191).
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# PASO 0 — Verificar los límites REALES de la tienda antes de modelar.
+# No asumir los del entorno de pruebas. En Magisik (Basic) dio:
+#   maxProductOptions: 3 · maxProductVariants: 2048 · locationLimit: 10
+#   checkoutApiSupported: false · supportedDigitalWallets: []
+# -----------------------------------------------------------------------------
+query ShopCapabilities {
+  shop {
+    name
+    currencyCode
+    enabledPresentmentCurrencies
+    unitSystem
+    weightUnit
+    checkoutApiSupported
+    plan {
+      publicDisplayName
+      shopifyPlus
+    }
+    resourceLimits {
+      maxProductOptions
+      maxProductVariants
+      locationLimit
+    }
+    paymentSettings {
+      supportedDigitalWallets
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# PASO 1 — Guía de tallas.
+#
+# Una entrada por fila de la tabla. `foot_length_cm` es el campo que de verdad
+# reduce el RTO: deja que el comprador mida su pie en vez de adivinar el número.
+# La tienda usa METRIC_SYSTEM, así que cm es coherente con el resto.
+#
+# Verificado por ejecución: metaobjectDefinitionCreate devolvió la definición
+# completa y userErrors vacío.
+# -----------------------------------------------------------------------------
+mutation CreateSizeChartDefinition {
+  metaobjectDefinitionCreate(
+    definition: {
+      type: "size_chart"
+      name: "Guía de tallas"
+      description: "Una entrada por talla. Equivalencias y medida de pie en cm."
+      access: { storefront: PUBLIC_READ }
+      fieldDefinitions: [
+        { key: "label", name: "Talla (como se muestra)", type: "single_line_text_field", required: true }
+        { key: "eu", name: "EU", type: "number_decimal" }
+        { key: "us_men", name: "US Hombre", type: "number_decimal" }
+        { key: "us_women", name: "US Mujer", type: "number_decimal" }
+        { key: "uk", name: "UK", type: "number_decimal" }
+        { key: "foot_length_cm", name: "Largo de pie (cm)", type: "number_decimal" }
+        { key: "insole_length_cm", name: "Largo de plantilla (cm)", type: "number_decimal" }
+      ]
+    }
+  ) {
+    metaobjectDefinition {
+      id
+      type
+      fieldDefinitions {
+        key
+        type {
+          name
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# PASO 2 — Perfil de horma (fit).
+#
+# Separado de la guía de tallas porque es por MODELO, no por talla.
+# "Calza estrecho / fiel / amplio" es la segunda causa de devolución tras la
+# talla, y decirlo antes de comprar es más barato que procesar un RTO.
+# -----------------------------------------------------------------------------
+mutation CreateFitProfileDefinition {
+  metaobjectDefinitionCreate(
+    definition: {
+      type: "fit_profile"
+      name: "Perfil de horma"
+      description: "Cómo calza un modelo. Se referencia desde el producto."
+      access: { storefront: PUBLIC_READ }
+      fieldDefinitions: [
+        { key: "name", name: "Nombre del perfil", type: "single_line_text_field", required: true }
+        { key: "advice", name: "Recomendación al comprador", type: "multi_line_text_field" }
+        { key: "size_offset", name: "Ajuste sugerido de talla", type: "number_decimal" }
+        { key: "width_note", name: "Nota de ancho", type: "single_line_text_field" }
+      ]
+    }
+  ) {
+    metaobjectDefinition {
+      id
+      type
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# PASO 3 — Metafields de producto que referencian lo anterior,
+# más los datos de ficha propios del calzado.
+#
+# Todos con acceso PUBLIC_READ de storefront para que la página los lea.
+# -----------------------------------------------------------------------------
+mutation CreateProductMetafieldDefinitions {
+  sizeChart: metafieldDefinitionCreate(
+    definition: {
+      name: "Guía de tallas"
+      namespace: "ne"
+      key: "size_chart"
+      ownerType: PRODUCT
+      type: "list.metaobject_reference"
+      access: { storefront: PUBLIC_READ }
+      validations: [{ name: "metaobject_definition_type", value: "size_chart" }]
+    }
+  ) {
+    createdDefinition {
+      id
+      key
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+
+  fitProfile: metafieldDefinitionCreate(
+    definition: {
+      name: "Perfil de horma"
+      namespace: "ne"
+      key: "fit_profile"
+      ownerType: PRODUCT
+      type: "metaobject_reference"
+      access: { storefront: PUBLIC_READ }
+      validations: [{ name: "metaobject_definition_type", value: "fit_profile" }]
+    }
+  ) {
+    createdDefinition {
+      id
+      key
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+
+  upperMaterial: metafieldDefinitionCreate(
+    definition: {
+      name: "Material del corte"
+      namespace: "ne"
+      key: "upper_material"
+      ownerType: PRODUCT
+      type: "single_line_text_field"
+      access: { storefront: PUBLIC_READ }
+    }
+  ) {
+    createdDefinition {
+      id
+      key
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+
+  soleMaterial: metafieldDefinitionCreate(
+    definition: {
+      name: "Material de la suela"
+      namespace: "ne"
+      key: "sole_material"
+      ownerType: PRODUCT
+      type: "single_line_text_field"
+      access: { storefront: PUBLIC_READ }
+    }
+  ) {
+    createdDefinition {
+      id
+      key
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+
+  careInstructions: metafieldDefinitionCreate(
+    definition: {
+      name: "Cuidado"
+      namespace: "ne"
+      key: "care"
+      ownerType: PRODUCT
+      type: "multi_line_text_field"
+      access: { storefront: PUBLIC_READ }
+    }
+  ) {
+    createdDefinition {
+      id
+      key
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# PASO 4 — Entradas de guía de tallas.
+#
+# ⚠️ PLACEHOLDER EXPLÍCITO. Los valores de abajo NO son datos reales de
+# Nathan & Esteban. Las equivalencias de talla y las medidas en cm deben venir
+# del fabricante o de medición física del producto. Sustituir antes de publicar.
+# Inventarlas provocaría exactamente el RTO que intentamos evitar.
+# -----------------------------------------------------------------------------
+mutation CreateSizeChartEntryPlaceholder {
+  metaobjectCreate(
+    metaobject: {
+      type: "size_chart"
+      handle: "placeholder-talla-pendiente"
+      fields: [
+        { key: "label", value: "PLACEHOLDER" }
+        { key: "eu", value: "0" }
+        { key: "foot_length_cm", value: "0" }
+      ]
+      capabilities: { publishable: { status: DRAFT } }
+    }
+  ) {
+    metaobject {
+      id
+      handle
+      type
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# PASO 5 — Producto de footwear.
+#
+# UN producto por modelo, con opciones Color y Talla.
+# Razón verificada: las combined listings (que darían URL propia por color) son
+# solo Shopify Plus, y el máximo de opciones por producto es 3.
+#
+# ⚠️ Título, precio, materiales y colores son PLACEHOLDER. No inventar.
+# status: DRAFT hasta que los datos sean reales.
+# inventoryItem.tracked: true para que DENY proteja contra oversell.
+# -----------------------------------------------------------------------------
+mutation CreateFootwearProductPlaceholder {
+  productCreate(
+    product: {
+      title: "PLACEHOLDER — modelo pendiente de definir"
+      vendor: "Nathan & Esteban"
+      productType: "Footwear"
+      status: DRAFT
+      descriptionHtml: "<p>PLACEHOLDER. Sin copy, sin claims, sin especificaciones. Pendiente de definición de producto.</p>"
+      productOptions: [
+        {
+          name: "Color"
+          values: [{ name: "PLACEHOLDER COLOR" }]
+        }
+        {
+          name: "Talla"
+          values: [{ name: "PLACEHOLDER TALLA" }]
+        }
+      ]
+    }
+  ) {
+    product {
+      id
+      handle
+      options {
+        name
+        position
+        optionValues {
+          name
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# VERIFICACIÓN — ejecutar después de cargar catálogo.
+#
+# Esta consulta es la que detecta la trampa documentada en
+# docs/VERIFICATION-LOG.md §4: hasVariants dice si un VALOR de opción se usa en
+# alguna variante, NO si una combinación Color × Talla concreta existe.
+#
+# El selector de la página de producto debe construir el conjunto de
+# combinaciones válidas a partir de variants[].selectedOptions, nunca a partir
+# de optionValues[].hasVariants.
+# -----------------------------------------------------------------------------
+query VerifyVariantMatrix($productId: ID!) {
+  product(id: $productId) {
+    id
+    title
+    status
+    options {
+      name
+      position
+      optionValues {
+        name
+        hasVariants # ⚠️ NO usar esto para decidir disponibilidad por combinación
+        swatch {
+          color
+        }
+      }
+    }
+    variantsCount {
+      count
+    }
+    variants(first: 250) {
+      edges {
+        node {
+          id
+          title
+          availableForSale # fuente de verdad de si se puede comprar
+          inventoryPolicy
+          inventoryQuantity
+          selectedOptions {
+            # fuente de verdad de qué combinaciones existen
+            name
+            value
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+      }
+    }
+  }
+}
+
+
+# -----------------------------------------------------------------------------
+# VERIFICACIÓN — swatches de color.
+#
+# shopify--color-pattern es la definición estándar. Su campo `image` permite que
+# el swatch sea una FOTO DEL MATERIAL (cuero, suede, textil) en lugar de un
+# cuadrado de color plano. Para footwear premium la diferencia es sustancial.
+#
+# Verificado: los swatches NO son automáticos. variant.swatch devolvió null
+# hasta vincular los valores de opción a entradas de este metaobject.
+# -----------------------------------------------------------------------------
+query VerifyColorSwatchDefinition {
+  metaobjectDefinitionByType(type: "shopify--color-pattern") {
+    id
+    type
+    name
+    metaobjectsCount
+    fieldDefinitions {
+      key
+      name
+      required
+      type {
+        name
+      }
+    }
+    access {
+      storefront
+    }
+  }
+}

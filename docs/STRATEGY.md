@@ -92,9 +92,32 @@ Aplicando §180 (test de necesidad) y §217 (cada elemento pesado justifica su c
 | **1 · `<model-viewer>` nativo** | Girar el zapato, zoom, y **AR en el espacio real** | Cuando el comprador necesita entender volumen, perfil y proporción — habitual en calzado | Bajo: nativo, lazy, accesible, AR gratis |
 | **2 · WebGL propio** | Escena con dirección de arte: materiales, luz, cámara, composición que `model-viewer` no puede expresar | **Solo si U2 lo exige**, y hay que defenderlo contra §180, §217, §218 y §222 | Alto: peso, GPU, batería, mantenimiento, accesibilidad |
 
-**Postura por defecto hasta tener U2:** nivel 0 garantizado, nivel 1 como ambición nativa, nivel 2
-sin aprobar. Esto no es cobardía técnica: es lo que pidió el propietario — *3D únicamente cuando
-aporte valor real* — y lo que exige §218.
+### 12.2.bis Corrección — el 3D no se pre-decide como visor de producto
+
+> **CORREGIDO el 2026-10-01 por indicación del propietario.** Había convertido el escalado de arriba
+> en una recomendación implícita de quedarse en nivel 1 (`<model-viewer>`). Eso era yo optimizando
+> coste **antes** de conocer el concepto creativo, y es exactamente el error inverso al que §226
+> advierte: conformarse con la primera solución razonable.
+
+La instrucción es clara: **la experiencia 3D debe responder al concepto creativo de la marca**, no
+al revés. Por tanto:
+
+| Lo que el escalado **sí** es | Lo que **no** es |
+| --- | --- |
+| Un mapa de costes y capacidades verificadas, para decidir con datos | Una recomendación de quedarse en el nivel barato |
+| La garantía de que el nivel 0 nunca falta como suelo de degradación (§215, §216) | Un veto al WebGL propio |
+| El recordatorio de que `model-viewer` trae AR, accesibilidad y lazy-load gratis | Una afirmación de que eso baste para N&E |
+
+**Nivel 2 no está descartado: está sin decidir.** Si el concepto de marca exige una escena con
+dirección de arte —materiales, luz, cámara, composición, narrativa— entonces `<model-viewer>` no la
+expresa y el WebGL propio es la respuesta correcta, no un lujo. Lo que §217 y §218 exigen no es
+evitarlo, es **presupuestarlo**: saber cuánto pesa, cuándo carga y qué pasa si falla.
+
+Lo que sí es decisión cerrada, independientemente del nivel: los requisitos no negociables de §12.3.
+
+**U2 queda abierto y es del propietario.** La pregunta precisa no es "¿3D sí o no?" sino
+**¿qué debe sentir y entender el comprador que hoy no puede?** De esa respuesta sale el nivel, y el
+presupuesto en MB sale después.
 
 ### 12.3 Requisitos no negociables para cualquier nivel de 3D
 
