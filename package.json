@@ -2,13 +2,15 @@
   "name": "nathan-esteban-storefront",
   "version": "0.0.0",
   "private": true,
-  "description": "Lógica de storefront de Nathan & Esteban. Sin dependencias: ESM puro, probado con el runner nativo de Node.",
+  "description": "L\u00f3gica de storefront de Nathan & Esteban. Sin dependencias: ESM puro, probado con el runner nativo de Node.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node --test 'src/**/*.test.js'",
-    "test:watch": "node --test --watch 'src/**/*.test.js'"
+    "test:watch": "node --test --watch 'src/**/*.test.js'",
+    "check": "node scripts/check.mjs",
+    "precommit": "node scripts/check.mjs"
   }
 }

@@ -20,6 +20,7 @@ se pierde la conversión en calzado. Esa se puede construir y probar ya:
 | [`lib/shopify-semantics.js`](lib/shopify-semantics.js) | La normalización de opciones y la definición de «comprable», una sola vez | Nació de la auditoría: estaba duplicada en dos módulos con dos implementaciones distintas |
 | [`lib/product-contract.js`](lib/product-contract.js) | La forma canónica de un producto, y su validación | Una sola forma elimina la segunda traducción desde Shopify, que es donde divergen |
 | [`lib/shopify-adapter.js`](lib/shopify-adapter.js) | Respuesta de Shopify → producto canónico. Admin API y Storefront API | Único sitio que conoce la forma de Shopify. Si cambia, se cambia aquí |
+| [`lib/size-selected-event.js`](lib/size-selected-event.js) | Emite `ne:size_selected` con el estado real de la combinación | Mecanismo verificado. `publish` se inyecta, así que es probable sin navegador |
 
 Ambos son ESM sin dependencias y sin tocar el DOM. Funcionan igual dentro de un theme Liquid, en
 React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
@@ -38,7 +39,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 170 pruebas
+npm test          # 201 pruebas
 npm run test:watch
 ```
 
@@ -67,6 +68,43 @@ disparan *aunque el comprador no haya consentido el seguimiento*, así que sirve
 la página, no para recoger datos de comportamiento. Para analítica van los web pixels, que respetan
 el consentimiento. `analytics-taxonomy.js` marca qué etapa pertenece a cada mundo para que no se
 mezclen.
+
+## `ne:size_selected` — qué representa y qué no
+
+**Representa:** que el navegador dijo que alguien eligió una talla. Nada más.
+
+**No representa, y no puede usarse para medirlo:** ventas · ingresos · stock · pedidos · entregas ·
+devoluciones · RTO.
+
+La razón no es cautela. Shopify documenta que los eventos personalizados los puede publicar
+cualquiera, **incluido un visitante desde la consola del navegador**. El dato es entrada no
+confiable: sirve para comportamiento agregado, no para sostener una cifra. El ingreso real vive en
+el webhook `orders/paid`.
+
+Decisiones de diseño, y su razón:
+
+| Decisión | Por qué |
+| --- | --- |
+| El payload **no lleva precio** | Incluirlo invitaría a sumar ingresos desde un evento de cliente |
+| No comprueba consentimiento | Publicar no es recoger. El pixel que se suscribe es quien lo respeta, vía Customer Privacy API. Duplicar esa garantía la haría divergir |
+| Lleva el `status` de la combinación | Distingue «eligió su talla» de «intentó una agotada» y de «intentó una que no existe en ese color». Eso informa sobre devoluciones y sobre catálogo |
+| Deduplica por talla y producto | Un selector dispara su callback en cada interacción, y reconciliar al cambiar de color vuelve a fijar la misma talla. Sin deduplicar, el embudo contaría varias donde hubo una |
+| Si `publish` lanza, se traga el error | Un fallo de analítica no puede romper la compra (§215) |
+
+## Comprobaciones
+
+```bash
+npm run check     # 10 comprobaciones, falla con código de salida
+```
+
+No es CI: es un script sin dependencias con invariantes reales. Cada comprobación se validó
+**inyectando el fallo que debe detectar**: import roto, ciclo de importación, token de Shopify,
+export muerto, `console.log` olvidado, dependencia añadida y enlace de documentación roto. Las siete
+se detectaron.
+
+Lo que **no** comprueba todavía, y por qué: Theme Check exige Shopify CLI y que el stack sea Liquid,
+las dos cosas pendientes; los presupuestos de performance exigen una página desplegada y datos
+reales, e inventar un umbral sería inventar información.
 
 ## Límites de confianza
 

@@ -32,6 +32,28 @@
  * verdad transaccional.
  */
 
+/**
+ * DECISIÓN: este módulo NO consume el producto canónico. Resuelta por comportamiento.
+ * ---------------------------------------------------------------------------------
+ * Se revisó si debía integrarse con `product-contract.js` para que todos los
+ * módulos compartieran estructura. **No debe.** La razón no es estética:
+ *
+ *  1. `funnelFrom` opera sobre **recuentos agregados por etapa**. Un número de
+ *     sesiones no tiene producto. Un número de pedidos entregados tampoco.
+ *  2. `STAGE_META` es metadato **estático de plataforma**: de dónde sale cada
+ *     dato y qué permiso requiere. Eso no depende de ningún producto.
+ *  3. Las cinco etapas autoritativas vienen de **webhooks de pedido**, no de
+ *     consultas de producto. Acoplarlo al producto introduciría una dependencia
+ *     que el comportamiento real no tiene.
+ *
+ * Quien sí necesita contexto de producto es el emisor del evento de talla, y vive
+ * aparte en `size-selected-event.js`. Esa es la separación correcta: el evento
+ * conoce un producto, la taxonomía conoce un embudo.
+ *
+ * Integrarlo "para que todos usen la misma estructura" habría creado
+ * exactamente la abstracción innecesaria que el estándar prohíbe (§181).
+ */
+
 /** Las diez etapas, en orden. */
 export const STAGE = Object.freeze({
   SESSION: 'session',

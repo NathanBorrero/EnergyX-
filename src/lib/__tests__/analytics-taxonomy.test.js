@@ -246,3 +246,57 @@ describe('integración — el caso que justifica el módulo', () => {
     assert.ok(f.rtoRate > 0.37);               // la fuga, cuantificada
   });
 });
+
+describe('DECISIÓN — la taxonomía es independiente del producto canónico', () => {
+  /**
+   * Estas pruebas no son cobertura decorativa: demuestran que el módulo funciona
+   * correctamente sin producto, que es la justificación de dejarlo desacoplado.
+   * Si alguna vez dejara de ser cierto, fallarían aquí.
+   */
+  test('funnelFrom opera solo con recuentos, sin ninguna noción de producto', () => {
+    const f = funnelFrom({
+      [STAGE.SESSION]: 100,
+      [STAGE.ORDER_CREATED]: 5,
+      [STAGE.ORDER_DELIVERED]: 3,
+    });
+    assert.equal(f.apparentConversion, 0.05);
+    assert.equal(f.realConversion, 0.03);
+  });
+
+  test('pasar un producto canónico como entrada no cambia nada ni rompe', () => {
+    const conProducto = funnelFrom({
+      [STAGE.SESSION]: 100,
+      [STAGE.ORDER_CREATED]: 5,
+      // Campos de un producto canónico, que deben ignorarse por completo.
+      title: 'Modelo',
+      variants: [{ id: 'v', selectedOptions: [] }],
+      options: [{ name: 'Talla', values: ['42'] }],
+    });
+    const sinProducto = funnelFrom({ [STAGE.SESSION]: 100, [STAGE.ORDER_CREATED]: 5 });
+    assert.deepEqual(conProducto.counts, sinProducto.counts);
+    assert.deepEqual(conProducto.stepRates, sinProducto.stepRates);
+  });
+
+  test('ninguna etapa declara depender de datos de producto', () => {
+    for (const stage of STAGE_ORDER) {
+      const meta = STAGE_META[stage];
+      const texto = `${meta.mechanism ?? ''} ${meta.note ?? ''}`;
+      assert.equal(/product-contract|producto canónico/.test(texto), false, `${stage} se acopló al producto`);
+    }
+  });
+
+  test('las cinco etapas autoritativas vienen de webhooks, no de consultas de producto', () => {
+    for (const stage of authoritativeStages()) {
+      const mecanismo = STAGE_META[stage].mechanism;
+      if (mecanismo === null) continue; // RTO, sin mecanismo confirmado
+      assert.match(mecanismo, /webhook/, `${stage} no viene de un webhook`);
+    }
+  });
+
+  test('el módulo no importa nada del contrato de producto', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const src = await readFile(new URL('../analytics-taxonomy.js', import.meta.url), 'utf8');
+    assert.equal(src.includes("from './product-contract.js'"), false);
+    assert.equal(src.includes("from './shopify-adapter.js'"), false);
+  });
+});
