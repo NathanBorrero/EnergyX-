@@ -14,13 +14,17 @@ evidencia también (§187, zero hallucination).
 | --- | --- |
 | [`docs/STANDARD.md`](docs/STANDARD.md) | Estándar de ejecución, §173–§246. Cómo se construye, revisa y entrega. |
 | [`docs/STATUS.md`](docs/STATUS.md) | Estado verificado del proyecto y del entorno, limitaciones, deuda técnica y decisiones críticas abiertas. |
+| [`docs/DISCOVERY.md`](docs/DISCOVERY.md) | Base de hechos de plataforma (Shopify, themes, Hydrogen, Storefront API, checkout, 3D, performance, analytics, seguridad, costos), opciones de arquitectura y sus restricciones verificadas. |
 
 ## Antes de escribir código
 
-Hay cinco decisiones críticas abiertas (D1–D5 en [`docs/STATUS.md`](docs/STATUS.md)).
+Hay cinco decisiones críticas abiertas (D1–D5 en [`docs/STATUS.md`](docs/STATUS.md)), refinadas
+tras la investigación de plataforma en [`docs/DISCOVERY.md`](docs/DISCOVERY.md) §11.
+
 Dos de ellas — el brief de marca y producto, y la elección de stack — bloquean cualquier
 implementación: construir antes de resolverlas significaría tirar el trabajo o inventar
-información.
+información. El espacio de opciones ya está investigado y sus restricciones están verificadas;
+lo que falta es el criterio de ponderación, que vive en el brief.
 
 ## Convenciones de seguridad
 

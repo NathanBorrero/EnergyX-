@@ -2,7 +2,11 @@
 
 **Fecha del informe:** 2026-10-01
 **Rama:** `claude/dreamy-maxwell-js5745`
-**Método:** inspección directa del repositorio y del entorno de ejecución. Sin suposiciones (§191).
+**Método:** inspección directa del repositorio y del entorno de ejecución, más investigación de
+plataforma sobre documentación oficial. Sin suposiciones (§191).
+
+**Documento hermano:** [`DISCOVERY.md`](DISCOVERY.md) — base de hechos de plataforma verificados,
+opciones de arquitectura y sus restricciones.
 
 ---
 
@@ -22,8 +26,10 @@ de ejecución y este informe.
 
 | Área | Estado | Evidencia / motivo |
 | --- | --- | --- |
-| Arquitectura | `PLACEHOLDER` | Stack no decidido. Decisión crítica abierta (D2). |
-| Shopify | `UNVERIFIED` | Connector presente pero **sin autenticar**; ninguna tienda comprobada. |
+| Arquitectura | `PLACEHOLDER` | Stack no decidido. Opciones y restricciones ya investigadas y verificadas en `DISCOVERY.md` §10; la elección requiere §1–172. Decisión crítica abierta (D2). |
+| Shopify — tienda | `VERIFIED`, pero **es la tienda equivocada** | Conectado a **Magisik** (`magisik.store`), plan **Basic**, COP, Colombia. 4 productos, todos de belleza, **cero footwear**. No es Nathan & Esteban. Ver `DISCOVERY.md` §13. |
+| Shopify — deploy | `UNVERIFIED` | La conexión **no tiene herramientas de theme ni de despliegue**. Requiere Shopify CLI (no instalado) o la integración de GitHub. |
+| Shopify — plataforma | `VERIFIED` | Capacidades, límites y matriz de planes leídos de documentación oficial. Ver `DISCOVERY.md` §1–§7. |
 | Dropi | `DOCUMENTED` | Ver §4. Nada comprobado contra una cuenta real. |
 | Ecommerce | `PLACEHOLDER` | Sin implementación. |
 | 3D | `PLACEHOLDER` | Sin implementación ni assets. |
@@ -36,6 +42,7 @@ de ejecución y este informe.
 | Analytics | `PLACEHOLDER` | Sin implementación. |
 | Assets | `PLACEHOLDER` | Ningún asset de marca o producto en el repositorio. |
 | Claims | `PLACEHOLDER` | Ningún claim de producto conocido ni verificado. |
+| Marca / categoría | `VERIFIED` (por el propietario) | Nathan & Esteban, footwear premium. Dirección de arte concreta sigue pendiente (§1–172). |
 
 ## 3. Entorno de ejecución — verificado
 
@@ -47,7 +54,11 @@ de ejecución y este informe.
 | git | `2.43.0` — verificado |
 | Shopify CLI | **no instalado** — verificado |
 | Connector Shopify (MCP) | **requiere re-autenticación** — verificado por fallo de llamada |
-| Egress de red | restringido por proxy. `apps.shopify.com` **bloqueado** — verificado |
+| Egress de red | restringido por política de la organización — verificado |
+| `shopify.dev` | **bloqueado** — verificado. Mitigado vía el conector MCP de Shopify, que devuelve el mismo contenido con su URL |
+| `help.shopify.com` | **bloqueado** — verificado. Sin fuente primaria de facturación y comisiones |
+| `apps.shopify.com` | **bloqueado** — verificado. Sin auditoría del listado oficial de la app de Dropi |
+| `search_docs_chunks` (MCP Shopify) | **funciona sin autenticar** — verificado. Única vía autoritativa a documentación de Shopify en este entorno |
 
 ## 4. Dropi — clasificación honesta (§186)
 
@@ -75,8 +86,11 @@ cuenta real de Dropi. `DOCUMENTED` nunca se convierte en `VERIFIED` (§186).
    leer tienda, productos, variantes, inventario ni probar checkout (§184, §185).
 3. **Dropi no es verificable ahora.** Sin cuenta ni credenciales. Documentación oficial
    no accesible públicamente.
-4. **`apps.shopify.com` bloqueado por el proxy de egress.** No se puede auditar el
-   listado oficial de la app de Dropi ni sus scopes declarados.
+4. **Tres hosts de Shopify bloqueados por la política de egress** (`shopify.dev`,
+   `help.shopify.com`, `apps.shopify.com`). Consecuencias concretas: no se pudo auditar
+   el listado oficial de la app de Dropi ni sus scopes, y **las cifras de planes,
+   comisiones y la exención de métodos de pago manuales quedan en `DOCUMENTED`**, no
+   verificadas. La documentación técnica de Shopify sí fue accesible vía el conector MCP.
 5. **Shopify CLI no instalado.** Sin `theme check` ni `theme dev` hasta instalarlo —
    relevante solo si el stack es un theme Liquid (decisión D2).
 6. **Sin QA visual.** No hay aplicación que capturar (§213).
@@ -105,3 +119,7 @@ o el resultado comercial.
 
 **Estado:** bloqueado en D1–D3 para cualquier implementación de producto o visual.
 D4 y D5 bloquean verificación, no diseño.
+
+**Refinamiento:** la investigación de plataforma ya acotó el espacio de D2 a cuatro opciones con
+sus restricciones verificadas, y añadió dos variables que antes no estaban en la lista — la
+naturaleza real del 3D y el plan de Shopify contratado. Ver [`DISCOVERY.md`](DISCOVERY.md) §10–§11.
