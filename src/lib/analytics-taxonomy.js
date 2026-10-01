@@ -86,29 +86,35 @@ export const STAGE_META = Object.freeze({
     label: 'Visita',
     source: SOURCE.WEB_PIXEL,
     consentGated: true,
-    mechanism: 'web pixel — evento de página vista',
-    level: LEVEL.DOCUMENTADO,
+    mechanism: 'web pixel — evento estándar `page_viewed`',
+    level: LEVEL.VERIFICADO,
     note: 'Los eventos estándar de storefront NO sirven aquí: ignoran el consentimiento.',
   }),
   [STAGE.PRODUCT_VIEWED]: Object.freeze({
     label: 'Producto visto',
     source: SOURCE.WEB_PIXEL,
     consentGated: true,
-    mechanism: 'web pixel — evento de producto visto',
-    level: LEVEL.DOCUMENTADO,
+    mechanism: 'web pixel — evento estándar `product_viewed`',
+    level: LEVEL.VERIFICADO,
     note: null,
   }),
   [STAGE.SIZE_SELECTED]: Object.freeze({
     label: 'Talla seleccionada',
     source: SOURCE.WEB_PIXEL,
     consentGated: true,
-    mechanism: null,
-    level: LEVEL.NO_VERIFICADO,
+    mechanism:
+      'evento personalizado — `Shopify.analytics.publish(\'ne:size_selected\', data)` ' +
+      'desde `theme.liquid` o un theme app extension, con `analytics.subscribe()` en el pixel',
+    level: LEVEL.VERIFICADO,
     note:
-      'No se encontró un evento estándar de pixel para selección de variante. ' +
-      'Existe `shopify:product:select` como evento de storefront, pero ignora el ' +
-      'consentimiento, así que no vale para analítica. Probablemente requiera un ' +
-      'evento personalizado publicado al pixel. Por verificar.',
+      'La lista exhaustiva de eventos estándar de pixel NO incluye selección de ' +
+      'variante, así que hace falta un evento propio. El mecanismo existe y está ' +
+      'confirmado: `Shopify.analytics.publish` está disponible en el Online Store. ' +
+      'Los nombres propios deben ir con prefijo para no colisionar con los ' +
+      'estándar, que no se pueden publicar. ' +
+      'SEGURIDAD: la documentación advierte que los eventos personalizados los ' +
+      'puede publicar cualquiera, incluido un visitante desde la consola del ' +
+      'navegador. El dato es entrada no confiable y no puede sostener una cifra.',
   }),
   [STAGE.ADDED_TO_CART]: Object.freeze({
     label: 'Añadido al carrito',
@@ -122,8 +128,8 @@ export const STAGE_META = Object.freeze({
     label: 'Checkout iniciado',
     source: SOURCE.WEB_PIXEL,
     consentGated: true,
-    mechanism: 'web pixel — evento de checkout iniciado',
-    level: LEVEL.DOCUMENTADO,
+    mechanism: 'web pixel — evento estándar `checkout_started`',
+    level: LEVEL.VERIFICADO,
     note: 'Último punto medible en cliente: el checkout es de Shopify.',
   }),
   [STAGE.ORDER_CREATED]: Object.freeze({
@@ -132,7 +138,12 @@ export const STAGE_META = Object.freeze({
     consentGated: false,
     mechanism: 'webhook `orders/create` (ORDERS_CREATE)',
     level: LEVEL.VERIFICADO,
-    note: 'NO es una venta. Con contra entrega, aquí todavía no ha entrado dinero.',
+    note:
+      'NO es una venta. Con contra entrega, aquí todavía no ha entrado dinero. ' +
+      'Existe además el evento de pixel `checkout_completed`, que señala lo mismo ' +
+      'desde el cliente, pero está sujeto a consentimiento y a bloqueadores, así ' +
+      'que dará una cifra MENOR. Solo el webhook es autoritativo; si los dos ' +
+      'números se mezclan en un informe, el informe miente.',
   }),
   [STAGE.ORDER_CONFIRMED]: Object.freeze({
     label: 'Pedido pagado',
@@ -288,8 +299,8 @@ export function funnelFrom(raw) {
   }
   if (counts[STAGE.SIZE_SELECTED] === 0 && counts[STAGE.PRODUCT_VIEWED] > 0) {
     caveats.push(
-      'Sin selección de talla registrada: su mecanismo está NO VERIFICADO, así que ' +
-        'probablemente falte instrumentarlo, no que nadie elija talla.',
+      'Sin selección de talla registrada: requiere un evento personalizado propio, ' +
+        'así que probablemente falte instrumentarlo, no que nadie elija talla.',
     );
   }
   for (const stage of unverifiedStages()) {

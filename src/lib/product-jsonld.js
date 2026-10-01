@@ -33,6 +33,8 @@
  * estructurados es una declaración falsa ante un buscador (§191, §242).
  */
 
+import { foldKey, isPurchasable, hasAvailabilityData } from './shopify-semantics.js';
+
 /** Propiedades por las que Google admite que varíen las variantes. */
 export const VARIES_BY = Object.freeze({
   COLOR: 'https://schema.org/color',
@@ -59,8 +61,22 @@ const DEFAULT_OPTION_MAP = Object.freeze({
   talla: { variesBy: VARIES_BY.SIZE, property: 'size' },
   size: { variesBy: VARIES_BY.SIZE, property: 'size' },
   material: { variesBy: VARIES_BY.MATERIAL, property: 'material' },
-  ancho: { variesBy: VARIES_BY.SIZE, property: 'size' },
 });
+
+/**
+ * `ancho` / `horma` NO están en el mapa por defecto, a propósito.
+ *
+ * schema.org no tiene una propiedad propia para el ancho de calzado, y mapearlo
+ * a `size` lo hace colisionar con la talla. La auditoría midió el resultado: con
+ * `{ Talla: '42', Ancho: 'D' }` se emitía `size: "D"` — el ancho sobrescribía la
+ * talla y se publicaba un dato estructurado falso.
+ *
+ * Omitir es honesto; sobrescribir no lo es. Si más adelante se decide modelar el
+ * ancho, se pasa un `optionMap` explícito y la detección de colisiones de abajo
+ * impide que se pierda la talla en silencio.
+ *
+ * Contexto de la decisión: docs/THIRD-OPTION-ANALYSIS.md
+ */
 
 /**
  * @param {unknown} v
@@ -110,9 +126,52 @@ function normalizePrice(price) {
   }
   if (hasText(price)) {
     const trimmed = price.trim();
-    if (/^\d+(\.\d+)?$/.test(trimmed)) return trimmed;
+    // Decimal simple, sin notación científica, sin signo, y sin ceros a la
+    // izquierda. `"00042"` pasaba el filtro anterior y se emitía tal cual, que es
+    // un precio malformado en el grafo. Auditoría de seguridad S6.
+    if (/^(0|[1-9]\d*)(\.\d+)?$/.test(trimmed)) return trimmed;
   }
   return undefined;
+}
+
+/**
+ * Forma de un código ISO 4217: exactamente tres letras.
+ *
+ * No se valida contra la lista real de monedas —eso cambia y no se puede
+ * verificar aquí—, solo la forma. Una moneda malformada hace que no se emita la
+ * oferta: mejor sin oferta que con una moneda inventada. Auditoría S7.
+ *
+ * @param {unknown} currency
+ * @returns {string|undefined}
+ */
+function normalizeCurrency(currency) {
+  if (!hasText(currency)) return undefined;
+  const trimmed = currency.trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(trimmed) ? trimmed : undefined;
+}
+
+/**
+ * Nombres de propiedad que nunca se escriben en un nodo del grafo.
+ *
+ * `optionMap` lo aporta quien integra el módulo, no un visitante, así que esto no
+ * es una barrera contra un atacante: es una barrera contra un error. Un
+ * `property: 'constructor'` emitía `"constructor": "X"` en el JSON-LD, que no es
+ * vocabulario de schema.org y ensucia el grafo. Auditoría S3 y S4.
+ */
+const FORBIDDEN_PROPERTIES = Object.freeze(
+  new Set(['__proto__', 'constructor', 'prototype', '@type', '@context', '@id']),
+);
+
+/**
+ * @param {unknown} name
+ * @returns {boolean} true si se puede escribir como propiedad del grafo.
+ */
+function isSafeProperty(name) {
+  return (
+    typeof name === 'string' &&
+    /^[a-zA-Z][a-zA-Z0-9_]*$/.test(name) &&
+    !FORBIDDEN_PROPERTIES.has(name)
+  );
 }
 
 /**
@@ -125,21 +184,23 @@ function normalizePrice(price) {
  */
 function buildOffer(variant, currency, url) {
   const price = normalizePrice(variant.price);
-  if (price === undefined || !hasText(currency)) return undefined;
+  const priceCurrency = normalizeCurrency(currency);
+  if (price === undefined || priceCurrency === undefined) return undefined;
 
   /** @type {Record<string, unknown>} */
   const offer = {
     '@type': 'Offer',
     price,
-    priceCurrency: currency.trim(),
+    priceCurrency,
   };
 
   // availableForSale es la fuente de verdad de Shopify. Si no viene, no se
   // declara disponibilidad: inventarla sería declarar stock falso.
-  if (variant.availableForSale === true) {
-    offer.availability = AVAILABILITY.IN_STOCK;
-  } else if (variant.availableForSale === false) {
-    offer.availability = AVAILABILITY.OUT_OF_STOCK;
+  // La definición de "comprable" vive en shopify-semantics.js, una sola vez.
+  if (hasAvailabilityData(variant)) {
+    offer.availability = isPurchasable(variant)
+      ? AVAILABILITY.IN_STOCK
+      : AVAILABILITY.OUT_OF_STOCK;
   }
 
   setIfPresent(offer, 'url', url);
@@ -213,6 +274,10 @@ export function buildProductGroupJsonLd(input) {
   const variants = Array.isArray(input.variants) ? input.variants : [];
   const variesBySet = new Set();
   const hasVariant = [];
+  /** Opciones omitidas por colisión de propiedad. Se exponen, no se ocultan. */
+  const collisions = new Set();
+  /** Opciones omitidas por nombre de propiedad no admisible. */
+  const rejected = new Set();
 
   for (const variant of variants) {
     if (!variant || typeof variant !== 'object') continue;
@@ -231,10 +296,23 @@ export function buildProductGroupJsonLd(input) {
       .join(' / ');
     v.name = suffix ? `${node.name} — ${suffix}` : node.name;
 
+    // Precedencia por orden de opción: la primera que reclama una propiedad de
+    // schema.org se la queda. Una segunda que reclamara la misma se omite, en
+    // lugar de sobrescribirla. Omitir un dato es honesto; falsear otro no.
+    const claimed = new Set();
     for (const optionName of optionNames) {
-      const mapped = optionMap[fold(optionName)];
+      const mapped = optionMap[foldKey(optionName)];
       const value = options[optionName];
       if (!mapped || !hasText(value)) continue;
+      if (!isSafeProperty(mapped.property)) {
+        rejected.add(`${optionName} -> ${String(mapped.property)}`);
+        continue;
+      }
+      if (claimed.has(mapped.property)) {
+        collisions.add(`${optionName} -> ${mapped.property}`);
+        continue;
+      }
+      claimed.add(mapped.property);
       v[mapped.property] = String(value).trim();
       variesBySet.add(mapped.variesBy);
     }
@@ -250,14 +328,57 @@ export function buildProductGroupJsonLd(input) {
     const meaningful =
       v.offers !== undefined ||
       v.sku !== undefined ||
-      optionNames.some((k) => optionMap[fold(k)] && hasText(options[k]));
+      optionNames.some((k) => optionMap[foldKey(k)] && hasText(options[k]));
     if (meaningful) hasVariant.push(v);
   }
 
   if (variesBySet.size > 0) node.variesBy = [...variesBySet];
   if (hasVariant.length > 0) node.hasVariant = hasVariant;
 
+  // Las colisiones no se emiten en el JSON-LD (no son vocabulario de schema.org),
+  // pero tampoco se esconden: viajan en una propiedad no enumerable para que un
+  // chequeo de QA o el consumidor puedan detectarlas sin ensuciar la salida.
+  if (collisions.size > 0) {
+    Object.defineProperty(node, '__collisions', {
+      value: Object.freeze([...collisions]),
+      enumerable: false,
+    });
+  }
+  if (rejected.size > 0) {
+    Object.defineProperty(node, '__rejected', {
+      value: Object.freeze([...rejected]),
+      enumerable: false,
+    });
+  }
+
   return node;
+}
+
+/**
+ * Opciones que se omitieron por colisionar con una propiedad ya reclamada.
+ *
+ * Devuelve lista vacía si no hubo ninguna. Sirve para que un chequeo previo a
+ * publicar avise de que un eje de variación no se está expresando, en lugar de
+ * descubrirlo por un dato raro en el buscador.
+ *
+ * @param {Record<string, unknown>|null} node
+ * @returns {readonly string[]}
+ */
+export function collisionsIn(node) {
+  if (!node) return [];
+  const value = /** @type {{__collisions?: readonly string[]}} */ (node).__collisions;
+  return Array.isArray(value) ? value : [];
+}
+
+/**
+ * Opciones omitidas porque su propiedad de destino no era admisible.
+ * @param {Record<string, unknown>|null} node
+ * @returns {readonly string[]}
+ */
+export function rejectedIn(node) {
+  if (!node) return [];
+  const value = /** @type {{__rejected?: readonly string[]}} */ (node).__rejected;
+  return Array.isArray(value) ? value : [];
 }
 
 /**
@@ -272,5 +393,14 @@ export function buildProductGroupJsonLd(input) {
  */
 export function serializeJsonLd(node) {
   if (!node) return '';
-  return JSON.stringify(node).replace(/</g, '\\u003c');
+  return (
+    JSON.stringify(node)
+      // Cierre de etiqueta: impide romper el documento o inyectar marcado.
+      .replace(/</g, '\\u003c')
+      // Separadores de línea Unicode: válidos en JSON pero rompen un contexto
+      // JavaScript. Defensa en profundidad por si la cadena acaba inlineada en
+      // un script en lugar de en un bloque ld+json. Auditoría S2.
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029')
+  );
 }

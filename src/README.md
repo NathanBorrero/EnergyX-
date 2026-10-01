@@ -17,6 +17,7 @@ se pierde la conversión en calzado. Esa se puede construir y probar ya:
 | [`lib/size-advisor.js`](lib/size-advisor.js) | Recomendar talla desde la medida real del pie en cm | Es la palanca de margen más barata contra el RTO. Aritmética pura |
 | [`lib/product-jsonld.js`](lib/product-jsonld.js) | Datos estructurados `ProductGroup` + `hasVariant` para footwear | No hay evidencia de que Shopify los genere. Pura transformación de datos |
 | [`lib/analytics-taxonomy.js`](lib/analytics-taxonomy.js) | Qué se mide, de dónde sale, qué permiso requiere, y la aritmética que separa la métrica bonita de la real | Con contra entrega, pedido creado ≠ venta. Pura |
+| [`lib/shopify-semantics.js`](lib/shopify-semantics.js) | La normalización de opciones y la definición de «comprable», una sola vez | Nació de la auditoría: estaba duplicada en dos módulos con dos implementaciones distintas |
 
 Ambos son ESM sin dependencias y sin tocar el DOM. Funcionan igual dentro de un theme Liquid, en
 React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
@@ -35,7 +36,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 107 pruebas
+npm test          # 142 pruebas
 npm run test:watch
 ```
 
@@ -64,6 +65,40 @@ disparan *aunque el comprador no haya consentido el seguimiento*, así que sirve
 la página, no para recoger datos de comportamiento. Para analítica van los web pixels, que respetan
 el consentimiento. `analytics-taxonomy.js` marca qué etapa pertenece a cada mundo para que no se
 mezclen.
+
+## Límites de confianza
+
+Ningún módulo puede verificar de dónde viene su entrada. Eso lo decide quien los llama, y por eso
+los límites se declaran aquí en lugar de darse por supuestos.
+
+| Dato | Origen admisible | Nunca |
+| --- | --- | --- |
+| `price` | Servidor: Liquid o Storefront API | Un valor leído del DOM o editable en el cliente (§209) |
+| `availableForSale` | Servidor | Un flag calculado en el navegador (§210) |
+| Tabla de tallas | Metaobject `size_chart` de Shopify | Constantes dentro del código |
+| Medida del pie | Entrada del comprador — **no confiable**, se valida | Asumir que es un número razonable |
+| Eventos personalizados de analítica | **No confiable**: Shopify documenta que un visitante puede publicarlos desde la consola del navegador | Sostener una cifra de negocio sobre ellos |
+
+Los módulos defienden lo que pueden defender: entrada malformada degrada en lugar de explotar, un
+precio no numérico no se emite, una moneda malformada impide la oferta, y la serialización escapa lo
+que podría romper el documento. **Lo que no pueden hacer es saber si un precio correcto en forma es
+el precio real.** Eso solo lo garantiza que venga del servidor.
+
+El checkout, el cobro y el stock siguen siendo de Shopify. Estos módulos solo deciden qué se
+muestra.
+
+### Endurecimiento aplicado tras la auditoría
+
+| # | Problema medido | Corrección |
+| --- | --- | --- |
+| S1 | Un nombre de producto con `</script>` podía romper el documento | Se escapa `<` |
+| S2 | U+2028 y U+2029 pasaban crudos | Se escapan: defensa en profundidad si la cadena acaba en un contexto JS |
+| S3/S4 | Un `optionMap` con `property: 'constructor'` escribía `"constructor"` en el grafo | Lista de propiedades prohibidas y forma de identificador obligatoria; lo rechazado se expone con `rejectedIn()` |
+| S6 | `"00042"` se emitía como precio | Decimal estricto sin ceros a la izquierda ni notación científica |
+| S7 | `"COP\"><script>"` se emitía como moneda | Forma ISO 4217 obligatoria; si no, no hay oferta |
+
+No hay pretensión de invulnerabilidad: son capas que reducen superficie y evitan publicar datos
+falsos. Lo que queda fuera del alcance de estos módulos está dicho arriba.
 
 ## Los tres estados, y por qué no son dos
 

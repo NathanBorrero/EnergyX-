@@ -3,6 +3,18 @@
 **Fecha:** 2026-10-01
 **Estado:** análisis. **Sin decisión.** La elección es del propietario.
 
+## Niveles de afirmación usados en este documento
+
+| Etiqueta | Significado |
+| --- | --- |
+| `VERIFIED` | Comprobado por ejecución contra Shopify o leído de documentación oficial |
+| `DOCUMENTED` | Fuente secundaria plausible, **sin confirmar contra fuente primaria** |
+| `INFERRED` | Razonamiento propio sobre datos verificados. Es mi lectura, no un hecho |
+| `NOT VERIFIED` | No se pudo comprobar |
+| `DECISION PENDING` | Depende de una decisión del propietario |
+
+**Ninguna conclusión de este documento se apoya solo en `DOCUMENTED` o `INFERRED` sin decirlo.**
+
 ## El hecho que fuerza el análisis
 
 `resourceLimits.maxProductOptions` = **3**. `VERIFICADO` en vivo y por prueba negativa: añadir
@@ -94,15 +106,28 @@ Coste de código: bajo, ya está resuelto. Coste de diseño: real.
 
 ### 6. SEO
 
-| | Lectura |
-| --- | --- |
-| **A** | Un `ProductGroup` con `variesBy` de dos ejes: color y talla. Limpio. |
-| **B** | El ancho se expresa como `size` en schema.org, igual que la talla: **dos ejes distintos compiten por la misma propiedad**. Modelado ambiguo. |
-| **C** | El material tiene propiedad propia (`https://schema.org/material`) y Google la admite como eje de variación. **Modela limpio.** |
-| **D** | Depende: `pattern` sí tiene propiedad propia; un eje inventado, no. |
+| | Lectura | Nivel |
+| --- | --- | --- |
+| **A** | Un `ProductGroup` con `variesBy` de dos ejes: color y talla. | `VERIFIED` que el modelo existe y funciona |
+| **B** | **Problema medido, no supuesto.** schema.org no tiene propiedad para el ancho de calzado. Mapearlo a `size` lo hace chocar con la talla: la auditoría del módulo midió que se emitía `size: "D"`, es decir **el ancho sobrescribía la talla y se publicaba un dato falso**. Corregido omitiendo el ancho; expresarlo requiere resolver antes el modelado | `VERIFIED` por ejecución |
+| **C** | `https://schema.org/material` figura entre las propiedades que Google admite como eje de variación | `DOCUMENTED` — ver aviso abajo |
+| **D** | `https://schema.org/pattern` también figura en esa lista. Un eje sin propiedad propia caería en el mismo problema que B | `DOCUMENTED` |
 
-**Ventaja objetiva de C sobre B** en datos estructurados. Ninguna de las cuatro da URL propia por
-color, porque eso exige combined listings (Plus).
+> **Aviso de verificación.** La lista de propiedades que Google admite en `variesBy`
+> (`color`, `size`, `material`, `pattern`, `suggestedAge`, `suggestedGender`) proviene de
+> **fuentes secundarias**: `developers.google.com` y `schema.org` están **bloqueados por la política
+> de egress de este entorno**, así que no pude leer la fuente primaria.
+>
+> Por tanto **la supuesta ventaja SEO de C sobre B no es una conclusión**, es una hipótesis
+> `DOCUMENTED` pendiente de confirmar. Lo que **sí** está verificado por ejecución es el problema de
+> B, porque lo medí en el propio código.
+>
+> Para elevarla a `VERIFIED` hace falta: leer la documentación de Google de datos estructurados de
+> variantes desde una red sin ese bloqueo, y pasar la salida real por la prueba de resultados
+> enriquecidos.
+
+Lo que sí es `VERIFIED` en los cuatro casos: **ninguna da URL propia por color**, porque eso exige
+combined listings, que son solo Plus.
 
 ### 7. Devoluciones (RTO)
 
@@ -184,29 +209,37 @@ Casi todo lo que la gente convierte en opción es, en realidad, metafield.
 | UX | ✅ | ⚠️ pregunta difícil | 🟡 visible | depende |
 | Variantes | ✅ 50 | 🟡 100 | 🟡 100 | 🟡 100+ |
 | Inventario | ✅ | ⚠️ fragmenta, no sustituible | ⚠️ riesgo de stock muerto | ⚠️ |
-| Dropi | ✅ | ❌ exige que el proveedor lo surta | ❌ ídem | ❌ ídem |
+| Dropi | ✅ | ❌ exige que el proveedor lo surta `NOT VERIFIED` | ❌ ídem `NOT VERIFIED` | ❌ ídem `NOT VERIFIED` |
 | Complejidad | ✅ | 🟡 | 🟡 | 🟡 |
-| SEO | ✅ | ⚠️ ambiguo en `size` | ✅ `material` propio | depende |
-| Devoluciones | 🟡 se ataca por otra vía | ✅ **si** se conoce el ancho | ⚠️ neutro o peor | 🟡 |
+| SEO | ✅ `VERIFIED` | ⚠️ colisión medida `VERIFIED` | 🟡 posible ventaja `DOCUMENTED` | 🟡 `DOCUMENTED` |
+| Devoluciones | 🟡 se ataca por otra vía `VERIFIED` el mecanismo | 🟡 **si** se conoce el ancho `INFERRED` | ⚠️ neutro o peor `INFERRED` | 🟡 `INFERRED` |
 | Escalabilidad | ✅ deja hueco | ❌ agota | ❌ agota | ❌ agota |
 | Mantenimiento | ✅ | 🟡 | 🟡 | 🟡 |
 | Móvil | ✅ | ⚠️ tercer selector | ⚠️ | ⚠️ |
 
 ### Lo que el análisis sí establece, sin elegir
 
-1. **El límite de variantes no es la restricción.** Lo son el inventario, Dropi y el móvil.
-2. **C y D no tienen justificación de devoluciones.** Si se eligen, es por razón comercial, no por RTO.
-3. **B es la única con un beneficio real de devoluciones**, y está condicionada a dos cosas no
-   verificadas: que el proveedor surta ambos anchos, y que el comprador sepa el suyo.
-4. **Casi todo el beneficio de B se obtiene sin gastar la opción**, con una nota de horma en
-   metafield más la guía de tallas en metaobject.
-5. **A conserva el hueco 3**, que es valor real sobre el futuro.
+1. **El límite de variantes no es la restricción.** 100 variantes está muy por debajo de 2.048.
+   Las restricciones reales son inventario, proveedor de fulfillment y móvil. — `VERIFIED` el
+   límite; `INFERRED` que las otras tres pesan más.
+2. **Mapear el ancho a datos estructurados está roto hoy**, y eso sí lo medí: sobrescribía la talla.
+   — `VERIFIED`.
+3. **Ni C ni D tienen justificación de devoluciones.** El material y el acabado no cambian el calce.
+   Si se eligen, es por razón comercial. — `INFERRED`.
+4. **B es la única con un beneficio plausible de devoluciones**, condicionado a dos cosas que no
+   pude comprobar: que el proveedor surta ambos anchos (`NOT VERIFIED`, requiere Dropi) y que el
+   comprador conozca el suyo (`DECISION PENDING`, es conocimiento de mercado del propietario).
+   — `INFERRED`.
+5. **Casi todo el beneficio de B se obtiene sin gastar la opción**, con una nota de horma en
+   metafield más la guía de tallas en metaobject. — `VERIFIED` que el mecanismo existe y funciona
+   (ejecutado); `INFERRED` que captura "casi todo" el beneficio.
+6. **A conserva el hueco 3.** — `VERIFIED` que solo hay tres; `INFERRED` que conservarlo tiene valor.
 
 ### Lo que falta para poder decidir
 
 | # | Dato | De quién |
 | --- | --- | --- |
-| 1 | ¿El catálogo del proveedor ofrece de verdad más de un ancho o material por modelo? | Dropi / proveedor. `NO VERIFICADO` |
+| 1 | ¿El catálogo del proveedor ofrece de verdad más de un ancho o material por modelo? | **Requiere Dropi. `NOT VERIFIED`** — sin cuenta ni credenciales no hay forma de comprobarlo, y no se va a suponer |
 | 2 | ¿El público objetivo conoce su ancho de pie? | Propietario / conocimiento de mercado |
 | 3 | ¿La línea de producto tendrá materiales distintos del mismo modelo, o modelos distintos? | Propietario. Decisión de producto |
 | 4 | ¿Hay un eje de variación propio del concepto de marca que no esté en esta lista? | §1–172 |

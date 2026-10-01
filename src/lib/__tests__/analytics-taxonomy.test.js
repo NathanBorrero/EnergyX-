@@ -81,10 +81,26 @@ describe('taxonomía — separación de los dos mundos', () => {
     assert.match(STAGE_META[STAGE.ORDER_CREATED].note, /NO es una venta/);
   });
 
-  test('selección de talla queda NO VERIFICADO, no inventado', () => {
+  test('selección de talla tiene mecanismo verificado: evento personalizado', () => {
     const m = STAGE_META[STAGE.SIZE_SELECTED];
-    assert.equal(m.level, LEVEL.NO_VERIFICADO);
-    assert.equal(m.mechanism, null);
+    assert.equal(m.level, LEVEL.VERIFICADO);
+    assert.match(m.mechanism, /Shopify\.analytics\.publish/);
+  });
+
+  test('la selección de talla advierte de que su dato es entrada no confiable', () => {
+    // Shopify documenta que un visitante puede publicar eventos personalizados
+    // desde la consola del navegador.
+    assert.match(STAGE_META[STAGE.SIZE_SELECTED].note, /no confiable/);
+  });
+
+  test('pedido creado advierte de que checkout_completed dará una cifra menor', () => {
+    assert.match(STAGE_META[STAGE.ORDER_CREATED].note, /checkout_completed/);
+  });
+
+  test('las cinco etapas de cliente tienen mecanismo nombrado', () => {
+    for (const stage of consentGatedStages()) {
+      assert.ok(STAGE_META[stage].mechanism, `${stage} sin mecanismo`);
+    }
   });
 
   test('entrega y RTO quedan NO VERIFICADO', () => {

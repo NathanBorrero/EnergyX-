@@ -28,6 +28,8 @@
  * que sobrevive a la decisión de arquitectura pendiente.
  */
 
+import { foldKey, isPurchasable } from './shopify-semantics.js';
+
 /** @typedef {{ name: string, value: string }} SelectedOption */
 /**
  * @typedef {object} Variant
@@ -46,23 +48,13 @@ export const VALUE_STATUS = Object.freeze({
 const KEY_SEPARATOR = '\u0000';
 
 /**
- * Normaliza un valor de opción para comparar sin sorpresas por espacios o caja.
- * No se usa para mostrar: solo como clave interna.
- * @param {unknown} value
- * @returns {string}
- */
-function normalize(value) {
-  return String(value ?? '').trim().toLowerCase();
-}
-
-/**
  * @param {readonly string[]} optionNames
  * @param {Record<string, string>} selection
  * @returns {string}
  */
 function selectionKey(optionNames, selection) {
   return optionNames
-    .map((name) => normalize(selection[name]))
+    .map((name) => foldKey(selection[name]))
     .join(KEY_SEPARATOR);
 }
 
@@ -93,6 +85,37 @@ export function createVariantMatrix(variants, opts = {}) {
         ? usable[0].selectedOptions.map((o) => o.name)
         : [];
 
+  /** Nombre plegado -> nombre canónico, para aceptar cualquier caja desde fuera. */
+  const canonicalName = new Map(optionNames.map((n) => [foldKey(n), n]));
+
+  /**
+   * Resuelve el nombre canónico de una opción, tolerando caja y acentos.
+   * @param {string} name
+   * @returns {string|undefined}
+   */
+  function resolveOptionName(name) {
+    return canonicalName.get(foldKey(name));
+  }
+
+  /**
+   * Reescribe una selección a nombres canónicos. Sin esto, `{ talla: '42' }`
+   * devolvía `nonexistent`, que es indistinguible de "no existe".
+   * @param {Record<string, string>|null|undefined} selection
+   * @returns {Record<string, string>}
+   */
+  function canonicalizeSelection(selection) {
+    /** @type {Record<string, string>} */
+    const out = {};
+    if (!selection || typeof selection !== 'object') return out;
+    for (const key of Object.keys(selection)) {
+      const canon = resolveOptionName(key);
+      if (canon !== undefined && selection[key] !== undefined && selection[key] !== null) {
+        out[canon] = selection[key];
+      }
+    }
+    return out;
+  }
+
   /** Valores por opción, en orden de aparición y sin duplicados. */
   const valuesByOption = new Map(optionNames.map((name) => [name, []]));
   const seenValues = new Map(optionNames.map((name) => [name, new Set()]));
@@ -115,7 +138,7 @@ export function createVariantMatrix(variants, opts = {}) {
     for (const name of optionNames) {
       const raw = selection[name];
       const seen = seenValues.get(name);
-      const norm = normalize(raw);
+      const norm = foldKey(raw);
       if (!seen.has(norm)) {
         seen.add(norm);
         valuesByOption.get(name).push(raw);
@@ -125,7 +148,7 @@ export function createVariantMatrix(variants, opts = {}) {
     const key = selectionKey(optionNames, selection);
     // Si dos variantes comparten combinación, gana la comprable.
     const existing = byCombination.get(key);
-    if (!existing || (!existing.availableForSale && variant.availableForSale)) {
+    if (!existing || (!isPurchasable(existing) && isPurchasable(variant))) {
       byCombination.set(key, variant);
     }
   }
@@ -135,15 +158,16 @@ export function createVariantMatrix(variants, opts = {}) {
    * @param {Record<string, string>} selection
    * @returns {Variant[]}
    */
-  function matching(selection) {
+  function matching(rawSelection) {
+    const selection = canonicalizeSelection(rawSelection);
     const constraints = optionNames
-      .filter((name) => selection?.[name] !== undefined && selection[name] !== null)
-      .map((name) => [name, normalize(selection[name])]);
+      .filter((name) => selection[name] !== undefined && selection[name] !== null)
+      .map((name) => [foldKey(name), foldKey(selection[name])]);
 
     const result = [];
     for (const variant of byCombination.values()) {
       const got = Object.create(null);
-      for (const opt of variant.selectedOptions) got[opt.name] = normalize(opt.value);
+      for (const opt of variant.selectedOptions) got[foldKey(opt.name)] = foldKey(opt.value);
       if (constraints.every(([name, want]) => got[name] === want)) result.push(variant);
     }
     return result;
@@ -173,13 +197,14 @@ export function createVariantMatrix(variants, opts = {}) {
      * @returns {'available'|'unavailable'|'nonexistent'}
      */
     statusFor(optionName, value, selection = {}) {
-      if (!optionNames.includes(optionName)) return VALUE_STATUS.NONEXISTENT;
+      const canon = resolveOptionName(optionName);
+      if (canon === undefined) return VALUE_STATUS.NONEXISTENT;
 
-      const probe = { ...selection, [optionName]: value };
+      const probe = { ...canonicalizeSelection(selection), [canon]: value };
       const candidates = matching(probe);
 
       if (candidates.length === 0) return VALUE_STATUS.NONEXISTENT;
-      return candidates.some((v) => v.availableForSale === true)
+      return candidates.some(isPurchasable)
         ? VALUE_STATUS.AVAILABLE
         : VALUE_STATUS.UNAVAILABLE;
     },
@@ -192,7 +217,8 @@ export function createVariantMatrix(variants, opts = {}) {
      * @returns {{ value: string, status: 'available'|'unavailable'|'nonexistent' }[]}
      */
     statusesFor(optionName, selection = {}) {
-      const values = valuesByOption.get(optionName) ?? [];
+      const canon = resolveOptionName(optionName);
+      const values = canon === undefined ? [] : (valuesByOption.get(canon) ?? []);
       return values.map((value) => ({
         value,
         status: api.statusFor(optionName, value, selection),
@@ -204,11 +230,10 @@ export function createVariantMatrix(variants, opts = {}) {
      * @param {Record<string, string>} selection
      * @returns {Variant|null}
      */
-    resolve(selection) {
+    resolve(rawSelection) {
       if (optionNames.length === 0) return null;
-      const complete = optionNames.every(
-        (name) => selection?.[name] !== undefined && selection[name] !== null,
-      );
+      const selection = canonicalizeSelection(rawSelection);
+      const complete = optionNames.every((name) => selection[name] !== undefined);
       if (!complete) return null;
       return byCombination.get(selectionKey(optionNames, selection)) ?? null;
     },
@@ -220,7 +245,7 @@ export function createVariantMatrix(variants, opts = {}) {
      */
     firstAvailableSelection() {
       for (const variant of byCombination.values()) {
-        if (variant.availableForSale !== true) continue;
+        if (!isPurchasable(variant)) continue;
         /** @type {Record<string, string>} */
         const selection = {};
         for (const opt of variant.selectedOptions) selection[opt.name] = opt.value;
@@ -241,26 +266,42 @@ export function createVariantMatrix(variants, opts = {}) {
      * @param {string} [changedOption] Opción que el usuario acaba de tocar; nunca se suelta.
      * @returns {Record<string, string>}
      */
-    reconcile(selection, changedOption) {
-      const next = {};
-      for (const name of optionNames) {
-        if (selection?.[name] !== undefined && selection[name] !== null) {
-          next[name] = selection[name];
-        }
-      }
+    reconcile(rawSelection, changedOption) {
+      const selection = canonicalizeSelection(rawSelection);
+      const changed = changedOption === undefined ? undefined : resolveOptionName(changedOption);
+      const next = { ...selection };
       if (matching(next).length > 0) return next;
 
       // Suelta opciones, de la última a la primera, sin tocar la que cambió.
       for (let i = optionNames.length - 1; i >= 0; i -= 1) {
         const name = optionNames[i];
-        if (name === changedOption) continue;
+        if (name === changed) continue;
         if (next[name] === undefined) continue;
         delete next[name];
         if (matching(next).length > 0) return next;
       }
-      return changedOption && selection?.[changedOption] !== undefined
-        ? { [changedOption]: selection[changedOption] }
+      return changed !== undefined && selection[changed] !== undefined
+        ? { [changed]: selection[changed] }
         : {};
+    },
+
+    /**
+     * Valores de una opción que se pueden comprar ahora mismo.
+     *
+     * Existe para cerrar una costura que estaba implícita: `size-advisor`
+     * necesita saber qué tallas son comprables, y antes había que construir esa
+     * lista a mano desde fuera, con el riesgo de que cada consumidor la
+     * calculara distinto.
+     *
+     * @param {string} optionName
+     * @param {Record<string, string>} [selection]
+     * @returns {string[]} Valores tal como se muestran, no plegados.
+     */
+    purchasableValuesFor(optionName, selection = {}) {
+      return api
+        .statusesFor(optionName, selection)
+        .filter((entry) => entry.status === VALUE_STATUS.AVAILABLE)
+        .map((entry) => entry.value);
     },
   };
 
@@ -277,4 +318,5 @@ export function createVariantMatrix(variants, opts = {}) {
  * @property {(selection: Record<string,string>) => Variant|null} resolve
  * @property {() => Record<string,string>|null} firstAvailableSelection
  * @property {(selection: Record<string,string>, changedOption?: string) => Record<string,string>} reconcile
+ * @property {(optionName: string, selection?: Record<string,string>) => string[]} purchasableValuesFor
  */

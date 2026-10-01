@@ -25,6 +25,8 @@
  * Sin dependencias. Pura. Sobrevive a la decisión de arquitectura pendiente.
  */
 
+import { foldKey } from './shopify-semantics.js';
+
 /**
  * @typedef {object} SizeRow
  * @property {string} label Talla como se le muestra al comprador. Ej. "42".
@@ -244,6 +246,21 @@ function round1(n) {
  * y luego no puede comprar. Esta función degrada a la talla comprable más cercana
  * y lo dice.
  *
+ * CONTRATO CON `variant-matrix` — era implícito y la auditoría lo hizo explícito:
+ *
+ *   El `label` de cada fila de la tabla de tallas debe coincidir con el VALOR de
+ *   la opción de talla en Shopify. Es decir, si la opción "Talla" tiene el valor
+ *   "42", la fila correspondiente debe tener `label: "42"`.
+ *
+ *   `purchasableLabels` se obtiene de
+ *   `matrix.purchasableValuesFor('Talla', selection)`. Ese helper existe
+ *   precisamente para que no haya dos formas de calcular la misma lista.
+ *
+ *   La comparación usa la normalización compartida (`foldKey`), así que
+ *   diferencias de espacios o caja no rompen el cruce. Lo que sí rompe el cruce
+ *   es que las etiquetas y los valores de opción no sean la misma nomenclatura:
+ *   eso es un error de carga de catálogo, no de este módulo.
+ *
  * @param {Recommendation} recommendation
  * @param {readonly string[]} purchasableLabels Tallas comprables ahora mismo.
  * @param {readonly SizeRow[]} chart
@@ -251,14 +268,14 @@ function round1(n) {
  */
 export function reconcileWithStock(recommendation, purchasableLabels, chart) {
   const buyable = new Set(
-    (Array.isArray(purchasableLabels) ? purchasableLabels : []).map((l) => String(l).trim()),
+    (Array.isArray(purchasableLabels) ? purchasableLabels : []).map(foldKey),
   );
 
-  if (recommendation.label && buyable.has(recommendation.label)) {
+  if (recommendation.label && buyable.has(foldKey(recommendation.label))) {
     return { ...recommendation, substituted: false };
   }
 
-  const rows = usableRows(chart).filter((r) => buyable.has(r.label));
+  const rows = usableRows(chart).filter((r) => buyable.has(foldKey(r.label)));
   if (rows.length === 0 || !recommendation.matched) {
     return { ...recommendation, substituted: false, reason: recommendation.label ? 'recommended_out_of_stock' : recommendation.reason };
   }
