@@ -1,7 +1,7 @@
 # Nathan & Esteban
 
 > **Estado: lógica de storefront en construcción.** La arquitectura sigue pendiente de la dirección
-> de arte, pero la lógica que no depende de ella ya está escrita y probada: **170 pruebas, cero
+> de arte, pero la lógica que no depende de ella ya está escrita y probada: **254 pruebas, cero
 > dependencias**.
 
 **Objetivo del proyecto:** construir **la página web / storefront de Nathan & Esteban**, una
@@ -41,7 +41,13 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 npm test
 ```
 
-Ciento setenta pruebas, runner nativo de Node, sin dependencias.
+Doscientas cincuenta y cuatro pruebas, runner nativo de Node, sin dependencias.
+
+```bash
+npm run check
+```
+
+Diez comprobaciones de calidad, cada una validada inyectando el fallo que debe detectar.
 
 ## Antes de escribir el storefront
 
