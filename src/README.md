@@ -15,6 +15,8 @@ se pierde la conversión en calzado. Esa se puede construir y probar ya:
 | --- | --- | --- |
 | [`lib/variant-matrix.js`](lib/variant-matrix.js) | Qué combinaciones Color × Talla existen y cuáles se pueden comprar | Previene un fallo verificado en Shopify. Puro, sin DOM |
 | [`lib/size-advisor.js`](lib/size-advisor.js) | Recomendar talla desde la medida real del pie en cm | Es la palanca de margen más barata contra el RTO. Aritmética pura |
+| [`lib/product-jsonld.js`](lib/product-jsonld.js) | Datos estructurados `ProductGroup` + `hasVariant` para footwear | No hay evidencia de que Shopify los genere. Pura transformación de datos |
+| [`lib/analytics-taxonomy.js`](lib/analytics-taxonomy.js) | Qué se mide, de dónde sale, qué permiso requiere, y la aritmética que separa la métrica bonita de la real | Con contra entrega, pedido creado ≠ venta. Pura |
 
 Ambos son ESM sin dependencias y sin tocar el DOM. Funcionan igual dentro de un theme Liquid, en
 React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
@@ -33,7 +35,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 50 pruebas
+npm test          # 107 pruebas
 npm run test:watch
 ```
 
@@ -49,6 +51,19 @@ flotante.
 que debían empatar no empataban, así que la regla de desempate nunca se aplicaba y se recomendaba la
 talla menor — justo el error que provoca devoluciones. Corregido con tolerancia, y con prueba de
 regresión para que no vuelva (§196).
+
+## Dos reglas que estos módulos encodan, y son fáciles de incumplir
+
+**1. En datos estructurados, lo ausente no se fabrica.** `product-jsonld.js` omite toda propiedad
+cuyo dato no venga en la entrada: sin precio no hay `offers`, sin marca no hay `brand`, sin
+`availableForSale` no se declara disponibilidad. Un dato inventado en JSON-LD es una declaración
+falsa ante un buscador, no un detalle de implementación.
+
+**2. Los eventos estándar de storefront no son analítica.** Shopify lo dice textualmente: se
+disparan *aunque el comprador no haya consentido el seguimiento*, así que sirven para reaccionar en
+la página, no para recoger datos de comportamiento. Para analítica van los web pixels, que respetan
+el consentimiento. `analytics-taxonomy.js` marca qué etapa pertenece a cada mundo para que no se
+mezclen.
 
 ## Los tres estados, y por qué no son dos
 

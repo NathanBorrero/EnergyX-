@@ -1,7 +1,7 @@
 # Nathan & Esteban
 
 > **Estado: lógica de storefront en construcción.** La arquitectura sigue pendiente de la dirección
-> de arte, pero la lógica que no depende de ella ya está escrita y probada: **50 pruebas, cero
+> de arte, pero la lógica que no depende de ella ya está escrita y probada: **107 pruebas, cero
 > dependencias**.
 
 **Objetivo del proyecto:** construir **la página web / storefront de Nathan & Esteban**, una
@@ -29,6 +29,7 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Comparación objetiva de alternativas, y modelos de seguridad, rendimiento, producto/variantes/inventario, carrito→checkout y Shopify→Dropi. |
 | [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analytics, testing, despliegue, riesgos y costos. |
 | [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md) | Lo comprobado **por ejecución real** contra Shopify, incluidas las correcciones a afirmaciones previas y el residuo que no se pudo limpiar. |
+| [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, comparadas en diez dimensiones. Análisis, sin decisión. |
 | [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, listo para ejecutarse cuando exista la tienda de N&E. |
 | [`src/`](src/) | Lógica de storefront que sobrevive a la decisión de arquitectura: disponibilidad de variantes y recomendación de talla. |
 
@@ -38,7 +39,7 @@ aquí por una razón explícita: suponerlos estaría prohibido por el propio est
 npm test
 ```
 
-Cincuenta pruebas, runner nativo de Node, sin dependencias.
+Ciento siete pruebas, runner nativo de Node, sin dependencias.
 
 ## Antes de escribir el storefront
 
