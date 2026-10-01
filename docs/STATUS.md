@@ -111,14 +111,14 @@ o el resultado comercial.
 
 | ID | Decisión | Por qué es crítica |
 | --- | --- | --- |
-| **D1** | Secciones 1–172 del estándar (marca, producto, dirección de arte) | Sin ellas, toda propuesta visual y todo claim de producto serían inventados |
-| **D2** | Stack: theme Shopify (Liquid/OS 2.0) · headless Hydrogen+Oxygen · frontend propio + Storefront API | Irreversible en la práctica. Determina rendimiento, techo creativo, coste de mantenimiento y todo el pipeline de QA |
-| **D3** | Verdad de producto: qué vende EnergyX, catálogo o producto único, variantes, precio, claims | §191 prohíbe suponer precio, materiales, beneficios y certificaciones |
-| **D4** | Acceso a Shopify: dominio de la tienda + re-autenticar el connector (o tienda de desarrollo) | Sin esto no se puede verificar la cadena producto→variante→precio→stock→cart→checkout (§184) |
-| **D5** | Dropi: app nativa Dropify vs integración propia por API; disponibilidad de cuenta y credenciales | Cambia la arquitectura de pedidos, idempotencia (§204) y seguridad de webhooks (§203) |
+| **D1** | Secciones 1–172 del estándar (dirección de arte y requisitos) | **ABIERTA.** Marca y categoría ya definidas por el propietario: Nathan & Esteban, footwear premium. Falta la dirección de arte concreta y el peso de cada criterio |
+| **D2** | Stack: theme · Hydrogen+Oxygen · Hydrogen preview · sitio propio + Web Components | **ABIERTA.** Cuatro opciones con restricciones ya verificadas en `DISCOVERY.md` §10. Depende de D1 |
+| **D3** | Catálogo real de footwear: modelos, tallas, colores, materiales, precios, claims | **ABIERTA, no bloquea arquitectura.** La tienda de N&E no existe aún, así que el catálogo se creará, no se leerá. Hasta entonces, placeholder explícito (§191) |
+| ~~D4~~ | ~~Acceso a Shopify~~ | **RESUELTA.** Conexión verificada; apunta a Magisik (Basic). N&E no tiene tienda aún → se necesita un development store. Plan objetivo: **Advanced**. Ver `DISCOVERY.md` §13–§14 |
+| **D5** | Dropi: app nativa Dropify vs integración propia por API; cuenta y credenciales | **ABIERTA, degradada.** El propietario la marcó como "cuando corresponda": es condicional, no un requisito de lanzamiento |
 
-**Estado:** bloqueado en D1–D3 para cualquier implementación de producto o visual.
-D4 y D5 bloquean verificación, no diseño.
+**Estado al 2026-10-01:** D4 resuelta. D5 degradada a condicional. D3 no bloquea arquitectura.
+**Solo D1 bloquea la recomendación de arquitectura (D2).**
 
 **Refinamiento:** la investigación de plataforma ya acotó el espacio de D2 a cuatro opciones con
 sus restricciones verificadas, y añadió dos variables que antes no estaban en la lista — la

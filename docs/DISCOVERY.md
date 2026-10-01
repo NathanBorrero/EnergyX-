@@ -634,3 +634,73 @@ La herramienta existe, pero su propia definición advierte que **revoca el token
 tienda actual** y obliga a autorizar de nuevo de forma interactiva. Esta sesión no puede ejecutar
 un flujo OAuth. Llamarla sin confirmación arriesgaría perder el acceso a Shopify sin poder
 recuperarlo desde aquí. **Requiere decisión del propietario.**
+
+---
+
+## 14. Decisiones cerradas por el propietario — 2026-10-01
+
+Registradas aquí para no volver a preguntarlas (§193). Consecuencias derivadas de hechos ya
+verificados en este documento, no de suposiciones.
+
+### D-A. Nathan & Esteban **no tiene tienda Shopify todavía**
+
+| Consecuencia | Nivel |
+| --- | --- |
+| No existe dato real de producto de N&E en ninguna parte accesible. El catálogo de footwear **se creará**, no se leerá | `VERIFIED` |
+| El desarrollo necesita un **development store** de una cuenta de Partner | derivado |
+| Oxygen **sí** funciona en development stores desde el 3 de agosto de 2026, pero sin entornos públicos: las URLs de despliegue exigen login de la tienda | `VERIFIED` (§2) |
+| El benchmark de performance de Shopify se corre precisamente sobre un development store con un CSV de productos estandarizado | `VERIFIED` (§5) |
+| Hasta que exista catálogo decidido, todo dato de producto va como **placeholder explícito** (§191): modelos, tallas, colores, materiales, precios, claims | regla aplicada |
+| La conexión MCP **sí puede crear** productos, variantes, colecciones e inventario cuando llegue el momento | `VERIFIED` (§13) |
+
+**Lo que esto no cambia:** la arquitectura. Se puede decidir y construir contra un development
+store con productos placeholder, y conectar el catálogo real después. Lo que sí queda bloqueado es
+cualquier afirmación sobre producto, precio o claim.
+
+### D-B. Plan objetivo: **Shopify Advanced**
+
+Cruzando con la matriz verificada de §3 y §13:
+
+| Capacidad | En Advanced |
+| --- | --- |
+| **Market overrides** | **SÍ** — la documentación los sitúa exactamente en Advanced |
+| **Shopify Functions** | **SÍ** |
+| Extensions en Thank you / Order status | SÍ |
+| Web pixels | SÍ |
+| Oxygen sin cargo extra | SÍ (plan pago) |
+| Rate limit del Admin API | **200 puntos/segundo** (el doble del estándar) |
+| Comisión a pasarela externa | **0,6 %** (`DOCUMENTED`, sin verificar) |
+| Checkout UI extensions en information / shipping / payment | **NO** — solo Plus |
+| Branding visual del checkout vía Admin API | **NO** — solo Plus |
+
+### Consecuencia arquitectónica firme de D-B
+
+El checkout queda **visualmente intocable** y **sin campos propios**. No es una limitación a
+sortear: es el perímetro del diseño.
+
+Por tanto, y esto condiciona todo el proyecto:
+
+1. **Toda la experiencia de marca ocurre antes del `checkoutUrl`.** El storefront es el único
+   lienzo. La "checkout transition" que pide §231 es una transición *hacia* el checkout de Shopify,
+   no un checkout propio.
+2. **Toda validación de contra entrega ocurre pre-checkout.** Dirección, teléfono y municipio se
+   validan en el storefront, donde sí hay control total de diseño. Esto deja de ser una concesión y
+   pasa a ser una ventaja: es exactamente donde el RTO se combate (§8).
+3. **La lógica de pago y envío sí es programable** vía Shopify Functions: filtrar, renombrar y
+   reordenar opciones, máximos de pedido, restricciones de fulfillment.
+4. **Market overrides disponibles** abren precios y contenido por mercado sin necesidad de Plus,
+   lo que importa si N&E apunta a "marca internacional" más allá de Colombia.
+
+### Lo que sigue bloqueando la recomendación final de arquitectura
+
+Una sola cosa: **las secciones §1–172**, y dentro de ellas la naturaleza real de la necesidad de 3D.
+
+La distinción es decisiva y ya está documentada en §4 y §11 de este documento:
+
+| Si el 3D es… | Camino | Costo |
+| --- | --- | --- |
+| Ver el producto, girarlo, verlo en tu espacio | `<model-viewer>` + Shopify-XR, nativos | Bajo, accesible, con AR incluido |
+| Una escena con dirección de arte que `model-viewer` no puede expresar | WebGL propio | Alto, y hay que defenderlo contra §180, §217 y §218 |
+
+Ambos son posibles en las cuatro opciones de arquitectura de §10. Lo que cambia es **cuál de las
+cuatro gana**, y eso depende del peso que §1–172 dé a cada criterio.
