@@ -43,7 +43,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 313 pruebas
+npm test          # 321 pruebas
 npm run test:watch
 ```
 

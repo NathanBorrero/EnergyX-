@@ -108,8 +108,13 @@ export function parseColor(color) {
  * @returns {number}
  */
 export function relativeLuminance(rgb) {
+  // Es un export público, así que tiene que tolerar lo que le llegue. Devuelve 0
+  // —el valor del negro— ante una entrada inutilizable, en lugar de lanzar o de
+  // propagar un NaN que contaminaría cualquier razón de contraste.
+  if (!rgb || typeof rgb !== 'object') return 0;
   const channel = (value) => {
-    const c = value / 255;
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    const c = Math.min(255, Math.max(0, value)) / 255;
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   };
   return 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);

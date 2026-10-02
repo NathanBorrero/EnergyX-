@@ -391,9 +391,21 @@ export function rejectedIn(node) {
  * @returns {string} Cadena vacía si no hay nada que emitir.
  */
 export function serializeJsonLd(node) {
-  if (!node) return '';
+  if (!node || typeof node !== 'object') return '';
+
+  // `JSON.stringify` devuelve `undefined` para una función o un símbolo, y
+  // **lanza** con un BigInt o una referencia circular. Las dos cosas las encontró
+  // un barrido adversario. Sin esta guarda, `.replace` sobre `undefined` rompía.
+  let json;
+  try {
+    json = JSON.stringify(node);
+  } catch {
+    return '';
+  }
+  if (typeof json !== 'string') return '';
+
   return (
-    JSON.stringify(node)
+    json
       // Cierre de etiqueta: impide romper el documento o inyectar marcado.
       .replace(/</g, '\\u003c')
       // Separadores de línea Unicode: válidos en JSON pero rompen un contexto

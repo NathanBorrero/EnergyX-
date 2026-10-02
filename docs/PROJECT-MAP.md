@@ -86,7 +86,7 @@ Respuesta de Shopify (Admin API o Storefront API)
    shopify-semantics.js  ← foldKey · isPurchasable · hasAvailabilityData, una sola vez
 ```
 
-**313 pruebas, todas pasando. Diez comprobaciones. Cero dependencias.**
+**321 pruebas, todas pasando. Diez comprobaciones. Cero dependencias.**
 
 Módulos añadidos después de FASE 1, todos puros y sin DOM, en el orden del embudo que el proyecto
 persigue:

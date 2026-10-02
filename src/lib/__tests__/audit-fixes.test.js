@@ -389,3 +389,96 @@ describe('HALLAZGO 5 — un parámetro por defecto no cubre null', () => {
     assert.deepEqual(fallos, []);
   });
 });
+
+describe('HALLAZGO 6 — barrido adversario: cuatro crashes reales', () => {
+  /**
+   * Encontrados lanzando entradas hostiles contra todas las funciones
+   * exportadas: objetos sin prototipo, BigInt, funciones, símbolos,
+   * referencias circulares, objetos con `toString` que falla, proxies.
+   *
+   * Ninguno era teórico: un objeto sin prototipo es una forma legítima de pasar
+   * datos, y `JSON.stringify` tiene dos modos de fallo que nadie recuerda.
+   */
+  test('String() lanza con objetos sin prototipo, y foldKey ya no', () => {
+    const sinPrototipo = Object.create(null);
+    assert.throws(() => String(sinPrototipo), /convert object to primitive/);
+    assert.doesNotThrow(() => foldKey(sinPrototipo));
+    assert.equal(foldKey(sinPrototipo), '');
+  });
+
+  test('foldKey tolera un toString que lanza', () => {
+    const hostil = { toString() { throw new Error('no'); } };
+    assert.doesNotThrow(() => foldKey(hostil));
+    assert.equal(foldKey(hostil), '');
+  });
+
+  test('serializeJsonLd no rompe cuando JSON.stringify devuelve undefined', () => {
+    // Una función o un símbolo hacen que stringify devuelva undefined, y el
+    // `.replace` encadenado reventaba.
+    for (const raro of [() => {}, Symbol('x'), 42, 'texto', true]) {
+      assert.doesNotThrow(() => serializeJsonLd(raro));
+      assert.equal(serializeJsonLd(raro), '');
+    }
+  });
+
+  test('serializeJsonLd no rompe con BigInt ni con referencias circulares', () => {
+    const circular = { '@type': 'Product' };
+    circular.self = circular;
+    assert.doesNotThrow(() => serializeJsonLd(circular));
+    assert.equal(serializeJsonLd(circular), '');
+    assert.doesNotThrow(() => serializeJsonLd({ big: 10n }));
+    assert.equal(serializeJsonLd({ big: 10n }), '');
+  });
+
+  test('el escape resiste a escala y el resultado sigue siendo JSON válido', () => {
+    const node = buildProductGroupJsonLd({
+      title: '</script>'.repeat(50),
+      currency: 'COP',
+      variants: Array.from({ length: 200 }, (_, i) => ({
+        selectedOptions: [{ name: 'Color', value: ` ${i}` }, { name: 'Talla', value: String(i) }],
+        price: '1.00',
+        availableForSale: true,
+      })),
+    });
+    const out = serializeJsonLd(node);
+    assert.equal(out.includes('</script>'), false);
+    assert.equal(out.includes(' '), false);
+    assert.doesNotThrow(() => JSON.parse(out));
+  });
+
+  test('la matriz escala a más variantes de las que Shopify permite', () => {
+    // 3000 supera el límite real de 2048, así que si escala ahí, escala siempre.
+    const muchas = Array.from({ length: 3000 }, (_, i) => ({
+      id: `v${i}`,
+      selectedOptions: [
+        { name: 'Color', value: `c${i % 50}` },
+        { name: 'Talla', value: String(30 + (i % 60)) },
+      ],
+      availableForSale: i % 2 === 0,
+    }));
+    const inicio = Date.now();
+    const m = createVariantMatrix(muchas);
+    m.statusesFor('Talla', { Color: 'c0' });
+    m.purchasableValuesFor('Talla');
+    const ms = Date.now() - inicio;
+    assert.ok(m.variantCount > 0);
+    assert.ok(ms < 3000, `tardó ${ms}ms, posible coste cuadrático`);
+  });
+});
+
+describe('HALLAZGO 6b — relativeLuminance es un export público', () => {
+  test('no lanza ni devuelve NaN con entrada inutilizable', async () => {
+    const { relativeLuminance } = await import('../a11y-contrast.js');
+    for (const bad of [null, undefined, {}, 'x', 42, { r: 'a', g: null, b: NaN }]) {
+      assert.doesNotThrow(() => relativeLuminance(bad));
+      const v = relativeLuminance(bad);
+      assert.equal(Number.isFinite(v), true, `devolvió ${v} con ${JSON.stringify(bad)}`);
+    }
+  });
+
+  test('acota canales fuera de rango en lugar de propagarlos', async () => {
+    const { relativeLuminance } = await import('../a11y-contrast.js');
+    assert.equal(relativeLuminance({ r: 999, g: 999, b: 999 }), relativeLuminance({ r: 255, g: 255, b: 255 }));
+    assert.equal(relativeLuminance({ r: -50, g: -50, b: -50 }), 0);
+  });
+});

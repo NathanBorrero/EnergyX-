@@ -20,6 +20,27 @@
  */
 
 /**
+ * Convierte cualquier valor a cadena sin posibilidad de lanzar.
+ *
+ * `String(x)` **lanza** con un objeto sin prototipo (`Object.create(null)`, que
+ * aparece al construir mapas sin herencia) y con cualquier objeto cuyo
+ * `toString` falle. Lo encontró un barrido adversario, y no es teórico: un
+ * objeto sin prototipo es una forma legítima de pasar datos.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function safeString(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  try {
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Normalización canónica de nombres y valores de opción.
  *
  * Quita acentos, recorta y baja a minúsculas. Se usa **solo para comparar**;
@@ -32,7 +53,7 @@
  * @returns {string}
  */
 export function foldKey(value) {
-  return String(value ?? '')
+  return safeString(value)
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .trim()

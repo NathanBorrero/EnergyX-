@@ -153,7 +153,19 @@ export function validateColombianPhone(input) {
  * @returns {string}
  */
 export function normalizeMunicipality(name) {
-  return String(name ?? '')
+  // `String(x)` lanza con un objeto sin prototipo o con un `toString` que falla.
+  // Encontrado por barrido adversario.
+  let text;
+  if (name === null || name === undefined) text = '';
+  else if (typeof name === 'string') text = name;
+  else {
+    try {
+      text = String(name);
+    } catch {
+      text = '';
+    }
+  }
+  return text
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
