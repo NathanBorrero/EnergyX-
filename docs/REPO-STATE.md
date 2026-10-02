@@ -1,8 +1,9 @@
 # Estado del repositorio
 
-**Fecha:** 2026-10-02 · tras cerrar FASE 2 y el repaso de QA.
-**Comprobaciones:** 321 pruebas + 16 contratos de theme + 13 en navegador + 5 de accesibilidad +
-5 de rendimiento + 6 de seguridad + Theme Check (45 archivos, 0 infracciones). **17/17 pasan.**
+**Fecha:** 2026-10-02 · tras subir el theme optimizado a Shopify y cerrar el hueco que lo permitió.
+**Comprobaciones:** 321 pruebas + 16 contratos de theme + 16 en navegador (iPhone) + 5 de
+accesibilidad + 6 de rendimiento + 6 de seguridad + Theme Check (0 infracciones) + el theme coincide
+con Shopify (62 de 62 archivos). **18/18 pasan, ninguna sin ejecutar.**
 **Dependencias de runtime:** 0. **Dependencias opcionales de verificación:** 2, no versionadas.
 
 ---
@@ -63,11 +64,12 @@ theme/                                  THEME DE SHOPIFY, Online Store 2.0, escr
     ne-*.js                             12 copias GENERADAS de src/lib (no editar)
 
 scripts/
-  check.mjs                             17 comprobaciones con código de salida
+  check.mjs                             18 comprobaciones con código de salida
   check-theme.mjs                       16 contratos entre marcado, script y ajustes
-  check-components.mjs                  13 comprobaciones de comportamiento en Chromium
+  check-components.mjs                  16 comprobaciones de comportamiento en Chromium (iPhone)
   check-a11y.mjs                        5 de accesibilidad sobre la página renderizada
-  check-perf.mjs                        5 de presupuesto y carga, medidas
+  check-perf.mjs                        6 de presupuesto y carga, medidas
+  theme-diff.mjs                        ¿lo que hay en Shopify es lo que hay aquí?
   check-security.mjs                    6 sobre la superficie real del theme
   sync-theme-assets.mjs                 publica src/lib como assets del theme
   fixtures/

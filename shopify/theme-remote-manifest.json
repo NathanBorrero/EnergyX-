@@ -1,0 +1,194 @@
+{
+  "theme": "NATHAN & ESTEBAN — ACTUAL (no publicar)",
+  "themeId": "gid://shopify/OnlineStoreTheme/213916090621",
+  "takenAt": "2026-10-02T22:10:00Z",
+  "note": "Retrato del theme en Shopify. `md5` es el checksum tal cual; `canonicalMd5` es la huella de la plantilla JSON tras deshacer el reformateo de Shopify, porque su checksum no se puede reproducir en local.",
+  "files": {
+    "assets/ne-a11y-contrast.js": {
+      "md5": "ec5e8005f5fdef641ba86ddb9be0cedf"
+    },
+    "assets/ne-analytics-taxonomy.js": {
+      "md5": "ee7b5a6b0630fefb2f854800e7be463c"
+    },
+    "assets/ne-cart-line.js": {
+      "md5": "281c6a4607e62bae1b4d7930c78183e1"
+    },
+    "assets/ne-cart.css": {
+      "md5": "787944c0a6ae848f0f5520b3905917fa"
+    },
+    "assets/ne-cod-guard.js": {
+      "md5": "4de9484cb04a1093097520594af6ca01"
+    },
+    "assets/ne-components.js": {
+      "md5": "69ca7ee369dbee3c445e118deb69a045"
+    },
+    "assets/ne-core.css": {
+      "md5": "cc01cf8798d5fc24e1e14f596fbbec0a"
+    },
+    "assets/ne-product-contract.js": {
+      "md5": "07e79a987f52f524d46d6e982f35401f"
+    },
+    "assets/ne-product-jsonld.js": {
+      "md5": "d38e4e18fda5e50f279197632b76ac0b"
+    },
+    "assets/ne-product.css": {
+      "md5": "d0ab90faa051900bfeffe1db6b10b727"
+    },
+    "assets/ne-responsive-image.js": {
+      "md5": "6047a343e8ab229eacf2cdb93acfc771"
+    },
+    "assets/ne-shopify-adapter.js": {
+      "md5": "6a35d57ecde6c3f444d879927e340ab7"
+    },
+    "assets/ne-shopify-semantics.js": {
+      "md5": "eb80788b23a99352f5e5221ab7a95db6"
+    },
+    "assets/ne-size-advisor.js": {
+      "md5": "b06e28a245db3de65121e1cd2051e32a"
+    },
+    "assets/ne-size-selected-event.js": {
+      "md5": "25b9dca4cb816a60e6901526b3d97f7e"
+    },
+    "assets/ne-variant-matrix.js": {
+      "md5": "52338a84a78cd0d145af73520957bde5"
+    },
+    "config/settings_data.json": {
+      "md5": "9c1231bf87758be2f51a8bfebc67e7ab"
+    },
+    "config/settings_schema.json": {
+      "md5": "46ae1a1e5b8c701daf3a913434b39645"
+    },
+    "layout/theme.liquid": {
+      "md5": "1114318efe43b85d02b4893c73b9f043"
+    },
+    "locales/es.default.json": {
+      "md5": "604963aa8afdb75a5fe3ea6d441322a6"
+    },
+    "locales/es.default.schema.json": {
+      "md5": "a9b1f604deebc96f9b0a564cf958b81e"
+    },
+    "sections/custom-liquid.liquid": {
+      "md5": "08ac361fcbb5ca3dbfb92f07d1db4d40"
+    },
+    "sections/editorial-hero.liquid": {
+      "md5": "d8b6cb89c74b90ae384307f99a55e7d1"
+    },
+    "sections/footer-group.json": {
+      "md5": "9b14ccf46d39b884027e8f1bbaa9ab8a"
+    },
+    "sections/footer.liquid": {
+      "md5": "d13357ff0fe1b617722b972b5b6944a1"
+    },
+    "sections/header-group.json": {
+      "md5": "0f177ce338fe50f393f2dd1a6cecf3ea"
+    },
+    "sections/header.liquid": {
+      "md5": "cc850ba70965da863c180fa02dc00345"
+    },
+    "sections/main-404.liquid": {
+      "md5": "c727496f91ea7967aac87bd65930a639"
+    },
+    "sections/main-article.liquid": {
+      "md5": "024c86154ac989cefdc0212266cc3c0b"
+    },
+    "sections/main-blog.liquid": {
+      "md5": "db6bbcf4d53083a6f5a200912f3b3b9e"
+    },
+    "sections/main-cart.liquid": {
+      "md5": "6ac42195934599c7068fe70442898e3e"
+    },
+    "sections/main-collection.liquid": {
+      "md5": "3d299475eb06ddbecee98339275f795b"
+    },
+    "sections/main-list-collections.liquid": {
+      "md5": "0cd11be1071f49981e9c9420313b3888"
+    },
+    "sections/main-page.liquid": {
+      "md5": "a5aa553c0dbca6bb2ec0673072c64fb0"
+    },
+    "sections/main-password.liquid": {
+      "md5": "87fdd5d575c83a9aa1ea237bdfafe34c"
+    },
+    "sections/main-product.liquid": {
+      "md5": "d31e41412175ac94b34d2c83175b99d2"
+    },
+    "sections/main-search.liquid": {
+      "md5": "71cf39e0b5cda3d958144df164e938df"
+    },
+    "sections/product-grid.liquid": {
+      "md5": "b1b180b629ad7025536833e32a26daa7"
+    },
+    "sections/statement.liquid": {
+      "md5": "d0bc7ced230524a67295a29d6a5a91cc"
+    },
+    "snippets/ne-buy-buttons.liquid": {
+      "md5": "e66107a12e3fbb5c31dbe72291267c52"
+    },
+    "snippets/ne-cod-coverage.liquid": {
+      "md5": "e9dabb8206a6226f701693ff7c78c230"
+    },
+    "snippets/ne-image-preload.liquid": {
+      "md5": "a377524baa1770bf872022cccf086360"
+    },
+    "snippets/ne-image.liquid": {
+      "md5": "03743a1ce72c3cf22ffd8a70fcd8ccf1"
+    },
+    "snippets/ne-meta-social.liquid": {
+      "md5": "3dd66d1ec0ffadae4365cc59b8bab1c7"
+    },
+    "snippets/ne-price.liquid": {
+      "md5": "99f4b961edb6d554f85e9d5aeded436f"
+    },
+    "snippets/ne-product-card.liquid": {
+      "md5": "bdf8e33abaf6229967f0cd298cb2b38a"
+    },
+    "snippets/ne-product-jsonld.liquid": {
+      "md5": "97058bb5b83ab51e8ad1dfa3510db497"
+    },
+    "snippets/ne-product-specs.liquid": {
+      "md5": "5c4fbcaeb114d2ea0f4d5e875cd7d402"
+    },
+    "snippets/ne-size-guide.liquid": {
+      "md5": "eded8fac146bf32eecd5f12906de8da1"
+    },
+    "snippets/ne-variant-picker.liquid": {
+      "md5": "0f6aed52da47dbcfcc2ada4f06bf1e13"
+    },
+    "templates/404.json": {
+      "canonicalMd5": "98160f1b0067ca5de4149ecedaf16b0d"
+    },
+    "templates/article.json": {
+      "canonicalMd5": "f7d7c4fd90ce68a62e5973b6a4e9e8f5"
+    },
+    "templates/blog.json": {
+      "canonicalMd5": "30f7d7c2622957495af612573dee40c5"
+    },
+    "templates/cart.json": {
+      "canonicalMd5": "2d40faedd00b89f590c4c32110beddb8"
+    },
+    "templates/collection.json": {
+      "canonicalMd5": "c59e3270d47de5945a5eefaec8d9e24e"
+    },
+    "templates/index.json": {
+      "canonicalMd5": "45adfb941c81cca04f0c773b138cb196"
+    },
+    "templates/list-collections.json": {
+      "canonicalMd5": "661efc25cd33435624e828f6ad412efd"
+    },
+    "templates/page.contact.json": {
+      "canonicalMd5": "06daa2e6b2c1ad88131027bb7086d0ea"
+    },
+    "templates/page.json": {
+      "canonicalMd5": "06daa2e6b2c1ad88131027bb7086d0ea"
+    },
+    "templates/password.json": {
+      "canonicalMd5": "df9900d4ab49b419ea677f46fc41f31c"
+    },
+    "templates/product.json": {
+      "canonicalMd5": "05372045b52a6205157c4df6ba85effc"
+    },
+    "templates/search.json": {
+      "canonicalMd5": "a1f8c37f88d9a68e776f4509385987ae"
+    }
+  }
+}

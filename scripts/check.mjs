@@ -572,6 +572,49 @@ await check('seguridad del theme', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 18 · Lo que hay en Shopify es lo que hay aquí.
+//
+//      Esta comprobación existe porque fallé exactamente en esto: optimicé
+//      `layout/theme.liquid`, lo medí, lo di por bueno y la tienda se quedó una
+//      revisión atrás. El repositorio decía una cosa y Shopify servía otra, y
+//      nada lo señalaba.
+//
+//      No puede consultar la Admin API —este script no tiene credenciales, ni
+//      debe tenerlas—, así que compara contra un RETRATO versionado del theme.
+//      Y eso, lejos de debilitarla, es lo que la hace auto-mantenida: el
+//      retrato lleva el md5 de cada archivo, así que TOCAR un archivo del theme
+//      sin volver a subirlo rompe la comprobación. No se puede olvidar.
+//
+//      Lo que afirma al pasar es exacto y no más: cada archivo del theme es
+//      idéntico al que Shopify tenía en la fecha del retrato. No afirma nada
+//      sobre lo que Shopify sirve AHORA, porque desde aquí no se puede ver.
+// ---------------------------------------------------------------------------
+await check('el theme coincide con Shopify', async () => {
+  const snapshot = path.join(ROOT, 'shopify', 'theme-remote-manifest.json');
+  try {
+    await stat(snapshot);
+  } catch {
+    if (!QUIET) console.log('  NO EJECUTADA: falta shopify/theme-remote-manifest.json');
+    notRun.push('el theme coincide con Shopify');
+    return [];
+  }
+  try {
+    const { stdout } = await run('node', ['scripts/theme-diff.mjs', snapshot], { cwd: ROOT, maxBuffer: 1024 * 1024 * 10 });
+    if (!QUIET) {
+      for (const line of stdout.split('\n')) {
+        if (/^(retrato|IGUALES)/.test(line)) console.log(`  ${line.trim()}`);
+      }
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    const lines = out.split('\n').map((l) => l.trim()).filter(Boolean);
+    const problems = lines.filter((l) => /^(SUBIR|SIN COMPARAR|SOBRAN|\S+\.(liquid|json|css|js) —|\S+\.(liquid|json|css|js) \()/.test(l));
+    return problems.length > 0 ? problems.slice(0, 12) : ['la comparación con Shopify salió con error'];
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);

@@ -1090,7 +1090,11 @@ superados se renombraron con prefijo `ZZ OBSOLETO` para que se ordenen al final 
 clic desde el admin. **Es trabajo pendiente para el dueño, no un descuido.**
 
 `themeUpdate` solo acepta `name`, y `themeFilesDelete` también está bloqueado, así que no hay forma
-de reemplazar un theme en sitio desde un ZIP: cada subida crea uno nuevo. Por eso hay tres.
+de reemplazar un theme en sitio **desde un ZIP**: cada subida de ZIP crea uno nuevo. Por eso hay tres.
+
+> **CORRECCIÓN (§20).** Lo que escribí a continuación de esa frase —que por eso cada cambio exigía
+> un theme nuevo— era un error de alcance. `themeFilesUpsert` **sí reemplaza archivos en sitio** en
+> un theme no publicado, y es el camino correcto. No hacen falta más themes. Lo corrijo en §20.1.
 
 ### 18.8 El vídeo de un tercero, en fachada
 
@@ -1239,3 +1243,132 @@ Mediana de cinco ejecuciones, CPU 4× y 4G lento, iPhone, **servido comprimido c
 | Parseado | 23,8 KB | 88,4 KB | 79,1 KB | — |
 
 La portada transfiere **6 KB** y no descarga una sola línea de JavaScript.
+
+---
+
+## 20. El theme en Shopify, actualizado EN SITIO — y por qué no me di cuenta antes
+
+El ciclo anterior midió que `modulepreload` quitaba **197 ms** hasta poder tocar la ficha, lo dio por
+bueno y lo dejó en el repositorio. **Y la tienda se quedó una revisión atrás.** `layout/theme.liquid`
+cambió en local y en Shopify seguía el de antes. El repositorio decía una cosa y Shopify servía otra,
+y **nada en todo el pipeline lo señalaba**.
+
+Eso es peor que un defecto de rendimiento: es una medición que describe algo que la tienda no tiene.
+
+### 20.1 La corrección de fondo: sí se reemplaza en sitio
+
+Yo había escrito en §18.7 que «cada subida crea un theme nuevo». Es verdad **de un ZIP**, y lo
+generalicé mal.
+
+| Operación | Resultado real, ejecutado |
+| --- | --- |
+| `themeCreate` desde ZIP | crea un theme **nuevo**. No reemplaza. |
+| `themeUpdate` | solo acepta `name`. No toca archivos. |
+| **`themeFilesUpsert` en un theme no publicado** | ✅ **reemplaza el archivo EN SITIO** |
+| `themeFilesDelete` | ❌ bloqueado por política |
+| `themeDelete`, `themePublish` | ❌ bloqueados por política |
+
+Así que el camino de despliegue por API correcto es: **subida preparada → `themeFilesUpsert` solo de
+los archivos que cambiaron → verificar por checksum.** Sin themes nuevos. Los tres `ZZ OBSOLETO` que
+hay son consecuencia de mi error de alcance, no de un límite de la plataforma.
+
+Ejecutado para `layout/theme.liquid`:
+
+| Paso | Resultado |
+| --- | --- |
+| `stagedUploadsCreate` (`resource: FILE`) | destino firmado, `userErrors: []` |
+| POST multipart a Google Cloud Storage | **HTTP 201**, `ETag "1114318efe43b85d02b4893c73b9f043"` |
+| `themeFilesUpsert` con `body: { type: URL }` | `userErrors: []`, job encolado |
+| job | `done: true` |
+| checksum del archivo en Shopify | **`1114318efe43b85d02b4893c73b9f043`**, 17 996 B |
+| md5 del archivo local | **`1114318efe43b85d02b4893c73b9f043`**, 17 996 B |
+
+El `ETag` que devuelve Google y el checksum que devuelve Shopify coinciden los dos con el md5 local.
+**VERIFICADO byte a byte.**
+
+### 20.2 Un hecho de plataforma que rompe la verificación ingenua
+
+Comparar un theme por checksum parece trivial. No lo es, y lo descubrí intentándolo.
+
+**Shopify reescribe las plantillas JSON.** Les antepone una cabecera de «auto-generated» y añade un
+`"settings": {}` vacío a cada sección y a cada bloque. Eso ya era conocido.
+
+**Lo nuevo: su `checksumMd5` no es el md5 de nada que yo pueda reproducir.** Lo probé de las tres
+formas posibles sobre las doce plantillas:
+
+| Hipótesis | Coinciden |
+| --- | --- |
+| md5 del cuerpo que devuelve la API, con cabecera | 0 / 12 |
+| md5 del cuerpo que devuelve la API, sin cabecera | **1 / 12** |
+| md5 de mi reconstrucción del reformateo | 0 / 12 |
+
+La única que coincide es `templates/index.json`, y coincide porque es **la única que Shopify NO
+reescribió**: ya traía `settings` en sus tres secciones, así que no había nada que añadir y se guardó
+tal cual. Para las once que sí reescribió, el checksum remoto no corresponde ni a lo que la API
+devuelve ni a nada que se pueda calcular en local.
+
+**Consecuencia práctica:** quien compare un theme por checksum a secas obtiene **once falsos
+positivos** y vuelve a subir plantillas que ya estaban bien. Una plantilla JSON solo se puede
+comparar **semánticamente**, sobre su cuerpo, deshaciendo el reformateo.
+
+### 20.3 `scripts/theme-diff.mjs`
+
+De ahí la herramienta. Hace tres cosas y ninguna de más:
+
+- **md5** para los 50 archivos que Shopify sirve tal cual.
+- **Huella canónica** para las 12 plantillas JSON: quita la cabecera, quita los `settings` vacíos
+  —solo los vacíos: uno con valores es contenido—, y serializa ordenando las **claves** pero **no las
+  listas**, porque `block_order` es el orden en que el comprador ve los bloques de la ficha y sí es
+  información.
+- **Residuo**: un archivo que está en Shopify y no en el repositorio se reporta, porque
+  `themeFilesDelete` está bloqueado y solo se puede borrar desde el admin.
+
+Si a una plantilla le falta el cuerpo, dice `SIN COMPARAR` y sale con error. **Nunca la cuenta como
+igual.**
+
+Validada inyectando los seis fallos que debe detectar, uno a uno:
+
+| Inyección | Detectado |
+| --- | --- |
+| un `.liquid` con md5 distinto | ✅ |
+| una plantilla JSON con un bloque de menos | ✅ |
+| la misma plantilla con los bloques en otro orden | ✅ |
+| una plantilla con un ajuste con valor que el local no tiene | ✅ |
+| un archivo local que no está en Shopify | ✅ |
+| un archivo que sobra en Shopify | ✅ |
+| **control**: la misma plantilla con otra sangría | correctamente **no** reportada |
+
+### 20.4 Y la comprobación que impide que vuelva a pasar
+
+`check.mjs` tiene una comprobación nueva, la 18: **el theme coincide con Shopify.**
+
+Este script no tiene credenciales de la tienda y no debe tenerlas, así que no consulta la Admin API:
+compara contra un **retrato versionado** del theme, `shopify/theme-remote-manifest.json`, de 6 KB.
+
+Eso, lejos de debilitarla, es lo que la hace **auto-mantenida**: el retrato lleva el md5 de cada
+archivo, así que **tocar un archivo del theme sin volver a subirlo rompe la comprobación**. No se
+puede olvidar, que es exactamente el fallo que acabo de cometer.
+
+Verificado inyectando el fallo: añadí un comentario a `snippets/ne-price.liquid` y la comprobación
+falló nombrando el archivo y los dos checksums. Al restaurarlo, volvió a pasar.
+
+Lo que afirma al pasar es exacto y no más: **cada archivo del theme es idéntico al que Shopify tenía
+en la fecha del retrato.** No afirma nada sobre lo que Shopify sirve *ahora*, porque desde aquí no se
+puede ver. Que no se convierta en lo segundo es el punto.
+
+### 20.5 Estado: 18 de 18, nada sin ejecutar
+
+Por primera vez la pirámide entera corre en verde, incluido el linter oficial de Shopify:
+
+| | |
+| --- | --- |
+| 321 pruebas unitarias | OK |
+| 16 contratos de theme | OK |
+| **Theme Check de Shopify** | **OK — 0 infracciones** |
+| 16 comprobaciones de componentes en navegador (iPhone) | OK |
+| 5 de accesibilidad sobre la página renderizada | OK |
+| 6 presupuestos de rendimiento | OK |
+| 6 de seguridad del theme | OK |
+| **el theme coincide con Shopify — 62 de 62 archivos** | **OK** |
+
+**18/18. Ninguna `NO EJECUTADA`.**

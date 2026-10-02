@@ -43,6 +43,44 @@ pago rápido que salve una ficha mediocre.
 retirar, y un archivo huérfano en un theme es un archivo que se sirve. Con git, el control de altas y
 bajas está en el repositorio.
 
+### Pero la API sí sirve para actualizar, y así se hizo en el banco de pruebas
+
+`VERIFICADO` ejecutándolo (`VERIFICATION-LOG.md` §20): **`themeFilesUpsert` reemplaza un archivo EN
+SITIO** en un theme no publicado. No hace falta crear un theme nuevo por cada cambio, que es lo que
+yo había supuesto mal.
+
+El ciclo completo, los cuatro pasos:
+
+1. `stagedUploadsCreate` con `resource: FILE` → devuelve un destino firmado.
+2. `POST` multipart a `shopify-staged-uploads.storage.googleapis.com` con los parámetros que devolvió,
+   y el archivo al final. Responde **201** y un `ETag` que es el md5 de lo subido: ahí ya se puede
+   comprobar que llegaron los bytes correctos.
+3. `themeFilesUpsert` con `body: { type: URL, value: <resourceUrl> }`. Devuelve un job.
+4. Cuando el job está `done`, consultar `checksumMd5` del archivo y **compararlo con el md5 local**.
+
+El paso 4 no es opcional. Sin él, lo único que se sabe es que la mutación no dio error.
+
+### Y después, comprobar que la tienda y el repositorio no se han separado
+
+```bash
+node scripts/theme-diff.mjs shopify/theme-remote-manifest.json
+```
+
+Compara los 62 archivos. Dos avisos sobre cómo leerlo:
+
+- Para las **plantillas JSON** el checksum de Shopify **no sirve**: Shopify las reescribe y su
+  checksum no corresponde a nada reproducible en local (§20.2). La herramienta las compara
+  semánticamente, con la huella guardada en el retrato.
+- El retrato es una **foto con fecha**. Que coincida demuestra que cada archivo del theme es idéntico
+  al que Shopify tenía **entonces**; no demuestra lo que Shopify sirve ahora.
+
+Para refrescar el retrato hace falta el volcado de la Admin API **con los cuerpos de las
+plantillas**:
+
+```bash
+node scripts/theme-diff.mjs --snapshot volcado.json > shopify/theme-remote-manifest.json
+```
+
 Tres cosas que conviene saber **antes** de conectar, porque después pesan (`DOCUMENTADO`, no
 verificado contra una tienda):
 

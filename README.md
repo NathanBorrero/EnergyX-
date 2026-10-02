@@ -1,8 +1,9 @@
 # Nathan & Esteban
 
 > **Estado: el theme existe y está verificado.** Stack decidido, theme de Shopify escrito de cero,
-> y **17 comprobaciones** que pasan: 321 pruebas, el linter oficial de Shopify sin infracciones, y
-> comportamiento, accesibilidad, rendimiento y seguridad medidos en un navegador real.
+> y **18 comprobaciones** que pasan sin ninguna sin ejecutar: 321 pruebas, el linter oficial de
+> Shopify sin infracciones, comportamiento, accesibilidad, rendimiento y seguridad medidos en un
+> navegador real, y los 62 archivos del theme verificados contra lo que hay en Shopify.
 > **Cero dependencias de runtime.**
 
 **Objetivo:** el storefront de Nathan & Esteban, una experiencia de footwear premium sobre un
@@ -73,7 +74,7 @@ se pudieron cruzar: [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md).
 
 ```bash
 npm test          # 321 pruebas, runner nativo de Node
-npm run check     # las 17 comprobaciones
+npm run check     # las 18 comprobaciones
 ```
 
 Dos de ellas necesitan herramientas que **no se versionan**, para que el repositorio siga con cero
