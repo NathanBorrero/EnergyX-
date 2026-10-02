@@ -1072,3 +1072,45 @@ partes. Ahora:
 | **JavaScript de la portada** | **0** | **0** |
 
 **Total de la ficha: 17 KB comprimidos** de CSS más JavaScript.
+
+### 18.7 El theme optimizado, en Shopify
+
+Subido y verificado. **62 archivos, `processingFailed: false`.** Los archivos clave comprobados byte
+a byte contra el local:
+
+| Theme | Id | Estado |
+| --- | --- | --- |
+| `NATHAN & ESTEBAN — ACTUAL (no publicar)` | `213916090621` | **el bueno** |
+| `ZZ OBSOLETO 2 — borrar` | `213915894013` | superado |
+| `ZZ OBSOLETO — borrar (sustituido por v2)` | `213914812669` | superado |
+
+**`themeDelete` está bloqueado por política de seguridad**, verificado ejecutándolo: *«Theme
+deletion is blocked — it could take down the live storefront. Use Shopify admin.»* Así que los dos
+superados se renombraron con prefijo `ZZ OBSOLETO` para que se ordenen al final y se borren de un
+clic desde el admin. **Es trabajo pendiente para el dueño, no un descuido.**
+
+`themeUpdate` solo acepta `name`, y `themeFilesDelete` también está bloqueado, así que no hay forma
+de reemplazar un theme en sitio desde un ZIP: cada subida crea uno nuevo. Por eso hay tres.
+
+### 18.8 El vídeo de un tercero, en fachada
+
+Un embed de YouTube o Vimeo trae varios cientos de KB de JavaScript ajeno, cookies y conexiones a
+dominios que no son Shopify, **en la carga inicial, aunque nadie vaya a ver el vídeo**. En una ficha
+de producto el vídeo casi nunca es lo primero que se mira.
+
+Ahora se pinta la miniatura y un botón, y el `iframe` vive en un `<template>`: el navegador lo
+parsea y **no carga su contenido**. Ni una petición al tercero hasta el clic. Sin JavaScript queda
+el enlace al vídeo en su sitio original, que es mejor que un hueco.
+
+Verificado en navegador: **cero `iframe` en el documento antes de pedirlo**, uno después, y el botón
+desaparece al cambiarse.
+
+### 18.9 Y un fallo que encontró esa misma prueba
+
+Al añadir un medio más al banco, la prueba de «el 3D se apaga fuera de la vista» empezó a fallar. La
+causa era real: el observador vigilaba **la galería entera**, que puede medir varias pantallas
+—fotos, vídeo, modelo—, así que mientras cualquier parte de ella asomara, el visor seguía encendido
+aunque estuviera muy lejos de la vista. Ahora observa **el visor**.
+
+Un contexto WebGL encendido consume GPU y batería. Ese es exactamente el fallo que la directiva de
+rendimiento quería evitar, y estaba ahí.

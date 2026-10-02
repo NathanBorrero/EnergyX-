@@ -110,6 +110,22 @@
           <li class="ne-gallery__item" data-ne-media-type="image">
             <img src="/scripts/fixtures/pixel.png" alt="Fotografía de banco de pruebas" width="4" height="5">
           </li>
+          <li class="ne-gallery__item" data-ne-media-type="external_video">
+            <!--
+              FACHADA DE VÍDEO EXTERNO. El `iframe` vive en un `<template>`, que
+              el navegador parsea y NO carga: ni una petición al dominio del
+              tercero hasta el clic. El banco apunta su `src` a una ruta local
+              para que la prueba no salga a la red.
+            -->
+            <div class="ne-gallery__facade" data-ne-video-facade>
+              <img class="ne-image ne-gallery__image" src="/scripts/fixtures/pixel.png" alt="Miniatura del vídeo"
+                   width="768" height="432" style="width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover;">
+              <button class="ne-button ne-gallery__play" type="button" data-ne-video-play>Reproducir el vídeo</button>
+              <template data-ne-video-embed>
+                <iframe class="ne-gallery__video" src="/scripts/fixtures/pixel.png" title="Vídeo de prueba" loading="lazy"></iframe>
+              </template>
+            </div>
+          </li>
           <li class="ne-gallery__item" data-ne-media-type="model">
             <div class="ne-gallery__model" data-ne-model-slot hidden>
               <!-- En el theme esto lo emite `model_viewer_tag`. Aquí se imita el

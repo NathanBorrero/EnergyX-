@@ -100,7 +100,49 @@
                       {{ media | video_tag: controls: true, preload: 'none', class: 'ne-gallery__video', image_size: '1280x' }}
 
                     {%- when 'external_video' -%}
-                      {{ media | external_video_tag: class: 'ne-gallery__video' }}
+                      {%- comment -%}
+                        FACHADA: el `iframe` del tercero NO se inserta hasta que
+                        alguien lo pide.
+
+                        Un embed de YouTube o Vimeo trae varios cientos de KB de
+                        JavaScript de terceros, cookies y conexiones a dominios
+                        que no son Shopify, y lo hace en la carga inicial aunque
+                        nadie vaya a ver el vídeo. Es exactamente lo que la
+                        directiva de rendimiento prohíbe, y en una ficha de
+                        producto el vídeo casi nunca es lo primero que se mira.
+
+                        Lo que se pinta es la miniatura y un botón. El `iframe`
+                        vive en un `<template>`, que el navegador parsea pero NO
+                        carga: ni una petición al tercero hasta el clic.
+
+                        Sin JavaScript queda el enlace al vídeo en su sitio
+                        original, que es mejor que un hueco.
+                      {%- endcomment -%}
+                      <div class="ne-gallery__facade" data-ne-video-facade>
+                        {% render 'ne-image',
+                          image: media.preview_image,
+                          role: 'below_fold',
+                          sizes: '(max-width: 47.99em) 100vw, 58vw',
+                          widths: '480, 768, 1280',
+                          max: 1280,
+                          ratio: '16 / 9',
+                          class: 'ne-gallery__image',
+                          alt: media.alt
+                        %}
+                        <button
+                          class="ne-button ne-gallery__play"
+                          type="button"
+                          data-ne-video-play
+                        >{{ 'products.product.play_video' | t }}</button>
+                        <template data-ne-video-embed>
+                          {{ media | external_video_tag: class: 'ne-gallery__video', loading: 'lazy' }}
+                        </template>
+                        <noscript>
+                          <a class="ne-button--text" href="{{ media.external_id | default: '' | prepend: 'https://www.youtube.com/watch?v=' }}" rel="noopener" target="_blank">
+                            {{ 'products.product.play_video' | t }}
+                          </a>
+                        </noscript>
+                      </div>
 
                     {%- else -%}
                       {{ media | media_tag: class: 'ne-gallery__image' }}

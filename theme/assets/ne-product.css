@@ -185,3 +185,11 @@
     align-items: baseline;
   }
   .ne-specs dd { margin: 0; }
+  .ne-gallery__facade {
+    position: relative;
+    display: grid;
+  }
+  .ne-gallery__play {
+    position: absolute;
+    inset: auto auto var(--ne-space-s) var(--ne-space-s);
+  }

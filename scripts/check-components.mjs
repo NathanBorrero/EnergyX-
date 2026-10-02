@@ -737,6 +737,53 @@ await check('el 3D se contiene en móvil y se apaga fuera de la vista', async ()
 });
 
 // ---------------------------------------------------------------------------
+// 7ter · El vídeo de un tercero no se carga hasta que alguien lo pide.
+//
+//        Un embed de YouTube o Vimeo trae varios cientos de KB de JavaScript
+//        ajeno, cookies y conexiones a dominios que no son Shopify, y lo hace en
+//        la carga inicial aunque nadie vaya a verlo. En una ficha de producto el
+//        vídeo casi nunca es lo primero que se mira.
+// ---------------------------------------------------------------------------
+await check('el vídeo de un tercero espera a que se lo pidan', async () => {
+  const problems = [];
+  const page = await openHarness();
+
+  // El `<template>` es la clave: el navegador lo parsea y no carga su
+  // contenido. Si hubiera un `<iframe>` vivo en el documento, ya habría salido
+  // una petición al tercero.
+  const before = await page.evaluate(() => ({
+    iframes: document.querySelectorAll('iframe').length,
+    dentroDelTemplate: document.querySelector('[data-ne-video-embed]')?.content?.querySelectorAll('iframe').length ?? 0,
+    boton: !!document.querySelector('[data-ne-video-play]'),
+    miniatura: !!document.querySelector('[data-ne-video-facade] img'),
+  }));
+
+  if (before.iframes !== 0) {
+    problems.push(`hay ${before.iframes} iframe(s) en el documento antes de pedir el vídeo: el tercero ya se cargó`);
+  }
+  if (before.dentroDelTemplate !== 1) {
+    problems.push('el embed debe estar dentro de un <template>, que no se carga');
+  }
+  if (!before.boton) problems.push('falta el botón de reproducir');
+  if (!before.miniatura) problems.push('falta la miniatura: el comprador vería un hueco');
+
+  await page.locator('[data-ne-video-play]').click();
+  await page.waitForTimeout(150);
+
+  const after = await page.evaluate(() => ({
+    iframes: document.querySelectorAll('iframe').length,
+    boton: !!document.querySelector('[data-ne-video-play]'),
+  }));
+
+  if (after.iframes !== 1) problems.push(`tras pedirlo debe haber exactamente un iframe; hay ${after.iframes}`);
+  if (after.boton) problems.push('el botón debe desaparecer al cambiarse por el vídeo');
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 8bis · La red de seguridad: si el módulo no llega, vuelve el control que
 //        permite comprar.
 //

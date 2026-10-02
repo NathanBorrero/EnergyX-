@@ -281,3 +281,18 @@
   }
   .ne-specs dd { margin: 0; }
 
+
+/* === Fachada de vídeo externo ==================================== */
+
+  /* El botón se superpone a la miniatura. No hay animación: un `transform` en
+     hover sobre una imagen grande repinta una capa entera, y no aporta nada que
+     el cursor no diga ya. */
+  .ne-gallery__facade {
+    position: relative;
+    display: grid;
+  }
+
+  .ne-gallery__play {
+    position: absolute;
+    inset: auto auto var(--ne-space-s) var(--ne-space-s);
+  }

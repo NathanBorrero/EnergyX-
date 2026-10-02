@@ -850,6 +850,11 @@ class NeProductGallery extends HTMLElement {
   }
 
   #mount() {
+    // La fachada de vídeo primero: existe aunque el producto no tenga modelo 3D,
+    // y es lo que evita que un `iframe` de tercero se cargue sin que nadie lo
+    // pida. Va antes del `return` temprano de abajo.
+    this.#enhanceVideoFacades();
+
     this.trigger = this.querySelector('[data-ne-model-trigger]');
     this.arTrigger = this.querySelector('[data-ne-ar-trigger]');
     this.modelSlot = this.querySelector('[data-ne-model-slot]');
@@ -883,6 +888,40 @@ class NeProductGallery extends HTMLElement {
     // importa.
     if (mode === 'eager' && !prefersReducedMotion() && !this.#deviceIsModest()) {
       this.#toggle();
+    }
+  }
+
+  /**
+   * Cambia cada fachada de vídeo por su embed, al pedirlo.
+   *
+   * El `iframe` del tercero vive en un `<template>`: el navegador lo parsea y
+   * NO lo carga, así que no hay una sola petición al dominio del tercero hasta
+   * este clic. Un embed de YouTube o Vimeo trae varios cientos de KB de
+   * JavaScript ajeno, y en una ficha de producto el vídeo casi nunca es lo
+   * primero que se mira.
+   *
+   * Una vez cambiado no se vuelve atrás: el comprador pidió el vídeo.
+   */
+  #enhanceVideoFacades() {
+    for (const facade of this.querySelectorAll('[data-ne-video-facade]')) {
+      const play = facade.querySelector('[data-ne-video-play]');
+      const template = facade.querySelector('[data-ne-video-embed]');
+      if (!play || !template) continue;
+
+      play.addEventListener(
+        'click',
+        () => {
+          try {
+            facade.replaceChildren(template.content.cloneNode(true));
+            // El foco al vídeo recién insertado, que es donde el comprador
+            // acaba de pedir estar.
+            facade.querySelector('iframe')?.focus?.();
+          } catch (error) {
+            report('gallery', 'video-facade', error);
+          }
+        },
+        { once: true },
+      );
     }
   }
 
@@ -958,7 +997,11 @@ class NeProductGallery extends HTMLElement {
       // Un margen holgado: se apaga cuando está claramente fuera, no al roce.
       { rootMargin: '200px 0px', threshold: 0 },
     );
-    this.observer.observe(this);
+    // Se observa EL VISOR, no la galería entera. La galería puede medir varias
+    // pantallas —fotos, vídeo, modelo—, así que mientras cualquier parte de ella
+    // asomara, el visor seguía encendido aunque estuviera muy lejos de la vista.
+    // Lo encontró la prueba al añadir un medio más al banco.
+    this.observer.observe(this.modelSlot);
   }
 
   /**

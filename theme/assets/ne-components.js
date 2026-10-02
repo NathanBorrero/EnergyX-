@@ -483,6 +483,8 @@ class NeProductGallery extends HTMLElement {
   }
 
   #mount() {
+    this.#enhanceVideoFacades();
+
     this.trigger = this.querySelector('[data-ne-model-trigger]');
     this.arTrigger = this.querySelector('[data-ne-ar-trigger]');
     this.modelSlot = this.querySelector('[data-ne-model-slot]');
@@ -507,6 +509,27 @@ class NeProductGallery extends HTMLElement {
 
     if (mode === 'eager' && !prefersReducedMotion() && !this.#deviceIsModest()) {
       this.#toggle();
+    }
+  }
+
+  #enhanceVideoFacades() {
+    for (const facade of this.querySelectorAll('[data-ne-video-facade]')) {
+      const play = facade.querySelector('[data-ne-video-play]');
+      const template = facade.querySelector('[data-ne-video-embed]');
+      if (!play || !template) continue;
+
+      play.addEventListener(
+        'click',
+        () => {
+          try {
+            facade.replaceChildren(template.content.cloneNode(true));
+            facade.querySelector('iframe')?.focus?.();
+          } catch (error) {
+            report('gallery', 'video-facade', error);
+          }
+        },
+        { once: true },
+      );
     }
   }
 
@@ -548,7 +571,7 @@ class NeProductGallery extends HTMLElement {
       },
       { rootMargin: '200px 0px', threshold: 0 },
     );
-    this.observer.observe(this);
+    this.observer.observe(this.modelSlot);
   }
 
   #release() {
