@@ -106,6 +106,15 @@
       },
       "updated": "Carrito actualizado",
       "updating": "Actualizando"
+    },
+    "cod": {
+      "title": "Pago contra entrega",
+      "intro": "¿Entregamos contra pago en tu ciudad?",
+      "field": "Tu ciudad o municipio",
+      "check": "Comprobar",
+      "covered": "Sí, entregamos contra pago en {{ place }}.",
+      "not_covered": "Todavía no entregamos contra pago en {{ place }}. Puedes pagar en línea en el checkout.",
+      "missing": "Escribe tu ciudad o municipio."
     }
   },
   "collections": {

@@ -1,7 +1,8 @@
 # Estado del repositorio
 
-**Fecha:** 2026-10-02 · tras cerrar FASE 2 y verificar el theme en navegador.
-**Pruebas:** 321 (`node:test`) + 9 en navegador (Chromium) + 10 de contrato de theme + Theme Check.
+**Fecha:** 2026-10-02 · tras cerrar FASE 2 y el repaso de QA.
+**Comprobaciones:** 321 pruebas + 16 contratos de theme + 13 en navegador + 5 de accesibilidad +
+5 de rendimiento + 6 de seguridad + Theme Check (45 archivos, 0 infracciones). **17/17 pasan.**
 **Dependencias de runtime:** 0. **Dependencias opcionales de verificación:** 2, no versionadas.
 
 ---
@@ -62,14 +63,24 @@ theme/                                  THEME DE SHOPIFY, Online Store 2.0, escr
     ne-*.js                             12 copias GENERADAS de src/lib (no editar)
 
 scripts/
-  check.mjs                             14 comprobaciones con código de salida
-  check-theme.mjs                       10 contratos entre marcado y script
-  check-components.mjs                  9 comprobaciones en Chromium
+  check.mjs                             17 comprobaciones con código de salida
+  check-theme.mjs                       16 contratos entre marcado, script y ajustes
+  check-components.mjs                  13 comprobaciones de comportamiento en Chromium
+  check-a11y.mjs                        5 de accesibilidad sobre la página renderizada
+  check-perf.mjs                        5 de presupuesto y carga, medidas
+  check-security.mjs                    6 sobre la superficie real del theme
   sync-theme-assets.mjs                 publica src/lib como assets del theme
   fixtures/
-    product-harness.html                banco de pruebas (datos ficticios, etiquetados)
+    product-harness.html                ficha de producto (datos ficticios, etiquetados)
+    cart-harness.html                   carrito con dos líneas y cobertura contra entrega
+    cart-empty-harness.html             carrito vacío, que es un estado aparte
+    home-harness.html                   portada (superficie inversa) y colección
     pixel.png                           imagen mínima, sin dependencia externa
 ```
+
+Los cuatro bancos cargan **el CSS real, los textos reales del archivo de idioma y el mismo bootstrap
+de maquetación que `theme.liquid`**. No copias: una copia se desincroniza y entonces la prueba mide
+algo que la tienda no tiene. Pasó cuatro veces, y hay comprobaciones que ahora lo impiden.
 
 ---
 
@@ -110,7 +121,13 @@ caducada de un módulo junto a otra reciente. El import map de `theme.liquid` re
 | Añadir al carrito sin recargar | terminado | Chromium, con la ruta de Shopify y la sección real |
 | 3D progresivo | terminado (sin asset) | Chromium: los tres modos y el camino de fallo |
 | **Compra sin JavaScript** | terminado | Chromium con JavaScript desactivado |
-| Tubería de comprobaciones | terminado | 13 fallos inyectados en los contratos, 13 detectados |
+| Carrito sin recargar | terminado | Chromium: los totales los renderiza Shopify, no se recalculan |
+| Cobertura contra entrega | terminado | Chromium: responde con lo que sabe y **calla lo que no** |
+| Accesibilidad automatizable | terminado | 4 páginas, contraste y objetivos **medidos sobre lo renderizado** |
+| Presupuestos de rendimiento | terminado | bytes comprimidos, módulos descargados y desplazamiento medidos |
+| Seguridad del theme | terminado | 6 comprobaciones; encontró un XSS reflejado real |
+| Pixel personalizado | escrito, sin destino | 6 comprobaciones; `DESTINATION` vacío no envía nada |
+| Tubería de comprobaciones | terminado | **cada comprobación validada inyectando su fallo** |
 
 ---
 

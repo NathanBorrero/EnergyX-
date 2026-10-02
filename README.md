@@ -1,66 +1,114 @@
 # Nathan & Esteban
 
-> **Estado: lógica de storefront en construcción.** La arquitectura sigue pendiente de la dirección
-> de arte, pero la lógica que no depende de ella ya está escrita y probada: **321 pruebas, cero
-> dependencias**.
+> **Estado: el theme existe y está verificado.** Stack decidido, theme de Shopify escrito de cero,
+> y **17 comprobaciones** que pasan: 321 pruebas, el linter oficial de Shopify sin infracciones, y
+> comportamiento, accesibilidad, rendimiento y seguridad medidos en un navegador real.
+> **Cero dependencias de runtime.**
 
-**Objetivo del proyecto:** construir **la página web / storefront de Nathan & Esteban**, una
-experiencia digital de footwear premium conectada a un e-commerce real sobre Shopify.
+**Objetivo:** el storefront de Nathan & Esteban, una experiencia de footwear premium sobre un
+ecommerce real en Shopify.
 
-No es un ERP, ni un CRM, ni un sistema de inventario, pedidos, fulfillment o pagos propio. Si
-Shopify ya resuelve algo, se usa Shopify. La complejidad técnica se reserva para lo que el cliente
-ve y usa.
+No es un ERP, ni un CRM, ni un sistema propio de inventario, pedidos, fulfillment o pagos. Si
+Shopify ya lo resuelve, se usa Shopify. La complejidad se reserva para lo que el comprador ve y usa.
 
-La dirección de arte concreta y el stack técnico **no están definidos todavía**. No se documentan
-aquí por una razón explícita: suponerlos estaría prohibido por el propio estándar del proyecto
-(§191, no suposición) y afirmarlos sin evidencia también (§187, zero hallucination).
+Lo que **falta** son los datos comerciales —productos, precios, materiales, fotografía, el modelo
+3D— y no se inventan: donde no hay dato hay un PLACEHOLDER explícito.
 
-> Nota: el repositorio se llama `EnergyX-` por herencia. Conviene renombrarlo antes de que haya
-> código.
+> Nota: el repositorio se llama `EnergyX-` por herencia. Conviene renombrarlo.
+
+## Las dos mitades del código, y la frontera entre ellas
+
+**`src/lib` decide. `theme/` presenta. Un solo archivo conecta, y no decide nada.**
+
+| | Qué es | Cómo se prueba |
+| --- | --- | --- |
+| [`src/lib/`](src/lib/) | 12 módulos de decisión: qué combinaciones de color y talla existen, qué talla se recomienda, qué se escribe en la línea del carrito, qué contraste cumple. Funciones puras, sin DOM. | **321 pruebas** con el runner de Node |
+| [`theme/`](theme/) | Un theme de Shopify (Online Store 2.0) escrito de cero: 12 plantillas JSON, 19 secciones, 10 snippets, el sistema de diseño en CSS. | **Theme Check oficial**, más 13 comprobaciones en Chromium |
+| `theme/assets/ne-components.js` | El único JavaScript escrito a mano. Conecta el DOM con los módulos probados. | las mismas 13 |
+
+Si la lógica de qué talla recomendar viviera en el JavaScript del theme, sería código sin pruebas
+tomando decisiones de negocio. [`scripts/sync-theme-assets.mjs`](scripts/sync-theme-assets.mjs)
+publica los módulos como assets del theme reescribiendo sus imports a un import map —sin bundler, sin
+paso de compilación— y una comprobación falla si alguien edita la copia.
+
+## Qué está verificado, y cómo
+
+**La tienda se compra sin JavaScript.** El formulario de producto es un `<form>` real con un
+`<select name="id">` funcional. Verificado en un contexto con JavaScript desactivado, y también
+bloqueando el módulo a propósito: el control de reserva vuelve.
+
+**Tres estados de combinación, no dos.** «Agotado en tu talla» y «no se fabrica esta talla en este
+color» son mensajes distintos, y confundirlos es lo que hace que una ficha de calzado se sienta
+rota. Verificado contra una tienda real: el campo `hasVariants` de Shopify no sirve para esto.
+
+**El recomendador de talla, de punta a punta.** Mide el pie, cruza con la tabla real del modelo y
+con el stock, y deja el rastro en atribuciones de línea que **persisten al pedido** —el único canal
+que permite cruzar después recomendación con devolución.
+
+**El 3D es progresivo y opcional.** Si no hay modelo, si falla WebGL, si el dispositivo es modesto o
+si el comprador pidió menos movimiento, la fotografía sigue siendo la experiencia completa. No hay
+ninguna demo de 3D fabricada para aparentar avance.
+
+Detalle de todo lo comprobado por ejecución, incluidos los defectos encontrados y los límites que no
+se pudieron cruzar: [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md).
 
 ## Documentación
 
 | Documento | Contenido |
 | --- | --- |
-| [`docs/STANDARD.md`](docs/STANDARD.md) | Estándar de ejecución, §173–§246. Cómo se construye, revisa y entrega. |
-| [`docs/STATUS.md`](docs/STATUS.md) | Estado verificado del proyecto y del entorno, limitaciones, deuda técnica y decisiones críticas abiertas. |
-| [`docs/DISCOVERY.md`](docs/DISCOVERY.md) | Base de hechos de plataforma (Shopify, themes, Hydrogen, Storefront API, checkout, 3D, performance, analytics, seguridad, costos), opciones de arquitectura y capacidad real de la conexión. |
-| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos conocidos y desconocidos, decisiones reversibles vs irreversibles, y auditoría de contradicciones entre todas las instrucciones. |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Comparación objetiva de alternativas, y modelos de seguridad, rendimiento, producto/variantes/inventario, carrito→checkout y Shopify→Dropi. |
-| [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analytics, testing, despliegue, riesgos y costos. |
-| [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md) | Lo comprobado **por ejecución real** contra Shopify, incluidas las correcciones a afirmaciones previas y el residuo que no se pudo limpiar. |
-| [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, comparadas en diez dimensiones. Análisis, sin decisión. |
-| [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado, qué está probado y qué depende de quién. |
-| [`docs/PROJECT-MAP.md`](docs/PROJECT-MAP.md) | **Mapa único**: jerarquía de verdad, estado por fase, decisiones ya verificadas y el único bloqueo real. Empieza aquí. |
-| [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, listo para ejecutarse cuando exista la tienda de N&E. |
-| [`src/`](src/) | Lógica de storefront que sobrevive a la decisión de arquitectura: disponibilidad de variantes y recomendación de talla. |
+| [`docs/PROJECT-MAP.md`](docs/PROJECT-MAP.md) | **Empieza aquí.** Jerarquía de verdad, estado por fase y decisiones cerradas. |
+| [`docs/STATUS.md`](docs/STATUS.md) | Estado por área con su nivel de verificación, limitaciones y decisiones abiertas. |
+| [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md) | Lo comprobado **por ejecución**, los defectos que eso encontró, y las correcciones a afirmaciones propias. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | §4bis: por qué el stack es theme de Shopify y no headless. Más los modelos de seguridad, rendimiento, producto/variantes y carrito→checkout. |
+| [`docs/DISCOVERY.md`](docs/DISCOVERY.md) | Base de hechos de plataforma verificados y capacidad real de la conexión. |
+| [`docs/STANDARD.md`](docs/STANDARD.md) | El estándar de ejecución, §173–§246. |
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos, reversibilidad y auditoría de contradicciones. |
+| [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analítica, riesgos y costos. |
+| [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado y qué depende de quién. |
+| [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, sin decisión. |
+| [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, y el **pixel personalizado** listo para pegar. |
 
-## Pruebas
-
-```bash
-npm test
-```
-
-Trescientas veintiuna pruebas, runner nativo de Node, sin dependencias.
+## Comprobaciones
 
 ```bash
-npm run check
+npm test          # 321 pruebas, runner nativo de Node
+npm run check     # las 17 comprobaciones
 ```
 
-Diez comprobaciones de calidad, cada una validada inyectando el fallo que debe detectar.
+Dos de ellas necesitan herramientas que **no se versionan**, para que el repositorio siga con cero
+dependencias:
 
-## Antes de escribir el storefront
+```bash
+NE_SHOPIFY_CLI=/ruta/a/shopify \
+NE_PLAYWRIGHT=/ruta/a/playwright/index.js \
+  npm run check
+```
 
-Hay cinco decisiones críticas abiertas (D1–D5 en [`docs/STATUS.md`](docs/STATUS.md)), refinadas
-tras la investigación de plataforma en [`docs/DISCOVERY.md`](docs/DISCOVERY.md) §11.
+Sin ellas, esas comprobaciones se declaran **`N/E` — NO EJECUTADA**, nunca `OK`. Una comprobación
+que no corrió no da ninguna garantía, y presentarla como verde es fabricar un éxito.
 
-Dos de ellas — el brief de marca y producto, y la elección de stack — bloquean cualquier
-implementación: construir antes de resolverlas significaría tirar el trabajo o inventar
-información. El espacio de opciones ya está investigado y sus restricciones están verificadas;
-lo que falta es el criterio de ponderación, que vive en el brief.
+**Cada comprobación se validó inyectando el fallo que debe detectar.** Eso es lo que distingue una
+comprobación de un adorno, y está registrado en `VERIFICATION-LOG.md`.
 
-## Convenciones de seguridad
+## Lo que falta, y de quién depende
 
-Ninguna credencial, API key privada ni secreto entra en este repositorio, en assets ni
-en código de cliente (§201, §202). Los secretos viven en la configuración del entorno,
-separados por development / staging / production.
+| Pendiente | Depende de |
+| --- | --- |
+| Catálogo real: productos, variantes, precios, materiales | **el dueño**. No se inventa. |
+| Assets: fotografía, modelo `.glb`, tipografía definitiva | **el dueño**. El theme ya los acepta. |
+| La tienda Shopify de Nathan & Esteban | **el dueño**. La conexión actual apunta a otra tienda. |
+| Desplegar el theme | la tienda, más permitir su dominio en la red del entorno (`VERIFICATION-LOG.md` §11.5) |
+| Lighthouse y métricas de campo | una página desplegada. No se estiman. |
+| Auditoría con lector de pantalla | una página desplegada |
+| Destino de los eventos de analítica | decisión sobre servicio. Hoy el pixel no envía nada. |
+| Integración Dropi | credenciales y documentación reales. Hoy es `DOCUMENTED`. |
+| Secciones §1–172 del estándar | **el dueño**. Anunciadas cuatro veces, nunca recibidas. |
+
+## Seguridad
+
+Ninguna credencial, clave privada ni secreto entra en este repositorio, en assets ni en código de
+cliente. Los secretos viven en la configuración del entorno.
+
+Todo lo que hay en `theme/` **se sirve al navegador**: lo descarga cualquiera. Hay una comprobación
+que busca formas de secreto —no palabras— en esos archivos, y seis más sobre la superficie real del
+theme, que encontraron un XSS reflejado por el término de búsqueda.

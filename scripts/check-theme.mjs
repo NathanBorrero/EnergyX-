@@ -404,6 +404,7 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
     'theme/snippets/ne-price.liquid',
     'theme/snippets/ne-product-specs.liquid',
     'theme/sections/main-cart.liquid',
+    'theme/snippets/ne-cod-coverage.liquid',
     'theme/sections/header.liquid',
     'theme/layout/theme.liquid',
   ];
@@ -636,6 +637,65 @@ await check('los modificadores usados solos se sostienen solos', async () => {
     if (/min-height/.test(body) && !/display\s*:/.test(body)) {
       problems.push(
         `.${modifier} se usa sin su clase base y declara min-height sin display: en un elemento en línea ese mínimo se ignora`,
+      );
+    }
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6septies. Ningún ajuste del theme que nadie lea.
+//
+//   Un ajuste declarado en `settings_schema.json` aparece en el editor del
+//   theme: el comerciante lo ve, lo cambia, y si ningún Liquid lo lee NO PASA
+//   NADA. Un control que miente es peor que una función que falta, porque el
+//   comerciante cree que ya lo configuró.
+//
+//   Pasó con tres: `analytics_size_selected_event`, `cod_prevalidation` y
+//   `cod_coverage_list`. Estaban en el editor y ningún archivo los leía.
+//
+//   Y al revés: leer `settings.algo` que el esquema no declara da `nil` en
+//   silencio, que es la otra mitad del mismo problema.
+// ---------------------------------------------------------------------------
+await check('los ajustes del theme se declaran y se leen', async () => {
+  const problems = [];
+  const schema = JSON.parse(
+    await readFile(path.join(THEME, 'config', 'settings_schema.json'), 'utf8'),
+  );
+
+  /** Ids declarados en el esquema global. */
+  const declared = new Set();
+  for (const group of schema) {
+    for (const setting of group.settings ?? []) {
+      if (typeof setting.id === 'string') declared.add(setting.id);
+    }
+  }
+
+  /**
+   * Ajustes que el Liquid lee de verdad.
+   *
+   * Hay que distinguir `settings.x` —global— de `section.settings.x` y
+   * `block.settings.x`, que viven en el esquema de cada sección. Sin esa
+   * distinción, trece ajustes de sección aparecerían como «no declarados».
+   */
+  const read = new Set();
+  for (const source of liquidCode.values()) {
+    for (const m of source.matchAll(/(^|[^.\w])settings\.([a-z_][a-z0-9_]*)/g)) {
+      read.add(m[2]);
+    }
+  }
+
+  for (const id of declared) {
+    if (!read.has(id)) {
+      problems.push(
+        `el ajuste '${id}' está en settings_schema.json y ningún Liquid lo lee: aparece en el editor y no hace nada`,
+      );
+    }
+  }
+  for (const id of read) {
+    if (!declared.has(id)) {
+      problems.push(
+        `el Liquid lee \`settings.${id}\` y settings_schema.json no lo declara: devolvería nil en silencio`,
       );
     }
   }

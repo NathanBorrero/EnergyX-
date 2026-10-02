@@ -1,0 +1,54 @@
+{%- comment -%}
+  Cobertura de pago contra entrega, antes del checkout.
+
+  POR QUÉ AQUÍ Y NO EN EL CHECKOUT
+
+  En el checkout sería el sitio natural, y no se puede: las extensiones de UI de
+  checkout en las páginas de información, envío y pago son solo de Shopify Plus,
+  y esta tienda no lo es. Verificado en la matriz de planes.
+
+  NO DISPONIBLE EN SHOPIFY CON EL ACCESO/CAPACIDADES ACTUALES para el checkout.
+  Lo que sí se puede es preguntarlo en el carrito, que es el último punto del
+  storefront antes de salir hacia el checkout de Shopify.
+
+  POR QUÉ IMPORTA EN ESTE PROYECTO
+
+  Con contra entrega el comprador no paga nada por adelantado, así que rechazar
+  el paquete no le cuesta: el flete de ida y de vuelta lo paga la marca. Saber
+  antes de pedir si hay cobertura evita el pedido que iba a volver.
+
+  LO QUE NO HACE
+
+  No inventa cobertura. La lista la escribe el comerciante en los ajustes del
+  theme, y si está vacía este bloque NO SE MUESTRA: afirmar que no entregamos en
+  una ciudad sin saberlo sería un dato inventado (§191). Tampoco bloquea la
+  compra: informa.
+{%- endcomment -%}
+
+{%- if settings.cod_prevalidation and settings.cod_coverage_list != blank -%}
+  <ne-cod-coverage class="ne-cod" data-ne-cod>
+    <h2 class="ne-caption ne-cod__title">{{ 'cart.cod.title' | t }}</h2>
+    <p class="ne-cod__intro">{{ 'cart.cod.intro' | t }}</p>
+
+    <div class="ne-cod__field">
+      <label class="ne-caption" for="ne-cod-place-{{ section.id }}">{{ 'cart.cod.field' | t }}</label>
+      {%- comment -%}
+        `type="text"`, no `search`: no busca nada, se compara contra una lista.
+        `autocomplete="address-level2"` es el valor estándar para ciudad, así que
+        el navegador puede rellenarlo con lo que el comprador ya usa.
+      {%- endcomment -%}
+      <input
+        class="ne-cod__input"
+        id="ne-cod-place-{{ section.id }}"
+        type="text"
+        autocomplete="address-level2"
+        data-ne-cod-input
+      >
+      <button class="ne-button ne-button--quiet" type="button" data-ne-cod-check>
+        {{ 'cart.cod.check' | t }}
+      </button>
+    </div>
+
+    <p class="ne-notice" data-ne-cod-result hidden role="status" aria-live="polite"></p>
+  </ne-cod-coverage>
+{%- endif -%}

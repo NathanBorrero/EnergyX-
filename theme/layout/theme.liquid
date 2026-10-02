@@ -143,6 +143,33 @@
       `/cart/add`, así que la compra funciona sin JavaScript.
     {%- endcomment -%}
     {%- comment -%}
+      CONFIGURACIÓN.
+
+      Los ajustes del theme que el script necesita. Van por aquí y no por
+      atributos porque son de alcance global, no de una sección.
+
+      Existe porque tres ajustes estaban declarados en el esquema y NINGÚN
+      archivo los leía: aparecían en el editor, el comerciante los podía
+      cambiar, y no pasaba nada. Un control que miente es peor que una función
+      que falta.
+    {%- endcomment -%}
+    <script type="application/json" id="ne-config">
+      {
+        "sizeSelectedEvent": {{ settings.analytics_size_selected_event | default: true | json }},
+        "codPrevalidation": {{ settings.cod_prevalidation | default: false | json }},
+        {%- comment -%}
+          La lista de cobertura llega como texto, una por línea, y se parte aquí.
+          Vacía significa «no se sabe», NO «no hay cobertura»: con la lista vacía
+          el módulo devuelve `unknown` y la interfaz no dice nada, porque
+          afirmar que no entregamos en una ciudad sin saberlo es un dato
+          inventado (§191).
+        {%- endcomment -%}
+        "codCoverage": {{ settings.cod_coverage_list | default: '' | strip | split: '
+' | json }}
+      }
+    </script>
+
+    {%- comment -%}
       RUTAS.
 
       Nunca se escriben a mano. Una tienda con varios mercados o idiomas sirve el
@@ -192,6 +219,9 @@
         "recommended_out_of_stock": {{ 'products.size_guide.recommended_out_of_stock' | t | json }},
         "cart_updated": {{ 'cart.general.updated' | t | json }},
         "cart_updating": {{ 'cart.general.updating' | t | json }},
+        "cod_covered": {{ 'cart.cod.covered' | t: place: '[[place]]' | json }},
+        "cod_not_covered": {{ 'cart.cod.not_covered' | t: place: '[[place]]' | json }},
+        "cod_missing": {{ 'cart.cod.missing' | t | json }},
         "error_cart_update": {{ 'errors.cart_update' | t | json }},
         "error_add_to_cart": {{ 'errors.add_to_cart' | t | json }},
         "error_network": {{ 'errors.network' | t | json }},

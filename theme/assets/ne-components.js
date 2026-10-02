@@ -33,6 +33,19 @@ import { sizeFitAttributes } from 'ne/cart-line';
 import { createSizeSelectionTracker } from 'ne/size-selected-event';
 import { foldKey } from 'ne/semantics';
 
+/**
+ * `cod-guard` NO se importa aquí arriba a propósito.
+ *
+ * Solo lo usa el carrito, y un import estático lo metería en el grafo de la
+ * ficha de producto: 4,3 KB comprimidos que la ficha descargaría sin usarlos.
+ * Lo detectó el presupuesto de bytes al pasar de 16 554 a 20 851 contra un
+ * límite de 20 000, y la respuesta correcta a un presupuesto excedido es quitar
+ * peso, no subir el número.
+ *
+ * Se carga con `import()` dentro del componente, así que solo baja en las
+ * páginas donde ese componente existe.
+ */
+
 // ---------------------------------------------------------------------------
 // Cimientos
 // ---------------------------------------------------------------------------
@@ -62,6 +75,15 @@ function readJson(root, selector) {
 /** Textos y rutas, de los archivos de idioma de Shopify. */
 const STRINGS = readJson(document, '#ne-strings') ?? {};
 const ROUTES = readJson(document, '#ne-routes') ?? {};
+
+/**
+ * Ajustes del theme que el script necesita.
+ *
+ * Existe porque tres ajustes estaban declarados en el esquema y ningún archivo
+ * los leía: aparecían en el editor, el comerciante los podía cambiar, y no
+ * pasaba nada. Un control que miente es peor que una función que falta.
+ */
+const CONFIG = readJson(document, '#ne-config') ?? {};
 
 /**
  * Texto localizado con interpolación.
@@ -232,7 +254,13 @@ class NeVariantPicker extends HTMLElement {
     if (this.inputs.length === 0 || !this.variantSelect) return;
 
     this.sizeOption = findSizeOption(this.matrix.optionNames);
-    this.tracker = createSizeSelectionTracker({ sizeOptionName: this.sizeOption ?? undefined });
+    // El ajuste del theme decide si se publica el evento. `publish: null` deja
+    // el rastreador funcionando y sin publicar, en lugar de no crearlo: así el
+    // resto del componente no necesita comprobar si existe.
+    this.tracker = createSizeSelectionTracker({
+      sizeOptionName: this.sizeOption ?? undefined,
+      publish: CONFIG.sizeSelectedEvent === false ? null : undefined,
+    });
     this.productRoot = this.closest('[data-ne-product]') ?? document;
     this.productId = this.productRoot?.dataset?.neProductId || '';
     this.productHandle = this.productRoot?.dataset?.neProductHandle || '';
@@ -1064,6 +1092,82 @@ class NeCart extends HTMLElement {
 }
 
 define('ne-cart', NeCart);
+
+// ---------------------------------------------------------------------------
+// <ne-cod-coverage>
+// ---------------------------------------------------------------------------
+
+/**
+ * Cobertura de pago contra entrega, preguntada en el carrito.
+ *
+ * EN EL CHECKOUT SERÍA EL SITIO NATURAL, Y NO SE PUEDE: las extensiones de UI de
+ * checkout en información, envío y pago son solo de Shopify Plus. El carrito es
+ * el último punto del storefront antes de salir hacia el checkout de Shopify.
+ *
+ * Por qué importa: con contra entrega el comprador no paga nada por adelantado,
+ * así que rechazar el paquete no le cuesta y el flete de ida y vuelta lo paga la
+ * marca. Saber antes de pedir si hay cobertura evita el pedido que iba a volver.
+ *
+ * La comparación la hace `cod-guard`, que tiene pruebas y además arregló tres
+ * defectos reales de normalización: «Bogotá D.C.», «bogota dc» y la ñ que una
+ * descomposición Unicode se comía. Aquí no se normaliza nada a mano.
+ *
+ * NO INVENTA COBERTURA. Con la lista vacía el módulo devuelve `unknown` y esto
+ * no dice nada: afirmar que no entregamos en una ciudad sin saberlo sería un
+ * dato inventado.
+ */
+class NeCodCoverage extends HTMLElement {
+  connectedCallback() {
+    if (this.dataset.neMounted === 'true') return;
+    this.dataset.neMounted = 'true';
+    this.#mount().catch((error) => report('cod', 'mount', error));
+  }
+
+  async #mount() {
+    this.placeInput = this.querySelector('[data-ne-cod-input]');
+    this.result = this.querySelector('[data-ne-cod-result]');
+    const button = this.querySelector('[data-ne-cod-check]');
+    if (!this.placeInput || !this.result || !button) return;
+
+    // El módulo se trae solo aquí: en las páginas sin este componente no baja.
+    this.cod = await import('ne/cod-guard');
+
+    this.coverage = Array.isArray(CONFIG.codCoverage) ? CONFIG.codCoverage : [];
+
+    button.addEventListener('click', () => this.#check());
+    this.placeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.#check();
+      }
+    });
+
+    this.dataset.neEnhanced = 'true';
+  }
+
+  #check() {
+    if (!this.cod) return; // El módulo aún no ha llegado.
+    const { checkCodCoverage, FIELD_STATUS } = this.cod;
+    const place = (this.placeInput.value ?? '').trim();
+    const outcome = checkCodCoverage(place, this.coverage);
+
+    let message = '';
+    if (outcome.status === FIELD_STATUS.OK) {
+      message = text('cod_covered', { place });
+    } else if (outcome.status === FIELD_STATUS.NOT_COVERED) {
+      message = text('cod_not_covered', { place });
+    } else if (outcome.status === FIELD_STATUS.MISSING) {
+      message = text('cod_missing');
+    }
+    // `unknown` —sin lista utilizable— no dice nada. Es la única respuesta
+    // honesta cuando no hay dato.
+
+    this.result.textContent = message;
+    this.result.hidden = message === '';
+  }
+}
+
+define('ne-cod-coverage', NeCodCoverage);
 
 // ---------------------------------------------------------------------------
 // Formulario de compra

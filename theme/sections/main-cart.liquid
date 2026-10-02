@@ -99,6 +99,8 @@
           {%- endfor -%}
         </ul>
 
+        {% render 'ne-cod-coverage', section: section %}
+
         <footer class="ne-cart__foot">
           <button class="ne-button ne-button--quiet" type="submit" name="update">
             {{ 'cart.general.title' | t }}

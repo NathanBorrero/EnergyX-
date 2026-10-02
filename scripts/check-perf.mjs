@@ -100,7 +100,9 @@ await check('presupuesto de bytes del primer paint', async () => {
 
   // Los módulos que la ficha necesita son los que `ne-components.js` importa.
   const source = await readFile(path.join(THEME, 'assets', 'ne-components.js'), 'utf8');
-  const specs = [...source.matchAll(/from '(ne\/[a-z-]+)'/g)].map((m) => m[1]);
+  // Solo los imports ESTÁTICOS: un `import()` dinámico no entra en el grafo
+  // inicial de la página, que es exactamente para lo que se usa.
+  const specs = [...source.matchAll(/^import\s[^;]*?from '(ne\/[a-z-]+)'/gm)].map((m) => m[1]);
   const layout = await readFile(path.join(THEME, 'layout', 'theme.liquid'), 'utf8');
 
   let modules = 0;
@@ -238,7 +240,7 @@ if (chromium) {
     await page.close();
 
     const source = await readFile(path.join(THEME, 'assets', 'ne-components.js'), 'utf8');
-    const specs = new Set([...source.matchAll(/from '(ne\/[a-z-]+)'/g)].map((m) => m[1]));
+    const specs = new Set([...source.matchAll(/^import\s[^;]*?from '(ne\/[a-z-]+)'/gm)].map((m) => m[1]));
     // Lo que el pie de módulos exige: `ne-components.js` más uno por import.
     const expected = specs.size + 1;
 

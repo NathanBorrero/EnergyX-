@@ -875,3 +875,80 @@ exactamente cómo se me había olvidado añadir el cuarto a una de ellas.
 | **Total `scripts/check.mjs`** | **17** | — |
 
 Cuatro páginas auditadas: ficha de producto, carrito, carrito vacío, portada y colección.
+
+---
+
+## 17. Tres ajustes que mentían, y el presupuesto haciendo su trabajo
+
+### 17.1 Tres controles en el editor del theme que no hacían nada
+
+Auditando la coherencia entre `settings_schema.json` y lo que el Liquid lee:
+
+| Ajuste | Estado |
+| --- | --- |
+| `analytics_size_selected_event` | en el editor, **ningún archivo lo leía** |
+| `cod_prevalidation` | en el editor, **ningún archivo lo leía** |
+| `cod_coverage_list` | en el editor, **ningún archivo lo leía** |
+
+Esto es peor que una función que falta: el comerciante los ve, los cambia, **y cree que ya lo
+configuró**. Un control que miente.
+
+Los tres están wireados ahora:
+
+- **`analytics_size_selected_event`** decide si se publica `ne:size_selected`. Se pasa al rastreador
+  como `publish: null`, que lo deja funcionando sin publicar, en lugar de no crearlo: así el resto
+  del componente no tiene que comprobar si existe.
+- **`cod_prevalidation` + `cod_coverage_list`** alimentan un bloque nuevo de **cobertura de pago
+  contra entrega en el carrito**, que usa el módulo `cod-guard` ya probado.
+
+### 17.2 Por qué la cobertura va en el carrito y no en el checkout
+
+El checkout sería el sitio natural, y **NO DISPONIBLE EN SHOPIFY CON EL ACCESO/CAPACIDADES
+ACTUALES**: las extensiones de UI de checkout en las páginas de información, envío y pago son solo
+de Shopify Plus. Verificado en la matriz de planes.
+
+El carrito es el último punto del storefront antes de salir hacia el checkout de Shopify, así que
+ahí se pregunta. Con contra entrega el comprador no paga nada por adelantado —rechazar el paquete no
+le cuesta, y el flete de ida y vuelta lo paga la marca—, así que saber antes de pedir si hay
+cobertura evita el pedido que iba a volver.
+
+**No inventa cobertura.** Si la lista está vacía, el bloque no se renderiza, y si llega vacía al
+módulo este devuelve `unknown` y la interfaz **no dice nada**: afirmar que no entregamos en una
+ciudad sin saberlo sería un dato inventado. Verificado en navegador con la lista vacía: no dice
+nada.
+
+También se verificó de punta a punta la normalización que había costado tres defectos reales:
+`Bogotá D.C.`, `bogota dc`, `BOGOTA D.C`, `Medellín` y `medellin` se reconocen todas.
+
+### 17.3 El presupuesto de bytes encontró una regresión que yo acababa de meter
+
+Al importar `cod-guard` en `ne-components.js`, los módulos de la ficha de producto pasaron de
+**16 554 a 20 851 B comprimidos**, por encima del límite de 20 000.
+
+Y el diagnóstico era exacto: el componente de cobertura **solo existe en el carrito**, pero un import
+estático lo mete en el grafo de la ficha de producto. **4,3 KB comprimidos que la ficha descargaría
+sin usarlos.**
+
+**La respuesta correcta a un presupuesto excedido es quitar peso, no subir el número.** Se cambió a
+`import()` dinámico dentro del componente, así que el módulo solo baja en las páginas donde ese
+componente existe. La ficha volvió a 16 554 B y sigue descargando seis módulos, `cod-guard` no entre
+ellos.
+
+El presupuesto de bytes se había quedado sin validar por inyección (§14.4). Esto es mejor que una
+inyección: encontró una regresión real, en el momento en que se introdujo.
+
+### 17.4 Dos comprobaciones nuevas
+
+| Comprobación | Qué detecta | Validada |
+| --- | --- | --- |
+| `los ajustes del theme se declaran y se leen` | un ajuste en el editor que nadie lee, **y** un `settings.x` que el esquema no declara y devolvería nil | inyectando los dos casos |
+| `los modificadores usados solos se sostienen solos` | un modificador sin su base que declare `min-height` sin `display` | el fallo real de §16.1 |
+
+La primera distingue `settings.x` de `section.settings.x` y `block.settings.x`. Sin esa distinción,
+trece ajustes de sección aparecían como «no declarados»: una comprobación con trece falsos positivos
+se desactiva.
+
+### 17.5 El README mentía
+
+Decía que el stack estaba sin decidir y que había diez comprobaciones. Reescrito: el punto de
+entrada del repositorio no puede contradecir el estado del repositorio.

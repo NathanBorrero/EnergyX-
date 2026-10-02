@@ -102,6 +102,18 @@
                 </li>
               </ul>
 
+              <!-- Cobertura contra entrega, con una lista real en #ne-config. -->
+              <ne-cod-coverage class="ne-cod" data-ne-cod>
+                <h2 class="ne-caption ne-cod__title">Pago contra entrega</h2>
+                <p class="ne-cod__intro">¿Entregamos contra pago en tu ciudad?</p>
+                <div class="ne-cod__field">
+                  <label class="ne-caption" for="ne-cod-place-banco">Tu ciudad o municipio</label>
+                  <input class="ne-cod__input" id="ne-cod-place-banco" type="text" autocomplete="address-level2" data-ne-cod-input>
+                  <button class="ne-button ne-button--quiet" type="button" data-ne-cod-check>Comprobar</button>
+                </div>
+                <p class="ne-notice" data-ne-cod-result hidden role="status" aria-live="polite"></p>
+              </ne-cod-coverage>
+
               <footer class="ne-cart__foot">
                 <button class="ne-button ne-button--quiet" type="submit" name="update">Carrito</button>
                 <div class="ne-cart__totals">
@@ -131,6 +143,14 @@
           "ne/product-jsonld": "/theme/assets/ne-product-jsonld.js",
           "ne/analytics-taxonomy": "/theme/assets/ne-analytics-taxonomy.js"
         }
+      }
+    </script>
+
+    <script type="application/json" id="ne-config">
+      {
+        "sizeSelectedEvent": true,
+        "codPrevalidation": true,
+        "codCoverage": ["Bogotá D.C.", "Medellín", "Cali"]
       }
     </script>
 

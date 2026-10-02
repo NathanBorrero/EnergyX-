@@ -790,6 +790,97 @@ await check('el carrito actualiza por la API de Shopify, no recalculando', async
 });
 
 // ---------------------------------------------------------------------------
+// 9bis · Cobertura contra entrega: responde con lo que sabe, y calla lo que no.
+//
+//        Con contra entrega el comprador no paga por adelantado, así que
+//        rechazar el paquete no le cuesta y el flete de ida y vuelta lo paga la
+//        marca. Saber antes de pedir si hay cobertura evita el pedido que iba a
+//        volver.
+//
+//        Lo que se verifica además es que NO INVENTE: sin lista utilizable no
+//        puede afirmar que no entregamos en una ciudad.
+// ---------------------------------------------------------------------------
+await check('la cobertura contra entrega responde sin inventar', async () => {
+  const problems = [];
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    globalThis.Shopify = { analytics: { publish() {} } };
+  });
+  await page.goto(CART_HARNESS, { waitUntil: 'load' });
+  await page.waitForTimeout(250);
+
+  if ((await page.locator('[data-ne-cod]').getAttribute('data-ne-enhanced')) !== 'true') {
+    problems.push('el componente de cobertura no se montó');
+  }
+
+  /** @param {string} place */
+  async function ask(place) {
+    await page.locator('[data-ne-cod-input]').fill(place);
+    await page.locator('[data-ne-cod-check]').click();
+    await page.waitForTimeout(80);
+    return page.evaluate(() => {
+      const el = document.querySelector('[data-ne-cod-result]');
+      return { hidden: el.hidden, text: el.textContent.trim() };
+    });
+  }
+
+  // En la lista, escrito distinto: la normalización del módulo arregló
+  // exactamente estos casos —puntuación y acentos— y aquí se comprueba de punta
+  // a punta, no solo en la prueba unitaria.
+  for (const written of ['Bogotá D.C.', 'bogota dc', 'BOGOTA D.C', 'Medellín', 'medellin']) {
+    const out = await ask(written);
+    if (out.hidden || !/^Sí, entregamos/.test(out.text)) {
+      problems.push(`«${written}» está en la lista y la respuesta fue: "${out.text}"`);
+    }
+  }
+
+  // Fuera de la lista: se dice, y se ofrece la alternativa.
+  const outside = await ask('Leticia');
+  if (outside.hidden || !/Todavía no entregamos/.test(outside.text)) {
+    problems.push(`una ciudad fuera de la lista debe decirse; la respuesta fue: "${outside.text}"`);
+  }
+
+  // Vacío: se pide el dato, no se adivina.
+  const empty = await ask('');
+  if (empty.hidden || !/Escribe tu ciudad/.test(empty.text)) {
+    problems.push(`sin ciudad debe pedirse el dato; la respuesta fue: "${empty.text}"`);
+  }
+  await page.close();
+
+  // SIN LISTA UTILIZABLE NO SE AFIRMA NADA. Es la mitad que importa: una lista
+  // vacía no significa «no hay cobertura», significa «no se sabe».
+  const page2 = await browser.newPage();
+  await page2.addInitScript(() => {
+    globalThis.Shopify = { analytics: { publish() {} } };
+  });
+  await page2.route('**/cart-harness.html', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      /"codCoverage":\s*\[[^\]]*\]/,
+      '"codCoverage": []',
+    );
+    await route.fulfill({ response, body, headers: { 'content-type': 'text/html; charset=utf-8' } });
+  });
+  await page2.goto(CART_HARNESS, { waitUntil: 'load' });
+  await page2.waitForTimeout(250);
+  await page2.locator('[data-ne-cod-input]').fill('Leticia');
+  await page2.locator('[data-ne-cod-check]').click();
+  await page2.waitForTimeout(80);
+  const unknown = await page2.evaluate(() => {
+    const el = document.querySelector('[data-ne-cod-result]');
+    return { hidden: el.hidden, text: el.textContent.trim() };
+  });
+  if (!unknown.hidden || unknown.text !== '') {
+    problems.push(
+      `sin lista utilizable no se puede afirmar nada, y dijo: "${unknown.text}"`,
+    );
+  }
+  await page2.close();
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 10 · El carrito se usa sin JavaScript.
 // ---------------------------------------------------------------------------
 await check('el carrito funciona con JavaScript desactivado', async () => {
