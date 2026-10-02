@@ -94,7 +94,13 @@
     {{ content_for_header }}
   </head>
 
-  <body class="ne-body-root template--{{ template.name | handle }}">
+  {%- comment -%}
+    `template--<nombre>` se mantiene aunque este theme no la use en su CSS: es la
+    convención que un comerciante o una app esperan para apuntar a una plantilla
+    concreta. Lo que se quitó de aquí fue `ne-body-root`, que no tenía ninguna
+    regla en ningún sitio: una clase muerta que viajaba en cada página.
+  {%- endcomment -%}
+  <body class="template--{{ template.name | handle }}">
     <a class="ne-skip-link" href="#ne-main">{{ 'accessibility.skip_to_content' | t }}</a>
 
     {%- sections 'header-group' -%}

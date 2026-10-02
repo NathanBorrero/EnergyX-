@@ -94,6 +94,9 @@ const PAGES = [
   ['ficha de producto', `http://127.0.0.1:${port}/scripts/fixtures/product-harness.html`],
   ['carrito', `http://127.0.0.1:${port}/scripts/fixtures/cart-harness.html`],
   ['carrito vacío', `http://127.0.0.1:${port}/scripts/fixtures/cart-empty-harness.html`],
+  // La portada es la única página con superficie INVERSA: los pares de color se
+  // validaron a nivel de token, pero medir tokens no es medir lo que se ve.
+  ['portada y colección', `http://127.0.0.1:${port}/scripts/fixtures/home-harness.html`],
 ];
 
 const browser = await chromium.launch({ executablePath: process.env.NE_CHROMIUM ?? '/opt/pw-browsers/chromium' });

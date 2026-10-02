@@ -388,6 +388,14 @@ await check('ninguna variable de bucle usa .index', () => {
 await check('el banco de pruebas lleva las clases del marcado real', async () => {
   const problems = [];
 
+  /** Los bancos de pruebas. Declarados en un sitio para que no se olvide ninguno. */
+  const HARNESSES = [
+    'product-harness.html',
+    'cart-harness.html',
+    'cart-empty-harness.html',
+    'home-harness.html',
+  ];
+
   /** Piezas que los bancos reproducen. */
   const MIRRORED = [
     'theme/snippets/ne-variant-picker.liquid',
@@ -397,6 +405,7 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
     'theme/snippets/ne-product-specs.liquid',
     'theme/sections/main-cart.liquid',
     'theme/sections/header.liquid',
+    'theme/layout/theme.liquid',
   ];
 
   /**
@@ -426,7 +435,7 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
   }
 
   const present = new Set();
-  for (const name of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+  for (const name of HARNESSES) {
     const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
     for (const c of neClasses(text)) present.add(c);
   }
@@ -446,7 +455,7 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
   if (!layoutHasBoot) {
     problems.push("theme.liquid no pone la marca `ne-js` antes del primer paint: el selector se pintaría y luego se desplazaría");
   }
-  for (const name of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+  for (const name of HARNESSES) {
     const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
     if (!/classList\.add\('ne-js'\)/.test(text)) {
       problems.push(`${name} no lleva el bootstrap de maquetación de theme.liquid: mediría un desplazamiento distinto al real`);
@@ -574,6 +583,60 @@ await check('JSON-LD sin interpolación cruda', () => {
           );
         }
       }
+    }
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6sexies. Un modificador usado sin su clase base tiene que ser autosuficiente.
+//
+//   `.ne-button--text` se usaba en cuatro sitios SIN `.ne-button`, y por sí sola
+//   no declaraba `display`. En un elemento en línea `min-height` no hace nada,
+//   así que su mínimo de área de pulsado nunca se aplicó. Lo midió la auditoría:
+//   71×21 contra un mínimo de 24.
+//
+//   No se prohíbe usar un modificador solo: `.ne-section--vast` declara su
+//   propio `padding-block` y es una variante legítima. Lo que se exige es que
+//   quien se use solo DECLARE lo que necesita para sostenerse.
+// ---------------------------------------------------------------------------
+await check('los modificadores usados solos se sostienen solos', async () => {
+  const problems = [];
+  const css = [
+    await readFile(path.join(ROOT, 'theme', 'assets', 'ne-base.css'), 'utf8'),
+    await readFile(path.join(ROOT, 'theme', 'assets', 'ne-components.css'), 'utf8'),
+  ].join('\n');
+
+  /** Modificadores usados sin su base, en todo el marcado. */
+  const standalone = new Set();
+  for (const source of liquidCode.values()) {
+    for (const m of source.matchAll(/class="([^"]*)"/g)) {
+      const tokens = m[1].split(/\s+/).filter((t) => t.startsWith('ne-'));
+      for (const token of tokens) {
+        if (!token.includes('--')) continue;
+        const clean = token.split('{')[0]; // la clase puede ir seguida de Liquid
+        const base = clean.split('--')[0];
+        if (!tokens.some((t) => t.split('{')[0] === base)) standalone.add(clean);
+      }
+    }
+  }
+
+  for (const modifier of standalone) {
+    // La regla del modificador, tal como está declarada.
+    const rule = css.match(
+      new RegExp(`\\.${modifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
+    );
+    if (!rule) {
+      problems.push(`.${modifier} se usa sin su clase base y no tiene ninguna regla propia`);
+      continue;
+    }
+    const body = rule[1];
+    // Si fija un alto mínimo, tiene que fijar también un `display` que lo haga
+    // efectivo: en un elemento en línea, `min-height` se ignora.
+    if (/min-height/.test(body) && !/display\s*:/.test(body)) {
+      problems.push(
+        `.${modifier} se usa sin su clase base y declara min-height sin display: en un elemento en línea ese mínimo se ignora`,
+      );
     }
   }
   return problems;

@@ -798,3 +798,80 @@ no hay tokens.
 | Validación de pago y PII | las tiene Shopify. El theme no las ve. |
 | Rotación de credenciales de app | no hay app todavía. |
 | Liquid personalizado del comerciante | es un requisito de la tienda de themes y solo lo usa quien ya tiene acceso al admin. Se informa en cada ejecución para que esté a la vista, no se trata como hallazgo. |
+
+---
+
+## 16. QA final — las dos páginas que nadie había auditado
+
+La auditoría cubría la ficha de producto y el carrito. Faltaban dos páginas, y no eran las menos
+importantes:
+
+- **La portada** es la primera impresión, y es la única que usa la superficie **inversa** —fondo
+  oscuro—. Los pares de color inversos se habían validado **a nivel de token**, y medir tokens no es
+  medir lo que se ve.
+- **La colección** pesa el **43% de la puntuación de velocidad** de la tienda de themes: más que la
+  ficha (40%) y mucho más que la portada (17%).
+
+Se añadió un cuarto banco que reproduce `editorial-hero` —con `ne-inverse` activado a propósito—,
+`statement`, `product-grid` y las tarjetas, incluida una con imagen pendiente y una agotada.
+
+**La superficie inversa pasa el contraste medido sobre lo renderizado.** Eso queda verificado, no
+inferido de los tokens.
+
+### 16.1 `min-height` no hace nada en un elemento en línea
+
+El hallazgo de esta pasada, y era latente en todo el theme.
+
+```css
+.ne-button--text {
+  min-height: var(--ne-touch-min);  /* inerte: falta `display` */
+}
+```
+
+`.ne-button--text` se usa en **cuatro sitios sin `.ne-button`**, y por sí sola no declaraba
+`display`. En un elemento en línea **`min-height` se ignora**, así que ese mínimo de área de pulsado
+**nunca se aplicó en ninguno de los cuatro**.
+
+Medido en la portada: «Ver todo» a **71×21**, por debajo del mínimo de 24. Tras añadir
+`display: inline-flex`: **71×27**.
+
+Lo más instructivo es por qué no había salido antes: en el carrito el mismo botón sí cumplía, pero
+solo porque al corregir «Quitar» le había puesto `display: inline-flex` en una regla aparte. El
+síntoma estaba tapado en la única página donde se estaba midiendo.
+
+Añadida la comprobación **`los modificadores usados solos se sostienen solos`**: un modificador
+usado sin su clase base que declare `min-height` sin `display` falla. No prohíbe usar un modificador
+solo —`.ne-section--vast` declara su propio `padding-block` y es una variante legítima—; exige que
+quien se use solo declare lo que necesita para sostenerse.
+
+### 16.2 Una clase muerta en cada página
+
+`<body class="ne-body-root ...">` no tenía **ninguna** regla de CSS en ningún archivo. Retirada.
+`template--<nombre>` se mantiene: no la usa nuestro CSS, pero es la convención que un comerciante o
+una app esperan para apuntar a una plantilla concreta, y eso es un propósito real.
+
+### 16.3 La deriva de marcado, por cuarta vez
+
+El banco de la portada escribía `class="ne-skip"`; la clase real del layout es `ne-skip-link`. Es
+**el mismo problema** que ya había aparecido con el CSS, con los textos y con las clases de los
+snippets, ahora en el layout, que la comprobación no cubría porque `theme/layout/theme.liquid` no
+estaba en la lista de piezas espejadas.
+
+Dos arreglos, y el segundo es el que importa: el layout entra en la lista, y **los cuatro bancos se
+declaran en un solo sitio** del script, en lugar de repetirse en tres comprobaciones —que es
+exactamente cómo se me había olvidado añadir el cuarto a una de ellas.
+
+### 16.4 Estado de las comprobaciones
+
+| Suite | Comprobaciones | Validadas inyectando el fallo |
+| --- | --- | --- |
+| `node --test` | 321 pruebas | — |
+| Contratos del theme | 15 | 16 inyecciones |
+| Componentes en navegador | 12 | 6 defectos reales encontrados |
+| Accesibilidad renderizada | 5 | 8 inyecciones |
+| Rendimiento | 5 | 4 de 5 (una inyección fue mala, §14.4) |
+| Seguridad | 6 | 6 inyecciones |
+| Theme Check de Shopify | 44 archivos | el propio linter |
+| **Total `scripts/check.mjs`** | **17** | — |
+
+Cuatro páginas auditadas: ficha de producto, carrito, carrito vacío, portada y colección.

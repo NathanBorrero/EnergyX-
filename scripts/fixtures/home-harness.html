@@ -1,0 +1,180 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DE LA PORTADA Y LA COLECCIÓN.
+
+  POR QUÉ HACÍA FALTA
+
+  La auditoría cubría la ficha de producto y el carrito, y dejaba fuera dos
+  páginas que importan más de lo que parece:
+
+    · La PORTADA es la primera impresión, y es la única que usa la superficie
+      INVERSA —fondo oscuro—. Los pares de color inversos se validaron a nivel
+      de token, pero nunca se midió el contraste RENDERIZADO sobre ese fondo, y
+      medir tokens no es medir lo que se ve.
+
+    · La COLECCIÓN pesa el 43% de la puntuación de velocidad de la tienda de
+      themes, más que la ficha y mucho más que la portada.
+
+  Reproduce `editorial-hero`, `statement`, `product-grid` y las tarjetas, con la
+  sección inversa activada a propósito: es la combinación que no estaba medida.
+
+  Datos ficticios y etiquetados. Los precios son cadenas inventadas.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <link rel="icon" href="data:,">
+    <title>Banco de pruebas · portada y colección</title>
+    <script>
+      document.documentElement.classList.add('ne-js');
+      setTimeout(function () {
+        var picker = document.querySelector('[data-ne-picker]');
+        if (picker && picker.getAttribute('data-ne-enhanced') !== 'true') {
+          document.documentElement.classList.remove('ne-js');
+        }
+      }, 3000);
+    </script>
+    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
+    <link rel="stylesheet" href="/theme/assets/ne-base.css">
+    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+  </head>
+  <body>
+    <a class="ne-skip-link" href="#ne-main">Saltar al contenido</a>
+
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <div class="ne-shell ne-header__inner">
+          <a class="ne-header__brand" href="/" aria-label="Banco de pruebas">
+            <span class="ne-header__wordmark">BANCO DE PRUEBAS</span>
+          </a>
+          <nav class="ne-header__nav" aria-label="Menú">
+            <ul class="ne-header__list">
+              <li><a class="ne-header__link" href="/collections/all">Colección</a></li>
+            </ul>
+          </nav>
+          <a class="ne-header__cart" href="/cart">
+            <span>Carrito</span>
+            <span class="ne-header__count" data-ne-cart-count aria-hidden="true">0</span>
+            <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+          </a>
+        </div>
+        <hr class="ne-rule">
+      </header>
+    </div>
+
+    <main id="ne-main">
+      <!-- Portada: con `ne-inverse`, que es la superficie que faltaba medir. -->
+      <section class="ne-hero ne-section--vast ne-inverse ne-hero--offset" aria-labelledby="ne-hero-heading-banco">
+        <div class="ne-shell">
+          <div class="ne-grid ne-hero__grid">
+            <div class="ne-hero__copy">
+              <p class="ne-caption ne-hero__eyebrow">PENDIENTE</p>
+              <h1 class="ne-colossal ne-hero__heading" id="ne-hero-heading-banco">BANCO DE PRUEBAS</h1>
+              <p class="ne-lead ne-hero__body">Texto pendiente de definir.</p>
+              <p class="ne-hero__action">
+                <a class="ne-button ne-button--accent" href="/products/banco">Ver el modelo</a>
+              </p>
+            </div>
+            <figure class="ne-hero__figure">
+              <img class="ne-image ne-hero__image" src="/scripts/fixtures/pixel.png" alt="Fotografía pendiente"
+                   width="960" height="1200" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- Declaración, en superficie clara. -->
+      <section class="ne-statement ne-section--vast" aria-labelledby="ne-statement-banco">
+        <div class="ne-shell">
+          <div class="ne-grid">
+            <div class="ne-statement__body">
+              <h2 class="ne-display" id="ne-statement-banco">Una declaración</h2>
+              <p class="ne-lead ne-statement__text">Texto pendiente de definir.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rejilla de producto, como en la colección: tres columnas y tarjetas. -->
+      <section class="ne-section" aria-labelledby="ne-grid-banco">
+        <div class="ne-shell">
+          <header class="ne-product-grid__head">
+            <h2 class="ne-title" id="ne-grid-banco">Colección</h2>
+            <a class="ne-button--text" href="/collections/all">Ver todo</a>
+          </header>
+          <ul class="ne-grid ne-product-grid ne-product-grid--cols-3" role="list">
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco">
+                  <div class="ne-card__media">
+                    <img class="ne-image ne-card__image" src="/scripts/fixtures/pixel.png" alt="BANCO DE PRUEBAS"
+                         width="480" height="600" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-price__current" data-ne-price-current>$100.000</span>
+                      <s class="ne-price__compare ne-soft" hidden></s>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco-2">
+                  <div class="ne-card__media">
+                    <img class="ne-image ne-card__image" src="/scripts/fixtures/pixel.png" alt="BANCO DE PRUEBAS DOS"
+                         width="480" height="600" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+                    <p class="ne-card__flag">Agotado</p>
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS DOS</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-price__current" data-ne-price-current>$130.000</span>
+                      <s class="ne-price__compare ne-soft">$160.000</s>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco-3">
+                  <div class="ne-card__media">
+                    <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Imagen pendiente">
+                      <span class="ne-placeholder">Imagen pendiente</span>
+                    </div>
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS TRES</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-placeholder">PENDIENTE</span>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ne-footer">
+      <div class="ne-shell">
+        <nav class="ne-footer__nav" aria-label="Enlaces del pie">
+          <ul class="ne-footer__list">
+            <li><a class="ne-footer__link" href="/policies/legal">Legal</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+    <!-- Lo rellena el runner con los textos reales. -->
+    <script type="application/json" id="ne-strings">{}</script>
+    <script src="/theme/assets/ne-components.js" type="module"></script>
+  </body>
+</html>

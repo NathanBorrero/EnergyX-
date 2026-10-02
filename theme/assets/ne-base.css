@@ -233,12 +233,20 @@ button, input, select, textarea {
 }
 .ne-button--quiet:hover { background: var(--ne-paper-deep); }
 
+/* AUTOSUFICIENTE, porque se usa sin `.ne-button`.
+   `display: inline-flex` no es decoración: sin él el elemento es en línea, y en
+   un elemento en línea `min-height` NO HACE NADA, así que el mínimo de área de
+   pulsado nunca se aplicaba. Medido en la portada: 71×21, por debajo de 24. */
 .ne-button--text {
+  display: inline-flex;
+  align-items: center;
   background: transparent;
   color: var(--ne-text);
   padding-inline: 0;
   min-height: var(--ne-touch-min);
   border-bottom: var(--ne-hairline) solid var(--ne-border);
+  text-decoration: none;
+  cursor: pointer;
 }
 .ne-button--text:hover { border-bottom-color: var(--ne-accent); background: transparent; }
 

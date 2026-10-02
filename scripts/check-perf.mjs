@@ -260,6 +260,9 @@ if (chromium) {
     for (const [label, file] of [
       ['ficha de producto', 'product-harness.html'],
       ['carrito', 'cart-harness.html'],
+      // La colección pesa el 43% de la puntuación de velocidad de la tienda de
+      // themes, más que la ficha y mucho más que la portada.
+      ['portada y colección', 'home-harness.html'],
     ]) {
       const page = await browser.newPage();
       await page.addInitScript(() => {
