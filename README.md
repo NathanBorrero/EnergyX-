@@ -64,6 +64,7 @@ se pudieron cruzar: [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md).
 | [`docs/STANDARD.md`](docs/STANDARD.md) | El estándar de ejecución, §173–§246. |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos, reversibilidad y auditoría de contradicciones. |
 | [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analítica, riesgos y costos. |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cómo poner el theme en Shopify: el orden, lo que pesa después, y qué necesita cada pieza para aparecer. |
 | [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado y qué depende de quién. |
 | [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, sin decisión. |
 | [`shopify/`](shopify/) | Modelo de datos de footwear validado contra el esquema, y el **pixel personalizado** listo para pegar. |
