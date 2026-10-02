@@ -86,7 +86,18 @@ Respuesta de Shopify (Admin API o Storefront API)
    shopify-semantics.js  ← foldKey · isPurchasable · hasAvailabilityData, una sola vez
 ```
 
-**170 pruebas, todas pasando. Cero dependencias.**
+**313 pruebas, todas pasando. Diez comprobaciones. Cero dependencias.**
+
+Módulos añadidos después de FASE 1, todos puros y sin DOM, en el orden del embudo que el proyecto
+persigue:
+
+| Módulo | Tramo del embudo |
+| --- | --- |
+| `size-selected-event.js` | TALLA → medición honesta de la selección |
+| `cart-line.js` | TALLA → **ADD TO CART**, con la puerta que impide carritos rotos |
+| `cod-guard.js` | ADD TO CART → **CHECKOUT**, validación que no cabe dentro del checkout |
+| `responsive-image.js` | Transversal: el LCP de cualquier página |
+| `a11y-contrast.js` | Transversal: valida la paleta antes de pintarla |
 
 Lo que esto resolvió: antes `variant-matrix` esperaba `selectedOptions` y `product-jsonld` esperaba
 un objeto `options`. Dos formas para el mismo dato significan dos traducciones desde Shopify, y dos

@@ -23,6 +23,8 @@ se pierde la conversión en calzado. Esa se puede construir y probar ya:
 | [`lib/size-selected-event.js`](lib/size-selected-event.js) | Emite `ne:size_selected` con el estado real de la combinación | Mecanismo verificado. `publish` se inyecta, así que es probable sin navegador |
 | [`lib/cart-line.js`](lib/cart-line.js) | La puerta entre «eligió talla» y «hay algo en el carrito». Produce `CartLineInput` o explica por qué no | Usa la misma matriz que el selector, así que no puede discrepar de lo que la interfaz mostró |
 | [`lib/cod-guard.js`](lib/cod-guard.js) | Validación pre-checkout para contra entrega: teléfono, dirección, municipio | Obligado: la UI dentro del checkout es solo Plus. Y es donde se combate el RTO |
+| [`lib/responsive-image.js`](lib/responsive-image.js) | Plan responsive: escalera de anchos, `sizes` y banderas de carga. **No construye URLs del CDN** | El LCP se gana decidiendo qué anchos pedir, que depende del diseño. Las URLs son de la plataforma |
+| [`lib/a11y-contrast.js`](lib/a11y-contrast.js) | Contraste WCAG y tamaño de objetivo táctil | Permite validar la paleta **antes** de pintar, en vez de descubrir el fallo en la auditoría final |
 
 Ambos son ESM sin dependencias y sin tocar el DOM. Funcionan igual dentro de un theme Liquid, en
 React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
@@ -41,7 +43,7 @@ React, en Vue o en vanilla. **Ninguna línea se tira cuando se elija el stack.**
 Runner nativo de Node, sin framework.
 
 ```bash
-npm test          # 254 pruebas
+npm test          # 313 pruebas
 npm run test:watch
 ```
 
@@ -120,6 +122,16 @@ pixel**, y es la que dice si el desajuste de talla explica el RTO.
 entrega no es poder entregar. Devolver `OK` por defecto sería la suposición que fabrica RTO. La lista
 de municipios **se inyecta**: Colombia tiene más de mil y la cobertura depende de la transportadora,
 así que inventarla produciría pedidos que nadie puede entregar.
+
+## La colisión que `a11y-contrast.js` anticipa
+
+El proyecto se fijó una media de Lighthouse de accesibilidad **≥ 90**. La estética premium habitual
+—tipografía fina, gris claro sobre blanco, texto pequeño, botones etéreos— **falla** 4.5:1 de
+contraste y 24×24 px de objetivo táctil.
+
+Descubrirlo en la auditoría final obliga a rehacer la paleta. `auditPalette()` permite validarla en
+cuanto exista la dirección de arte, antes de pintar un solo píxel. Hay una prueba que demuestra que
+el gris claro típico de marca "premium" suspende.
 
 ## Límites de confianza
 
