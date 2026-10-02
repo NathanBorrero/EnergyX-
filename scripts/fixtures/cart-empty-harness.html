@@ -14,6 +14,20 @@
     <meta charset="utf-8">
     <link rel="icon" href="data:,">
     <title>Banco de pruebas · carrito vacío</title>
+    <!--
+      EL MISMO BOOTSTRAP QUE theme.liquid, y en el mismo sitio: decide la
+      maquetación antes del primer paint. Sin él, el banco mediría un
+      desplazamiento que la tienda no tiene, o al revés.
+    -->
+    <script>
+      document.documentElement.classList.add('ne-js');
+      setTimeout(function () {
+        var picker = document.querySelector('[data-ne-picker]');
+        if (picker && picker.getAttribute('data-ne-enhanced') !== 'true') {
+          document.documentElement.classList.remove('ne-js');
+        }
+      }, 3000);
+    </script>
     <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
     <link rel="stylesheet" href="/theme/assets/ne-base.css">
     <link rel="stylesheet" href="/theme/assets/ne-components.css">

@@ -644,6 +644,57 @@ await check('la ficha se compra con JavaScript desactivado', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 8bis · La red de seguridad: si el módulo no llega, vuelve el control que
+//        permite comprar.
+//
+//        Tener JavaScript NO es lo mismo que que el módulo haya montado. La
+//        maquetación se decide antes del primer paint para que la página no se
+//        desplace, y eso significa que los chips se pintan contando con un
+//        script que todavía no ha llegado. Si no llega —error de red, error de
+//        sintaxis, un bloqueador—, unos chips inertes prometerían algo que no
+//        funciona y la venta se perdería en silencio.
+// ---------------------------------------------------------------------------
+await check('si el módulo no llega, vuelve el control de reserva', async () => {
+  const problems = [];
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    globalThis.Shopify = { analytics: { publish() {} } };
+  });
+
+  // Se bloquea el módulo: es exactamente lo que pasa con un fallo de red.
+  await page.route('**/ne-components.js', (route) => route.abort());
+  await page.goto(HARNESS, { waitUntil: 'load' });
+
+  // Antes de que venza la red de seguridad, los chips siguen pintados: es el
+  // precio de no desplazar la página, y es temporal.
+  const before = await page.evaluate(() => ({
+    marca: document.documentElement.classList.contains('ne-js'),
+    chips: getComputedStyle(document.querySelector('.ne-picker__values')).display,
+  }));
+  if (!before.marca) problems.push('la marca de JavaScript debería estar puesta desde el primer paint');
+
+  // Y al vencer, el `<select>` vuelve.
+  await page.waitForFunction(() => !document.documentElement.classList.contains('ne-js'), {
+    timeout: 6000,
+  }).catch(() => {});
+
+  const after = await page.evaluate(() => ({
+    marca: document.documentElement.classList.contains('ne-js'),
+    chips: getComputedStyle(document.querySelector('.ne-picker__values')).display,
+    selectVisible: getComputedStyle(document.querySelector('[data-ne-picker-fallback]')).display !== 'none',
+    enhanced: document.querySelector('[data-ne-picker]').getAttribute('data-ne-enhanced'),
+  }));
+
+  if (after.marca) problems.push('la marca de JavaScript debía retirarse al no montar el módulo');
+  if (after.chips !== 'none') problems.push(`los chips inertes deben dejar de pintarse; siguen en display:${after.chips}`);
+  if (!after.selectVisible) problems.push('el `<select>` que permite comprar debe volver a estar visible');
+  if (after.enhanced !== null) problems.push('nada debería haberse marcado como mejorado');
+
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 9 · El carrito: una sola fuente de totales, y sin recargar.
 // ---------------------------------------------------------------------------
 await check('el carrito actualiza por la API de Shopify, no recalculando', async () => {

@@ -22,6 +22,34 @@
 
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
 
+    {%- comment -%}
+      DECISIÓN DE MAQUETACIÓN ANTES DEL PRIMER PAINT.
+
+      Este script tiene que ser en línea y síncrono, y va aquí arriba a
+      propósito: marca el documento antes de que se pinte nada, de modo que el
+      selector de variantes se pinte ya en su estado final.
+
+      Sin esto, los chips quedaban ocultos hasta que el módulo montaba y la
+      página se desplazaba al aparecer. Medido: 0.0132 de desplazamiento
+      acumulado, reproducible, empujando la guía de tallas, el formulario de
+      compra y la ficha técnica.
+
+      La red de seguridad es la otra mitad: tener JavaScript NO es lo mismo que
+      que el módulo haya llegado. Si a los tres segundos ningún selector se ha
+      marcado como mejorado, se retira la marca y reaparece el `<select>` de
+      reserva, que es el control que permite comprar. Perder el estado visual es
+      aceptable; perder la venta no.
+    {%- endcomment -%}
+    <script>
+      document.documentElement.classList.add('ne-js');
+      setTimeout(function () {
+        var picker = document.querySelector('[data-ne-picker]');
+        if (picker && picker.getAttribute('data-ne-enhanced') !== 'true') {
+          document.documentElement.classList.remove('ne-js');
+        }
+      }, 3000);
+    </script>
+
     {{ 'ne-tokens.css' | asset_url | stylesheet_tag }}
     {{ 'ne-base.css' | asset_url | stylesheet_tag }}
     {{ 'ne-components.css' | asset_url | stylesheet_tag }}

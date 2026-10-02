@@ -612,3 +612,97 @@ elegida, no por una decisión.
 | Prueba de resultados enriquecidos de Google | `developers.google.com` denegado por la política de red |
 | Niveles de requisito de las propiedades | mismo bloqueo: siguen en `DOCUMENTED`, nunca `VERIFIED` |
 | Indexación real | exige una tienda publicada |
+
+---
+
+## 14. Rendimiento — medido, sin inventar una puntuación
+
+Esto **no es una medición de Lighthouse**, y no pretende serlo: una puntuación exige una página
+desplegada, un dispositivo y una red, y ninguna de las tres existe todavía. Inventar un umbral de
+rendimiento sería inventar información (§191).
+
+Lo que sí se puede medir hoy, y es real:
+
+### 14.1 Bytes servidos, comprimidos
+
+| Recurso | Comprimido | Presupuesto |
+| --- | --- | --- |
+| CSS del primer paint (3 archivos) | **11 063 B** | 12 000 |
+| `ne-components.js` | **14 681 B** | 17 000 |
+| Módulos que la ficha importa (5) | **16 554 B** | 20 000 |
+| **Total CSS + JS de la ficha** | **42 298 B** | — |
+
+Los presupuestos son **de regresión, no de objetivo**: están justo por encima de lo medido, con una
+razón. No afirman que el theme sea rápido —eso se mide desplegado—, avisan si alguien duplica el
+peso sin darse cuenta. Un presupuesto que no se ha medido no vale nada, y uno copiado de un artículo
+vale menos.
+
+### 14.2 El import map declara doce módulos; la página descarga seis
+
+Era un riesgo real y concreto: si declarar en el import map implicara descargar, la ficha bajaría
+unos 30 KB comprimidos de más en cada visita. **Verificado contando peticiones reales en Chromium:**
+
+```
+descargados 6: ne-components.js, ne-variant-matrix.js, ne-size-advisor.js,
+               ne-cart-line.js, ne-size-selected-event.js, ne-shopify-semantics.js
+```
+
+Exactamente `ne-components.js` más sus cinco imports. Declarar no es descargar, y ahora hay una
+comprobación que lo sostiene: verificada añadiendo un import no usado, que la hizo fallar.
+
+### 14.3 Un desplazamiento de maquetación real, causado por mi propio diseño
+
+**0.0132 de desplazamiento acumulado, reproducible en las cuatro ejecuciones.** No era ruido.
+
+La causa, leída de las fuentes que reporta el observador:
+
+```
+FIELDSET.ne-picker__group   327@28  ->  371@72
+NE-SIZE-GUIDE.ne-sizeguide  471@44  ->  467@44
+DIV.ne-buy                  539@46  ->  535@46
+DL.ne-specs                 609@75  ->  605@75
+```
+
+Los chips estaban ocultos hasta que el script mejoraba el selector. El primer paint mostraba el
+`<select>` de reserva —fieldset de 28px— y a los ~90 ms los chips aparecían a 72px, empujando hacia
+abajo la guía de tallas, el formulario de compra y la ficha técnica.
+
+Es el coste clásico de «ocultar hasta que llegue el JavaScript»: el fallback sin JavaScript era
+correcto, pero el cambio movía la página.
+
+**Corregido decidiendo la maquetación antes del primer paint**, con un script en línea y síncrono en
+`theme.liquid` que marca el documento con `ne-js`. Lo primero que se pinta ya es el estado final.
+
+**Y con una red de seguridad**, que es la otra mitad de la solución: tener JavaScript **no** es lo
+mismo que que el módulo haya llegado. Si a los tres segundos ningún selector se ha marcado como
+mejorado —error de red, de sintaxis, un bloqueador—, se retira la marca y reaparece el `<select>`,
+que es el control que permite comprar. Perder el estado visual es aceptable; perder la venta no.
+
+Medido después: **0.0000** en la ficha y en el carrito. Y hay una prueba en navegador que bloquea
+`ne-components.js` y verifica que el `<select>` vuelve: *si el módulo no llega, vuelve el control de
+reserva*.
+
+### 14.4 Las cinco comprobaciones, validadas inyectando el fallo
+
+| Fallo inyectado | Detectado |
+| --- | --- |
+| Imagen sin `width`/`height` ni `aspect-ratio` | sí |
+| `<script src>` sin `defer` ni `type="module"` | sí |
+| Un import no usado (séptimo módulo descargado) | sí |
+| Un bloque insertado tarde que desplaza la página | sí |
+| Presupuesto de bytes excedido | **la inyección fue mala**, no la comprobación: 900 reglas CSS idénticas comprimen a casi nada. El límite se verifica por construcción con los números medidos arriba. |
+
+Esa última fila queda escrita tal cual porque §183 prohíbe presentar como validado algo que no lo
+está. La comprobación compara un número medido contra un límite y falla si lo supera; lo que no se
+demostró es el detector con una inyección realista.
+
+### 14.5 Lo que sigue sin medir, y por qué
+
+| Pendiente | Depende de |
+| --- | --- |
+| Lighthouse (rendimiento ≥60, accesibilidad ≥90 de media) | una página desplegada |
+| LCP, INP, CLS de campo | tráfico real |
+| El método de prueba móvil (CPU 4× + 4G lento, 3 ejecuciones, mediana) | una URL que cargar |
+
+Las tres están bloqueadas por lo mismo: la política de red del entorno deniega el dominio de la
+tienda. Ninguna se declara estimada.

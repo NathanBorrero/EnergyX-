@@ -492,6 +492,48 @@ await check('accesibilidad en navegador', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 16 · Presupuestos de rendimiento, MEDIDOS. No es Lighthouse.
+//
+//      Una puntuación exige una página desplegada, un dispositivo y una red, y
+//      ninguna de las tres existe todavía; inventar un umbral sería inventar
+//      información. Lo que sí se mide: los bytes que el theme sirve de verdad
+//      comprimidos, cuántos módulos descarga la página —el import map declara
+//      doce y solo deben bajar los que se importan—, el desplazamiento de
+//      maquetación con el mismo observador que usa el navegador, que ninguna
+//      imagen entre sin dimensiones y que ningún script bloquee el parser.
+//
+//      Los presupuestos son DE REGRESIÓN: están justo por encima de lo medido
+//      hoy. No afirman que el theme sea rápido; avisan si alguien duplica el
+//      peso sin darse cuenta.
+//
+//      Encontró un desplazamiento real de 0.0132, reproducible, causado por
+//      ocultar los chips hasta que montaba el módulo.
+// ---------------------------------------------------------------------------
+await check('presupuestos de rendimiento', async () => {
+  try {
+    const { stdout } = await run('node', ['scripts/check-perf.mjs'], {
+      cwd: ROOT,
+      maxBuffer: 1024 * 1024 * 20,
+      timeout: 600_000,
+    });
+    if (!QUIET) {
+      for (const line of stdout.split('\n')) {
+        // Solo las líneas de MEDICIÓN, no los encabezados de cada comprobación.
+        if (/^\s{7}/.test(line) && /comprimidos|descargados|desplazamiento acumulado/.test(line)) {
+          console.log(`  ${line.trim()}`);
+        }
+      }
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    const fails = out.split('\n').filter((l) => l.startsWith('FALLA')).map((l) => l.replace(/^FALLA\s+/, ''));
+    const detail = out.split('\n').filter((l) => /^\s{7}(el|la|los|theme)/.test(l)).slice(0, 6).map((l) => l.trim());
+    return fails.length > 0 ? [...fails, ...detail] : ['el runner de rendimiento salió con error'];
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);

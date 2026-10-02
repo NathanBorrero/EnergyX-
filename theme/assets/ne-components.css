@@ -31,7 +31,9 @@
 
   .ne-picker__chosen { text-transform: none; letter-spacing: 0; color: var(--ne-text); }
 
-  .ne-picker__values { display: flex; flex-wrap: wrap; gap: var(--ne-space-3xs); }
+  /* El `display` de `.ne-picker__values` se decide más abajo, junto con quién
+     manda antes del primer paint. Declararlo aquí también dejaba dos reglas
+     compitiendo por orden de aparición, que es ilegible. */
 
   .ne-picker__chip { cursor: pointer; }
 
@@ -122,10 +124,22 @@
     background: var(--ne-paper);
   }
 
-  /* El script oculta el select y muestra los chips solo cuando ha tomado el
-     mando. Sin script, los chips quedan inertes y el select es el control. */
-  .ne-picker:not([data-ne-enhanced]) .ne-picker__values { display: none; }
-  .ne-picker[data-ne-enhanced] .ne-picker__fallback { display: none; }
+  /* QUIÉN MANDA, DECIDIDO ANTES DEL PRIMER PAINT.
+
+     Por defecto —sin JavaScript— los chips NO se pintan y el `<select>` es el
+     control: unos chips visibles e inertes prometerían algo que no funciona.
+
+     La clase `ne-js` la pone un script en línea y síncrono de `theme.liquid`,
+     antes de que se pinte nada, así que con JavaScript el primer paint ya es el
+     estado final y la página no se desplaza al montar el módulo. Decidirlo con
+     el atributo `data-ne-enhanced`, que el módulo escribe después, costaba
+     0.0132 de desplazamiento acumulado, medido y reproducible.
+
+     Y si el módulo nunca monta, ese mismo script retira la marca a los tres
+     segundos y el `<select>` vuelve. */
+  .ne-picker__values { display: none; }
+  .ne-js .ne-picker__values { display: flex; flex-wrap: wrap; gap: var(--ne-space-3xs); }
+  .ne-js .ne-picker__fallback { display: none; }
 
 /* === Guía de tallas y recomendador =============================== */
   .ne-sizeguide__summary {

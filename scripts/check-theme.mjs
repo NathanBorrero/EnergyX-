@@ -438,6 +438,21 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
       );
     }
   }
+
+  // El bootstrap de maquetación también. Es un script en línea de `theme.liquid`
+  // que decide, antes del primer paint, quién manda en el selector. Un banco sin
+  // él mediría un desplazamiento que la tienda no tiene, o al revés.
+  const layoutHasBoot = /classList\.add\('ne-js'\)/.test(layout);
+  if (!layoutHasBoot) {
+    problems.push("theme.liquid no pone la marca `ne-js` antes del primer paint: el selector se pintaría y luego se desplazaría");
+  }
+  for (const name of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+    const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+    if (!/classList\.add\('ne-js'\)/.test(text)) {
+      problems.push(`${name} no lleva el bootstrap de maquetación de theme.liquid: mediría un desplazamiento distinto al real`);
+    }
+  }
+
   return problems;
 });
 
