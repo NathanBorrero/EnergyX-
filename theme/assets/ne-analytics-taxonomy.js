@@ -1,64 +1,4 @@
-/* GENERADO por scripts/sync-theme-assets.mjs desde src/lib/analytics-taxonomy.js.
-   NO EDITAR AQUÍ: el cambio se perdería en la siguiente sincronización y la
-   comprobación `assets del theme sincronizados` fallaría. Edita el módulo
-   original, que es el que tiene pruebas. */
-/**
- * Taxonomía de medición del embudo, consciente de contra entrega.
- *
- * EL PROBLEMA QUE RESUELVE
- * ------------------------
- * Con pago contra entrega, **pedido creado ≠ venta**. El ingreso se confirma
- * días después, y una parte se pierde cuando el comprador rechaza el paquete
- * (RTO, return to origin). Si se mide la conversión como la mide cualquier
- * storefront por defecto, los números mienten en dirección optimista y las
- * decisiones se toman sobre ingresos que no existen.
- *
- * Este módulo separa dos mundos que casi todo el mundo mezcla:
- *
- *   EMBUDO DE STOREFRONT   → comportamiento. Cliente, sujeto a consentimiento,
- *                            con pérdida inevitable. Sirve para optimizar la página.
- *   REALIDAD DE NEGOCIO    → transacciones. Servidor, autoritativo, sin pérdida.
- *                            Sirve para saber si el negocio gana dinero.
- *
- * REGLA DE SHOPIFY QUE HAY QUE RESPETAR
- * -------------------------------------
- * Los eventos estándar de storefront (`shopify:product:view`, etc.) se disparan
- * **aunque el comprador no haya consentido el seguimiento**. La documentación es
- * explícita: sirven para reaccionar en la página, **no para recoger datos de
- * comportamiento**. Para analítica van los web pixels, que sí respetan el
- * consentimiento. Mezclarlos es un incumplimiento de privacidad, no un atajo.
- *
- * ESTO NO ES UN SISTEMA DE ANALÍTICA
- * ----------------------------------
- * No hay almacén de datos, ni pipeline, ni dashboard. Es la definición
- * compartida de qué se mide, de dónde sale y qué permiso requiere, más la
- * aritmética que evita la métrica mentirosa. Shopify sigue siendo la fuente de
- * verdad transaccional.
- */
-
-/**
- * DECISIÓN: este módulo NO consume el producto canónico. Resuelta por comportamiento.
- * ---------------------------------------------------------------------------------
- * Se revisó si debía integrarse con `product-contract.js` para que todos los
- * módulos compartieran estructura. **No debe.** La razón no es estética:
- *
- *  1. `funnelFrom` opera sobre **recuentos agregados por etapa**. Un número de
- *     sesiones no tiene producto. Un número de pedidos entregados tampoco.
- *  2. `STAGE_META` es metadato **estático de plataforma**: de dónde sale cada
- *     dato y qué permiso requiere. Eso no depende de ningún producto.
- *  3. Las cinco etapas autoritativas vienen de **webhooks de pedido**, no de
- *     consultas de producto. Acoplarlo al producto introduciría una dependencia
- *     que el comportamiento real no tiene.
- *
- * Quien sí necesita contexto de producto es el emisor del evento de talla, y vive
- * aparte en `size-selected-event.js`. Esa es la separación correcta: el evento
- * conoce un producto, la taxonomía conoce un embudo.
- *
- * Integrarlo "para que todos usen la misma estructura" habría creado
- * exactamente la abstracción innecesaria que el estándar prohíbe (§181).
- */
-
-/** Las diez etapas, en orden. */
+/* generado desde src/lib/analytics-taxonomy.js — no editar, ver scripts/sync-theme-assets.mjs */
 export const STAGE = Object.freeze({
   SESSION: 'session',
   PRODUCT_VIEWED: 'product_viewed',
@@ -72,7 +12,6 @@ export const STAGE = Object.freeze({
   ORDER_RETURNED: 'order_returned',
 });
 
-/** Orden canónico del embudo. */
 export const STAGE_ORDER = Object.freeze([
   STAGE.SESSION,
   STAGE.PRODUCT_VIEWED,
@@ -86,7 +25,6 @@ export const STAGE_ORDER = Object.freeze([
   STAGE.ORDER_RETURNED,
 ]);
 
-/** De dónde sale el dato. */
 export const SOURCE = Object.freeze({
   WEB_PIXEL: 'web_pixel',           // cliente, sujeto a consentimiento
   ADMIN_WEBHOOK: 'admin_webhook',   // servidor, autoritativo
@@ -94,19 +32,12 @@ export const SOURCE = Object.freeze({
   EXTERNAL: 'external',             // fuera de Shopify (p. ej. proveedor de fulfillment)
 });
 
-/** Hasta dónde se pudo verificar el mecanismo. */
 export const LEVEL = Object.freeze({
   VERIFICADO: 'VERIFICADO',
   DOCUMENTADO: 'DOCUMENTADO',
   NO_VERIFICADO: 'NO_VERIFICADO',
 });
 
-/**
- * Metadatos por etapa.
- *
- * `mechanism` recoge solo nombres que se leyeron en documentación oficial. Donde
- * no hay un mecanismo confirmado, es `null` y el nivel lo dice (§187).
- */
 export const STAGE_META = Object.freeze({
   [STAGE.SESSION]: Object.freeze({
     label: 'Visita',
@@ -214,83 +145,34 @@ export const STAGE_META = Object.freeze({
   }),
 });
 
-/**
- * Etapas cuyo dato requiere consentimiento del comprador.
- * @returns {string[]}
- */
 export function consentGatedStages() {
   return STAGE_ORDER.filter((s) => STAGE_META[s].consentGated);
 }
 
-/**
- * Etapas autoritativas: servidor, sin pérdida por consentimiento ni bloqueadores.
- * Son las que pueden sostener una cifra de negocio.
- * @returns {string[]}
- */
 export function authoritativeStages() {
   return STAGE_ORDER.filter((s) => !STAGE_META[s].consentGated);
 }
 
-/**
- * Etapas cuyo mecanismo todavía no está confirmado.
- * Sirve para no construir un informe sobre un dato que no se sabe si existe.
- * @returns {string[]}
- */
 export function unverifiedStages() {
   return STAGE_ORDER.filter((s) => STAGE_META[s].level !== LEVEL.VERIFICADO);
 }
 
-/**
- * @param {unknown} n
- * @returns {number} El número si es finito y >= 0; 0 en cualquier otro caso.
- */
 function count(n) {
   return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-/**
- * Divide sin explotar ni devolver Infinity.
- * @param {number} numerator
- * @param {number} denominator
- * @returns {number|null} null si no se puede calcular.
- */
 function rate(numerator, denominator) {
   if (denominator <= 0) return null;
   return Math.round((numerator / denominator) * 10000) / 10000;
 }
 
-/**
- * @typedef {object} Funnel
- * @property {Record<string, number>} counts Recuentos saneados por etapa.
- * @property {Record<string, number|null>} stepRates Tasa de paso de cada etapa a la siguiente.
- * @property {number|null} apparentConversion Pedidos creados / visitas. **La métrica bonita.**
- * @property {number|null} realConversion Entregados / visitas. **La métrica honesta.**
- * @property {number|null} paidConversion Pagados / visitas.
- * @property {number|null} rtoRate Devueltos / enviados.
- * @property {number|null} overstatement Cuántas veces exagera la métrica aparente.
- * @property {string[]} caveats Advertencias aplicables a esta lectura.
- */
-
-/**
- * Calcula el embudo y, sobre todo, la distancia entre lo que parece y lo que es.
- *
- * No inventa datos: una etapa ausente cuenta como 0 y las tasas que no se pueden
- * calcular salen como `null`, nunca como 0, para que no se confunda
- * "no hay dato" con "cero".
- *
- * @param {Record<string, number>} raw Recuentos por etapa.
- * @returns {Funnel}
- */
 export function funnelFrom(raw) {
   const input = raw && typeof raw === 'object' ? raw : {};
 
-  /** @type {Record<string, number>} */
   const counts = {};
   for (const stage of STAGE_ORDER) counts[stage] = count(input[stage]);
 
-  /** @type {Record<string, number|null>} */
   const stepRates = {};
-  // El RTO no es un paso del embudo hacia delante: es una fuga. Se excluye.
   const forward = STAGE_ORDER.filter((s) => s !== STAGE.ORDER_RETURNED);
   for (let i = 0; i < forward.length - 1; i += 1) {
     stepRates[`${forward[i]}_to_${forward[i + 1]}`] = rate(

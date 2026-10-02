@@ -18,14 +18,14 @@
         "type": "font_picker",
         "id": "font_body",
         "label": "t:settings.typography.font_body",
-        "default": "assistant_n4"
+        "default": "system_ui_n4"
       },
       {
         "type": "font_picker",
         "id": "font_display",
         "label": "t:settings.typography.font_display",
         "info": "t:settings.typography.font_display_info",
-        "default": "assistant_n4"
+        "default": "serif"
       }
     ]
   },
@@ -85,9 +85,18 @@
         "label": "t:settings.product.3d_mode",
         "info": "t:settings.product.3d_mode_info",
         "options": [
-          { "value": "off", "label": "t:settings.product.3d_off" },
-          { "value": "on_demand", "label": "t:settings.product.3d_on_demand" },
-          { "value": "eager", "label": "t:settings.product.3d_eager" }
+          {
+            "value": "off",
+            "label": "t:settings.product.3d_off"
+          },
+          {
+            "value": "on_demand",
+            "label": "t:settings.product.3d_on_demand"
+          },
+          {
+            "value": "eager",
+            "label": "t:settings.product.3d_eager"
+          }
         ],
         "default": "on_demand"
       }

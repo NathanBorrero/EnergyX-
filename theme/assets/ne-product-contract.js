@@ -1,113 +1,13 @@
-/* GENERADO por scripts/sync-theme-assets.mjs desde src/lib/product-contract.js.
-   NO EDITAR AQUÍ: el cambio se perdería en la siguiente sincronización y la
-   comprobación `assets del theme sincronizados` fallaría. Edita el módulo
-   original, que es el que tiene pruebas. */
-/**
- * Contrato canónico de producto.
- *
- * POR QUÉ EXISTE
- * --------------
- * Los módulos nacieron con formas de entrada distintas para lo mismo:
- * `variant-matrix` esperaba `selectedOptions: [{name, value}]` y
- * `product-jsonld` esperaba `options: { Color: 'Negro' }`. Dos formas para el
- * mismo dato significan dos traducciones desde Shopify, y dos traducciones
- * divergen — exactamente el defecto que la auditoría ya encontró un nivel más
- * abajo, con la normalización de nombres.
- *
- * Esto define UNA forma. Los módulos la consumen; `shopify-adapter.js` la
- * produce. Nada más la construye a mano.
- *
- * DISEÑO: CERCA DE SHOPIFY, NO DE UNA ABSTRACCIÓN
- * ----------------------------------------------
- * La forma imita deliberadamente lo que devuelve Shopify (`selectedOptions`,
- * `availableForSale`, `options[].values`) para que el adaptador sea fino y
- * auditable. No es un modelo de dominio: es el mínimo común que los cinco
- * módulos necesitan.
- *
- * Esto NO es una capa de datos. No hay caché, ni red, ni estado. Son tipos y una
- * validación que devuelve problemas en lugar de lanzarlos.
- */
-
+/* generado desde src/lib/product-contract.js — no editar, ver scripts/sync-theme-assets.mjs */
 import { foldKey } from 'ne/semantics';
 
-/**
- * @typedef {object} ProductImage
- * @property {string} url
- * @property {string} [altText]
- */
-
-/**
- * @typedef {object} ProductOption
- * @property {string} name   Nombre tal como lo devuelve Shopify. Ej. 'Talla'.
- * @property {string[]} values  Valores en el orden de Shopify.
- */
-
-/**
- * @typedef {object} ProductVariant
- * @property {string} id
- * @property {{name: string, value: string}[]} selectedOptions
- * @property {string} [sku]
- * @property {string} [title]
- * @property {string} [price]   Decimal como cadena. Nunca un número con coma.
- * @property {boolean} [availableForSale]  Ausente significa "no se sabe".
- * @property {ProductImage} [image]
- */
-
-/**
- * @typedef {object} ProductMetafields
- * @property {{label: string, footLengthCm: number}[]} [sizeChart]
- * @property {{name?: string, advice?: string, sizeOffset?: number, widthNote?: string}} [fitProfile]
- * @property {string} [upperMaterial]
- * @property {string} [soleMaterial]
- * @property {string} [care]
- */
-
-/**
- * @typedef {object} Product
- * @property {string} title              Lo único imprescindible.
- * @property {string} [id]
- * @property {string} [handle]
- * @property {string} [url]
- * @property {string} [description]
- * @property {string} [brand]            `vendor` en Shopify.
- * @property {string} [currency]         ISO 4217.
- * @property {ProductImage[]} [images]
- * @property {ProductOption[]} [options]
- * @property {ProductVariant[]} [variants]
- * @property {ProductMetafields} [metafields]
- * @property {string} [productGroupID]   "parent sku" para datos estructurados.
- */
-
-/** Número máximo de opciones que admite Shopify. Verificado en vivo y por prueba negativa. */
 export const MAX_PRODUCT_OPTIONS = 3;
 
-/** Número máximo de variantes por producto. Verificado en vivo. */
 export const MAX_PRODUCT_VARIANTS = 2048;
 
-/**
- * @typedef {object} ValidationResult
- * @property {boolean} valid   false solo si falta algo sin lo cual no se puede trabajar.
- * @property {string[]} errors  Impiden usar el producto.
- * @property {string[]} warnings  No impiden, pero delatan un catálogo mal cargado.
- */
-
-/**
- * Valida un producto canónico.
- *
- * No lanza nunca y no corrige nada: informa. Quien llama decide si renderiza
- * degradado o no renderiza (§216).
- *
- * Las advertencias existen porque un catálogo de footwear mal cargado falla de
- * formas silenciosas: una variante sin todas las opciones no es seleccionable,
- * un valor declarado en `options` que ninguna variante usa aparece en el selector
- * y no lleva a ninguna parte.
- *
- * @param {Product} product
- * @returns {ValidationResult}
- */
 export function validateProduct(product) {
-  /** @type {string[]} */ const errors = [];
-  /** @type {string[]} */ const warnings = [];
+ const errors = [];
+ const warnings = [];
 
   if (!product || typeof product !== 'object') {
     return { valid: false, errors: ['El producto no es un objeto.'], warnings };
@@ -141,8 +41,6 @@ export function validateProduct(product) {
     warnings.push('Sin variantes: no hay nada que seleccionar ni comprar.');
   }
 
-  // Coherencia entre las opciones declaradas y las que usan las variantes.
-  /** @type {Map<string, Set<string>>} */
   const usedValues = new Map(optionNames.map((n) => [foldKey(n), new Set()]));
   let incomplete = 0;
   let withoutPrice = 0;
@@ -203,14 +101,6 @@ export function validateProduct(product) {
   return { valid: errors.length === 0, errors, warnings };
 }
 
-/**
- * Producto canónico vacío pero válido en forma, con el título como placeholder
- * explícito. Sirve para montar la página antes de que exista catálogo, sin que
- * nada finja ser un dato real (§191).
- *
- * @param {string} [label]
- * @returns {Product}
- */
 export function placeholderProduct(label = 'PLACEHOLDER — producto pendiente de definir') {
   return {
     title: label,

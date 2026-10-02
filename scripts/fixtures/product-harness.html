@@ -62,18 +62,18 @@
         }
       }, 3000);
     </script>
-    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
-    <link rel="stylesheet" href="/theme/assets/ne-base.css">
+    <link rel="stylesheet" href="/theme/assets/ne-core.css">
     <!--
       EL MISMO CSS QUE LA TIENDA, no una copia.
 
       Antes el banco llevaba un puñado de reglas copiadas a mano, y esa copia es
       precisamente lo que no se puede verificar: comprobar que un estado «se
       pinta distinto» contra estilos copiados no dice nada del theme. Ahora
-      carga `ne-components.css`, así que cuando la prueba afirma que «agotada»
+      carga los mismos archivos que cargaría esta página en la tienda
+      —ni uno más—, así que cuando la prueba afirma que «agotada»
       y «no se fabrica» se distinguen, lo afirma del CSS real.
     -->
-    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+    <link rel="stylesheet" href="/theme/assets/ne-product.css">
   </head>
 
   <body>

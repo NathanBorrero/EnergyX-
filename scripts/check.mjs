@@ -178,7 +178,12 @@ await check('sin restos de depuración', async () => {
       if (!file.includes('__tests__') && /\bconsole\.(log|debug)\s*\(/.test(line)) {
         problems.push(`${rel(file)}:${i + 1}: console.log en código de librería`);
       }
-      if (/(^|[^A-Za-z])(TODO|FIXME|XXX)([^A-Za-z]|$)/.test(line)) {
+      // El MARCADOR, no la palabra. En un código comentado en español «TODO»
+      // aparece a cada rato con su significado normal —«TODO ES MEJORA
+      // PROGRESIVA»— y buscar la palabra suelta daba tres falsos positivos de
+      // golpe. El marcador de verdad lleva dos puntos o paréntesis detrás, que
+      // es la convención: `TODO:` o `TODO(alguien)`.
+      if (/(^|[^A-Za-z])(TODO|FIXME|XXX|HACK)\s*[:(]/.test(line)) {
         problems.push(`${rel(file)}:${i + 1}: marcador pendiente`);
       }
     });
@@ -317,7 +322,12 @@ await check('estado del repositorio', async () => {
 // ---------------------------------------------------------------------------
 await check('assets del theme sincronizados', async () => {
   try {
-    await run('node', ['scripts/sync-theme-assets.mjs', '--check'], { cwd: ROOT });
+    // `--verify` ejecuta las 321 pruebas CONTRA el código servido, sin
+    // comentarios. Es la garantía de que el barrido no cambia comportamiento.
+    await run('node', ['scripts/sync-theme-assets.mjs', '--check', '--verify'], {
+      cwd: ROOT,
+      maxBuffer: 1024 * 1024 * 20,
+    });
     return [];
   } catch (error) {
     const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;

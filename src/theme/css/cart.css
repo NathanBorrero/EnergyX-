@@ -1,0 +1,114 @@
+/* ---------------------------------------------------------------------------
+   NATHAN & ESTEBAN — carrito
+
+   Carrito y cobertura de pago contra entrega. Solo existe en el carrito.
+
+   TROCEADO POR USO, Y POR UNA RAZÓN MEDIDA. Este CSS bloquea el primer paint,
+   así que cada byte que una página carga sin necesitarlo retrasa lo que el
+   comprador ve. Juntos eran 22 KB en TODAS las páginas; la portada usaba 8.
+   --------------------------------------------------------------------------- */
+/* === Carrito (sección) ========================================= */
+  .ne-cart__list { display: grid; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+
+  .ne-cart__line {
+    display: grid;
+    grid-template-columns: 5rem 1fr;
+    gap: var(--ne-space-s);
+    padding-bottom: var(--ne-space-m);
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+
+  @media (min-width: 48em) {
+    .ne-cart__line { grid-template-columns: 6rem 1fr auto; align-items: start; }
+  }
+
+  .ne-cart__media { display: block; }
+  .ne-cart__info { display: grid; gap: var(--ne-space-3xs); align-content: start; }
+  .ne-cart__title { color: inherit; text-decoration: none; font-family: var(--ne-font-display); }
+  .ne-cart__props { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--ne-space-2xs); }
+  .ne-cart__props dd { margin: 0; }
+
+  .ne-cart__controls {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--ne-space-s);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__controls { grid-column: auto; flex-direction: column; align-items: end; }
+  }
+
+  .ne-cart__qty {
+    width: 4rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-cart__price { font-variant-numeric: tabular-nums; }
+
+  /* QUITAR es destructivo y es el control que más se pulsa por error en un
+     carrito en móvil. `.ne-button--text` cumple el mínimo de 24px, pero aquí se
+     sube al objetivo de 44: la auditoría lo midió a 53×27 y lo marcó. Un
+     objetivo pequeño en una acción destructiva es un error esperando a pasar. */
+  .ne-cart__controls .ne-button--text {
+    min-height: var(--ne-touch);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ne-cart__foot {
+    display: grid;
+    gap: var(--ne-space-m);
+    margin-top: var(--ne-space-xl);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__foot { grid-template-columns: auto 1fr auto; align-items: center; }
+  }
+
+  .ne-cart__totals { display: grid; gap: var(--ne-space-3xs); justify-items: end; }
+  .ne-cart__subtotal { display: flex; gap: var(--ne-space-2xs); align-items: baseline; font-variant-numeric: tabular-nums; }
+
+/* === Carrito ============================================================== */
+
+/* Mientras una actualización está en vuelo, el carrito queda inerte: dos
+   cambios simultáneos sobre el mismo carrito se pisarían, y el segundo
+   repintaría un estado ya caducado. */
+ne-cart[data-ne-busy] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Sin `transition` en la opacidad a propósito: el parpadeo tiene que ser
+   inmediato para que se lea como «estoy trabajando», no como una animación. */
+
+/* === Cobertura contra entrega ============================================= */
+
+.ne-cod {
+  display: grid;
+  gap: var(--ne-space-2xs);
+  margin-top: var(--ne-space-l);
+  padding-top: var(--ne-space-m);
+  border-top: var(--ne-hairline) solid var(--ne-rule);
+}
+
+.ne-cod__field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ne-space-2xs);
+}
+
+.ne-cod__field label { flex-basis: 100%; }
+
+.ne-cod__input {
+  flex: 1 1 12rem;
+  min-height: var(--ne-touch);
+  padding: var(--ne-space-2xs);
+  border: var(--ne-hairline) solid var(--ne-border);
+  border-radius: var(--ne-radius);
+  background: var(--ne-paper);
+}

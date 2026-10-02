@@ -28,9 +28,8 @@
         }
       }, 3000);
     </script>
-    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
-    <link rel="stylesheet" href="/theme/assets/ne-base.css">
-    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+    <link rel="stylesheet" href="/theme/assets/ne-core.css">
+    <link rel="stylesheet" href="/theme/assets/ne-cart.css">
   </head>
   <body>
     <div id="shopify-section-sections--banco__header">
@@ -68,6 +67,25 @@
         </section>
       </ne-cart>
     </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ne/semantics": "/theme/assets/ne-shopify-semantics.js",
+          "ne/variant-matrix": "/theme/assets/ne-variant-matrix.js",
+          "ne/size-advisor": "/theme/assets/ne-size-advisor.js",
+          "ne/cart-line": "/theme/assets/ne-cart-line.js",
+          "ne/size-selected-event": "/theme/assets/ne-size-selected-event.js",
+          "ne/cod-guard": "/theme/assets/ne-cod-guard.js",
+          "ne/responsive-image": "/theme/assets/ne-responsive-image.js",
+          "ne/a11y-contrast": "/theme/assets/ne-a11y-contrast.js",
+          "ne/product-contract": "/theme/assets/ne-product-contract.js",
+          "ne/shopify-adapter": "/theme/assets/ne-shopify-adapter.js",
+          "ne/product-jsonld": "/theme/assets/ne-product-jsonld.js",
+          "ne/analytics-taxonomy": "/theme/assets/ne-analytics-taxonomy.js"
+        }
+      }
+    </script>
 
     <script type="application/json" id="ne-config">
       { "sizeSelectedEvent": true, "codPrevalidation": false, "codCoverage": [] }

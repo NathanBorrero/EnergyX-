@@ -1,53 +1,10 @@
-/* GENERADO por scripts/sync-theme-assets.mjs desde src/lib/cart-line.js.
-   NO EDITAR AQUÍ: el cambio se perdería en la siguiente sincronización y la
-   comprobación `assets del theme sincronizados` fallaría. Edita el módulo
-   original, que es el que tiene pruebas. */
-/**
- * Construcción validada de una línea de carrito.
- *
- * POR QUÉ EXISTE
- * --------------
- * Entre "el comprador eligió talla" y "hay algo en el carrito" hay una puerta que
- * nadie suele poner: comprobar que la combinación **existe y se puede comprar**
- * antes de intentar añadirla. Sin esa puerta, un selector con un fallo manda al
- * carrito una variante inexistente y el error aparece como un `userErrors` de
- * Shopify que el comprador lee como "algo se rompió".
- *
- * Este módulo es esa puerta, y usa la misma fuente de verdad que el selector
- * (`variant-matrix`), así que no puede discrepar de lo que la interfaz mostró.
- *
- * FORMA DE SALIDA VERIFICADA
- * --------------------------
- * `CartLineInput` de la Storefront API: `merchandiseId` (obligatorio),
- * `quantity` (por defecto 1), `attributes` (máximo 250 valores).
- * Hay más campos (`sellingPlanId`, `parent`) que este proyecto no usa: no hay
- * suscripciones ni bundles, así que no se emiten.
- *
- * LAS ATRIBUCIONES SON LA PIEZA INTERESANTE
- * -----------------------------------------
- * Las atribuciones de línea **persisten al pedido**. Eso las convierte en un
- * canal de datos **autoritativo**, al contrario que un evento de analítica de
- * cliente: lo que se escriba aquí se puede leer después junto al pedido real y
- * junto a si ese pedido se entregó o se devolvió.
- *
- * Para este proyecto eso importa mucho: guardar qué talla recomendó el sistema
- * frente a qué talla eligió el comprador permite medir si el desajuste de talla
- * explica el RTO. Esa correlación no se puede obtener de un pixel.
- *
- * No se escribe nada sensible: son datos que el comprador puede ver.
- *
- * Sin dependencias. Pura. No hace red: devuelve el input, no lo envía.
- */
-
+/* generado desde src/lib/cart-line.js — no editar, ver scripts/sync-theme-assets.mjs */
 import { VALUE_STATUS } from 'ne/variant-matrix';
 
-/** Límite de atribuciones por línea, verificado en la documentación de `CartLineInput`. */
 export const MAX_LINE_ATTRIBUTES = 250;
 
-/** Longitud máxima que se emite para una clave o un valor de atribución. */
 const MAX_ATTRIBUTE_LENGTH = 200;
 
-/** Motivos por los que una línea no se puede construir. */
 export const REJECTION = Object.freeze({
   NO_MATRIX: 'no_matrix',
   INCOMPLETE_SELECTION: 'incomplete_selection',
@@ -57,10 +14,6 @@ export const REJECTION = Object.freeze({
   INVALID_QUANTITY: 'invalid_quantity',
 });
 
-/**
- * @param {unknown} value
- * @returns {string|undefined}
- */
 function str(value) {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
@@ -68,23 +21,10 @@ function str(value) {
   return trimmed.length > MAX_ATTRIBUTE_LENGTH ? trimmed.slice(0, MAX_ATTRIBUTE_LENGTH) : trimmed;
 }
 
-/**
- * Normaliza atribuciones a la forma `[{key, value}]` que espera `AttributeInput`.
- *
- * Descarta lo que no sea convertible a texto en lugar de emitir `"undefined"` o
- * `"[object Object]"`, que es lo que acaba viéndose en un pedido real cuando
- * nadie lo filtra. Recorta al límite de la plataforma.
- *
- * @param {Record<string, unknown>|Array<{key: string, value: unknown}>|null|undefined} source
- * @returns {{key: string, value: string}[]}
- */
 export function normalizeAttributes(source) {
-  /** @type {{key: string, value: string}[]} */
   const out = [];
-  /** @type {Set<string>} */
   const seen = new Set();
 
-  /** @param {unknown} rawKey @param {unknown} rawValue */
   function push(rawKey, rawValue) {
     const key = str(rawKey);
     if (key === undefined || seen.has(key)) return;
@@ -110,28 +50,6 @@ export function normalizeAttributes(source) {
   return out.slice(0, MAX_LINE_ATTRIBUTES);
 }
 
-/**
- * @typedef {object} CartLineResult
- * @property {boolean} ok
- * @property {{merchandiseId: string, quantity: number, attributes?: {key: string, value: string}[]}} [line]
- * @property {string} [reason]   Uno de REJECTION.
- * @property {string} [status]   Estado de la combinación, cuando aplica.
- * @property {string[]} [missing] Opciones que faltan por elegir.
- */
-
-/**
- * Construye una línea de carrito, o explica por qué no se puede.
- *
- * No lanza nunca. Un fallo aquí tiene que producir un mensaje para el comprador,
- * no una excepción (§216).
- *
- * @param {object} args
- * @param {import('ne/variant-matrix').VariantMatrix} args.matrix
- * @param {Record<string, string>} args.selection
- * @param {number} [args.quantity]
- * @param {Record<string, unknown>|Array<{key: string, value: unknown}>} [args.attributes]
- * @returns {CartLineResult}
- */
 export function buildCartLine(args) {
   const { matrix, selection, quantity = 1, attributes } = args ?? {};
 
@@ -143,8 +61,6 @@ export function buildCartLine(args) {
     return { ok: false, reason: REJECTION.INVALID_QUANTITY };
   }
 
-  // Qué falta por elegir. Se informa para que la interfaz señale el selector
-  // correcto en lugar de dar un error genérico.
   const missing = matrix.optionNames.filter((name) => {
     const provided = selection && typeof selection === 'object'
       ? Object.keys(selection).find((k) => k.toLowerCase() === name.toLowerCase())
@@ -160,8 +76,6 @@ export function buildCartLine(args) {
     return { ok: false, reason: REJECTION.NONEXISTENT, status: VALUE_STATUS.NONEXISTENT };
   }
 
-  // La compra se decide por `availableForSale`, nunca por una cuenta de stock
-  // calculada en el cliente (§210).
   if (variant.availableForSale !== true) {
     return { ok: false, reason: REJECTION.OUT_OF_STOCK, status: VALUE_STATUS.UNAVAILABLE };
   }
@@ -171,7 +85,6 @@ export function buildCartLine(args) {
     return { ok: false, reason: REJECTION.NO_VARIANT_ID };
   }
 
-  /** @type {{merchandiseId: string, quantity: number, attributes?: {key: string, value: string}[]}} */
   const line = { merchandiseId, quantity };
   const normalized = normalizeAttributes(attributes);
   if (normalized.length > 0) line.attributes = normalized;
@@ -179,28 +92,8 @@ export function buildCartLine(args) {
   return { ok: true, line, status: VALUE_STATUS.AVAILABLE };
 }
 
-/**
- * Atribuciones de ajuste de talla, para poder medir después si el desajuste
- * explica las devoluciones.
- *
- * Se escriben en la línea porque **persisten al pedido**, así que se pueden
- * cruzar con si ese pedido se entregó o se devolvió. Un evento de analítica de
- * cliente no permite ese cruce, y además es manipulable.
- *
- * Omite todo lo que no exista: sin medida del comprador no se inventa ninguna.
- *
- * @param {object} args
- * @param {string} [args.chosenSize]        Talla que eligió el comprador.
- * @param {string} [args.recommendedSize]   Talla que recomendó el sistema.
- * @param {number} [args.footLengthCm]      Medida que introdujo el comprador.
- * @param {boolean} [args.usedSizeGuide]    Si abrió la guía de tallas.
- * @returns {Record<string, string>}
- */
 export function sizeFitAttributes(rawArgs = {}) {
-  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
-  // explícitamente: §216 exige degradar, no lanzar.
   const args = rawArgs && typeof rawArgs === 'object' ? rawArgs : {};
-  /** @type {Record<string, string>} */
   const out = {};
   const chosen = str(args.chosenSize);
   const recommended = str(args.recommendedSize);
@@ -208,7 +101,6 @@ export function sizeFitAttributes(rawArgs = {}) {
   if (chosen !== undefined) out._ne_size_chosen = chosen;
   if (recommended !== undefined) out._ne_size_recommended = recommended;
 
-  // El dato que de verdad interesa: si el comprador se desvió de la recomendación.
   if (chosen !== undefined && recommended !== undefined) {
     out._ne_size_followed = String(chosen.toLowerCase() === recommended.toLowerCase());
   }

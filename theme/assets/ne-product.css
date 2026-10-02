@@ -1,0 +1,187 @@
+/* generado desde src/theme/css/{product.css} — no editar, ver scripts/sync-theme-assets.mjs */
+  .ne-picker { display: grid; gap: var(--ne-space-m); }
+  .ne-picker__group { margin: 0; padding: 0; border: 0; }
+  .ne-picker__legend {
+    display: flex;
+    gap: var(--ne-space-2xs);
+    margin-bottom: var(--ne-space-2xs);
+    padding: 0;
+  }
+  .ne-picker__chosen { text-transform: none; letter-spacing: 0; color: var(--ne-text); }
+  .ne-picker__chip { cursor: pointer; }
+  .ne-picker__chip-face {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ne-space-3xs);
+    min-height: var(--ne-touch);
+    min-width: var(--ne-touch);
+    justify-content: center;
+    padding-inline: var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+    font-variant-numeric: tabular-nums;
+    transition:
+      border-color var(--ne-dur-fast) var(--ne-ease),
+      background-color var(--ne-dur-fast) var(--ne-ease);
+  }
+  .ne-picker__chip:hover .ne-picker__chip-face { border-color: var(--ne-text); }
+  .ne-picker__chip input:checked + .ne-picker__chip-face {
+    background: var(--ne-ink);
+    color: var(--ne-paper);
+    border-color: var(--ne-ink);
+  }
+  .ne-picker__chip input:focus-visible + .ne-picker__chip-face {
+    outline: 2px solid var(--ne-accent);
+    outline-offset: 2px;
+  }
+  .ne-picker__chip[data-ne-state='unavailable'] .ne-picker__chip-face {
+    color: var(--ne-text-soft);
+    border-color: var(--ne-border);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .ne-picker__chip[data-ne-state='nonexistent'] .ne-picker__chip-face {
+    color: var(--ne-text-soft);
+    border-color: var(--ne-border);
+    border-style: dashed;
+  }
+  .ne-picker__chip[data-ne-state='nonexistent'] { cursor: not-allowed; }
+  .ne-picker__swatch {
+    width: 1.125rem;
+    height: 1.125rem;
+    background: var(--ne-swatch);
+    border: var(--ne-hairline) solid var(--ne-border);
+  }
+  .ne-picker__swatch-image {
+    width: 1.125rem;
+    height: 1.125rem;
+    object-fit: cover;
+    border: var(--ne-hairline) solid var(--ne-border);
+  }
+  .ne-picker__fallback { display: grid; gap: var(--ne-space-3xs); }
+  .ne-picker__select {
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs) var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+  }
+  .ne-picker__values { display: none; }
+  .ne-js .ne-picker__values { display: flex; flex-wrap: wrap; gap: var(--ne-space-3xs); }
+  .ne-js .ne-picker__fallback { display: none; }
+  .ne-sizeguide__summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--ne-touch);
+    cursor: pointer;
+    border-bottom: var(--ne-hairline) solid var(--ne-border);
+  }
+  .ne-sizeguide__summary::marker { content: ''; }
+  .ne-sizeguide__body {
+    display: grid;
+    gap: var(--ne-space-s);
+    padding-block: var(--ne-space-s);
+  }
+  .ne-sizeguide__fit { display: grid; gap: var(--ne-space-3xs); }
+  .ne-sizeguide__field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--ne-space-2xs);
+  }
+  .ne-sizeguide__field label {
+    flex-basis: 100%;
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+    color: var(--ne-text-soft);
+  }
+  .ne-sizeguide__field input {
+    width: 6rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+    font-variant-numeric: tabular-nums;
+  }
+  .ne-sizeguide__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .ne-sizeguide__table th,
+  .ne-sizeguide__table td {
+    padding: var(--ne-space-2xs);
+    text-align: left;
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+  .ne-sizeguide__table thead th {
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+    color: var(--ne-text-soft);
+    font-weight: 400;
+  }
+  .ne-sizeguide__how summary { min-height: var(--ne-touch-min); cursor: pointer; }
+  .ne-buy__form { display: grid; gap: var(--ne-space-2xs); }
+  .ne-buy__row { display: flex; gap: var(--ne-space-2xs); }
+  .ne-buy__qty {
+    width: 4.5rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .ne-buy__submit { flex: 1; }
+  .ne-pdp__grid { row-gap: var(--ne-space-l); align-items: start; }
+  .ne-pdp__media { grid-column: 1 / -1; }
+  .ne-pdp__panel { grid-column: 1 / -1; display: grid; gap: var(--ne-space-m); }
+  @media (min-width: 48em) {
+    .ne-pdp__media { grid-column: 1 / span 7; }
+    .ne-pdp__panel {
+      grid-column: 9 / span 4;
+      position: sticky;
+      top: var(--ne-space-2xl);
+    }
+  }
+  .ne-gallery__list { display: grid; gap: var(--ne-space-2xs); }
+  .ne-gallery__image,
+  .ne-gallery__video,
+  .ne-gallery__viewer {
+    width: 100%;
+    background: var(--ne-paper-deep);
+  }
+  .ne-gallery__image { object-fit: cover; }
+  .ne-gallery__viewer {
+    aspect-ratio: 4 / 5;
+    --poster-color: transparent;
+  }
+  .ne-gallery__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ne-space-2xs);
+    margin-top: var(--ne-space-s);
+  }
+  .ne-gallery__controls .ne-notice { flex-basis: 100%; }
+  .ne-pdp__vendor { margin-bottom: calc(var(--ne-space-2xs) * -1); }
+  .ne-pdp__price { display: grid; gap: var(--ne-space-3xs); }
+  .ne-pdp__price .ne-price__current { font-size: var(--ne-size-lead); font-variant-numeric: tabular-nums; }
+  .ne-pdp__description { padding-top: var(--ne-space-xs); border-top: var(--ne-hairline) solid var(--ne-rule); }
+  .ne-specs {
+    display: grid;
+    gap: var(--ne-space-2xs);
+    margin: 0;
+    padding-top: var(--ne-space-xs);
+    border-top: var(--ne-hairline) solid var(--ne-rule);
+  }
+  .ne-specs__row {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: var(--ne-space-2xs);
+    align-items: baseline;
+  }
+  .ne-specs dd { margin: 0; }

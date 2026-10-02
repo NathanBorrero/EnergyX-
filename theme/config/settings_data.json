@@ -1,7 +1,7 @@
 {
   "current": {
-    "font_body": "assistant_n4",
-    "font_display": "assistant_n4",
+    "font_body": "system_ui_n4",
+    "font_display": "serif",
     "logo_width": 140,
     "product_show_size_guide": true,
     "product_show_size_recommender": true,
@@ -12,8 +12,8 @@
   },
   "presets": {
     "Nathan & Esteban": {
-      "font_body": "assistant_n4",
-      "font_display": "assistant_n4",
+      "font_body": "system_ui_n4",
+      "font_display": "serif",
       "logo_width": 140,
       "product_show_size_guide": true,
       "product_show_size_recommender": true,

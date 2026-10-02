@@ -644,6 +644,99 @@ await check('la ficha se compra con JavaScript desactivado', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 7bis · El 3D no se adelanta en un teléfono, y se apaga al salir de la vista.
+//
+//        Las dos mitades de la directiva de rendimiento: no cargar lo pesado
+//        antes de que haga falta, y soltar lo que ya no se está mirando. Un
+//        contexto WebGL abierto consume GPU y batería mientras el comprador lee
+//        la ficha cien píxeles más abajo.
+// ---------------------------------------------------------------------------
+await check('el 3D se contiene en móvil y se apaga fuera de la vista', async () => {
+  const problems = [];
+
+  // 7bis-a · En un teléfono, `eager` no se honra. No es una suposición sobre el
+  //          dispositivo: es una decisión de prioridad.
+  const phone = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  });
+  const mobile = await phone.newPage();
+  await mobile.addInitScript(() => {
+    globalThis.Shopify = { analytics: { publish() {} } };
+  });
+  await mobile.goto(`${HARNESS}?model_mode=eager`, { waitUntil: 'load' });
+  await mobile.waitForTimeout(400);
+
+  const onPhone = await mobile.evaluate(() => ({
+    coarse: matchMedia('(hover: none) and (pointer: coarse)').matches,
+    slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+    triggerVisible: !document.querySelector('[data-ne-model-trigger]').hidden,
+    fotoVisible: !document.querySelector('[data-ne-model-fallback]').hidden,
+  }));
+
+  if (!onPhone.coarse) {
+    problems.push('el contexto no se comporta como un teléfono: la comprobación no vale');
+  } else {
+    if (!onPhone.slotHidden) {
+      problems.push('con `eager` en un teléfono el 3D NO debe abrirse solo: es el recurso más pesado y compite por GPU y datos');
+    }
+    if (!onPhone.triggerVisible) problems.push('debe seguir ofreciéndose el 3D a un toque');
+    if (!onPhone.fotoVisible) problems.push('la fotografía debe seguir siendo la experiencia');
+  }
+  await phone.close();
+
+  // 7bis-b · Al salir de la vista, se cierra y se libera.
+  const page = await openHarness();
+  await page.locator('[data-ne-model-trigger]').click();
+  await page.waitForTimeout(150);
+
+  if (await page.evaluate(() => document.querySelector('[data-ne-model-slot]').hidden)) {
+    problems.push('el visor debería estar abierto antes de comprobar que se apaga');
+  }
+
+  // Se instrumenta lo que el componente llama al liberar: `model-viewer` no
+  // expone un «destruir», así que lo que se puede comprobar de verdad es que se
+  // le pide volver al póster y dejar de renderizar.
+  await page.evaluate(() => {
+    const viewer = document.querySelector('model-viewer');
+    globalThis.__released = [];
+    viewer.pause = () => globalThis.__released.push('pause');
+    viewer.showPoster = () => globalThis.__released.push('showPoster');
+  });
+
+  // Fuera de la vista de verdad, más allá del margen de 200px del observador.
+  await page.evaluate(() => {
+    const filler = document.createElement('div');
+    filler.style.height = '3000px';
+    document.body.append(filler);
+    globalThis.scrollTo(0, 2800);
+  });
+  await page.waitForTimeout(600);
+
+  const after = await page.evaluate(() => ({
+    slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+    fotoVisible: !document.querySelector('[data-ne-model-fallback]').hidden,
+    released: globalThis.__released ?? [],
+    etiqueta: document.querySelector('[data-ne-model-trigger]').textContent.trim(),
+  }));
+
+  if (!after.slotHidden) problems.push('al salir de la vista el visor debe cerrarse');
+  if (!after.fotoVisible) problems.push('al cerrarse debe volver la fotografía');
+  if (!after.released.includes('showPoster')) {
+    problems.push(`debe pedirse al visor volver al póster y dejar de renderizar; se llamó a: ${after.released.join(', ') || '(nada)'}`);
+  }
+  if (after.etiqueta !== 'Ver en 3D') {
+    problems.push(`el botón debe volver a ofrecer el 3D; dice "${after.etiqueta}"`);
+  }
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 8bis · La red de seguridad: si el módulo no llega, vuelve el control que
 //        permite comprar.
 //
@@ -691,6 +784,89 @@ await check('si el módulo no llega, vuelve el control de reserva', async () => 
   if (after.enhanced !== null) problems.push('nada debería haberse marcado como mejorado');
 
   await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 8ter · TODOS los bancos cargan su grafo de módulos sin un solo error.
+//
+//        Nació de un fallo que envenenó una medición: el banco de la portada no
+//        tenía import map, así que `ne-components.js` lanzaba «Failed to resolve
+//        module specifier» y NINGÚN elemento personalizado se definía. La
+//        portada no tiene componentes que mejorar, así que la página se veía
+//        perfecta —y la medición de rendimiento dio un número buenísimo de una
+//        página con el JavaScript roto.
+//
+//        Un error de módulo no se ve. Hay que preguntarlo.
+// ---------------------------------------------------------------------------
+await check('todos los bancos definen sus componentes sin errores', async () => {
+  const problems = [];
+  const EXPECTED = ['ne-variant-picker', 'ne-size-guide', 'ne-product-gallery', 'ne-cart', 'ne-cod-coverage'];
+
+  // La portada NO entra: su plantilla no emite el módulo a propósito, porque no
+  // tiene ni un componente. Exigirle que los defina sería exigirle que cargue
+  // 46 KB para nada. Lo que sí se le exige, abajo, es cargar SIN errores.
+  for (const file of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('response', (r) => {
+      if (r.status() >= 400) errors.push(`${r.status()} ${r.url().split('/').pop()}`);
+    });
+    await page.addInitScript(() => {
+      globalThis.Shopify = { analytics: { publish() {} } };
+    });
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/${file}`, { waitUntil: 'load' });
+    await page.waitForTimeout(400);
+
+    // El módulo se registra entero o no se registra: si falta uno, el grafo
+    // falló antes de llegar a los `define`.
+    const defined = await page.evaluate(
+      (tags) => tags.filter((t) => !!customElements.get(t)),
+      EXPECTED,
+    );
+    await page.close();
+
+    if (errors.length > 0) {
+      problems.push(`${file}: ${errors.join(' | ')}`);
+    }
+    if (defined.length !== EXPECTED.length) {
+      const missing = EXPECTED.filter((t) => !defined.includes(t));
+      problems.push(`${file}: no se definieron ${missing.join(', ')}: el grafo de módulos no llegó al final`);
+    }
+  }
+
+  // La portada: sin errores, sin módulo y SIN NINGÚN componente definido. Si
+  // alguno apareciera, significaría que está cargando JavaScript que no usa.
+  {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('response', (r) => {
+      if (r.status() >= 400) errors.push(`${r.status()} ${r.url().split('/').pop()}`);
+    });
+    const scripts = [];
+    page.on('request', (r) => {
+      const name = r.url().split('/').pop() ?? '';
+      if (name.endsWith('.js')) scripts.push(name);
+    });
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/home-harness.html`, { waitUntil: 'load' });
+    await page.waitForTimeout(400);
+    const defined = await page.evaluate(
+      (tags) => tags.filter((t) => !!customElements.get(t)),
+      EXPECTED,
+    );
+    await page.close();
+
+    if (errors.length > 0) problems.push(`home-harness.html: ${errors.join(' | ')}`);
+    if (scripts.length > 0) {
+      problems.push(`la portada descargó JavaScript que no usa: ${scripts.join(', ')}`);
+    }
+    if (defined.length > 0) {
+      problems.push(`la portada definió componentes que no tiene: ${defined.join(', ')}`);
+    }
+  }
+
   return problems;
 });
 

@@ -1,42 +1,4 @@
-/* GENERADO por scripts/sync-theme-assets.mjs desde src/lib/shopify-adapter.js.
-   NO EDITAR AQUÍ: el cambio se perdería en la siguiente sincronización y la
-   comprobación `assets del theme sincronizados` fallaría. Edita el módulo
-   original, que es el que tiene pruebas. */
-/**
- * Adaptador: respuesta de Shopify → producto canónico.
- *
- * POR QUÉ EXISTE
- * --------------
- * Es el único sitio donde se conoce la forma de la respuesta de Shopify. Si
- * Shopify cambia, se cambia aquí y no en cinco módulos. Si hubiera dos
- * traducciones, divergirían: ese defecto ya apareció una vez en este proyecto.
- *
- * DOS APIS, DOS FORMAS — y la diferencia importa
- * ----------------------------------------------
- * | Campo     | Admin API                      | Storefront API                       |
- * | --------- | ------------------------------ | ------------------------------------ |
- * | precio    | `price: "79999.00"`            | `price: { amount, currencyCode }`     |
- * | variantes | `variants { edges { node } }`   | `variants { nodes }`                  |
- * | opciones  | `options { optionValues }`      | `options { optionValues }`           |
- * | imágenes  | `featuredMedia`, `media`       | `images { nodes }`, `media { nodes }` |
- *
- * El precio del Admin API está `VERIFIED`: lo leí de la tienda de pruebas, donde
- * devolvió la cadena `"79999.00"`. La forma `MoneyV2` de la Storefront API está
- * `DOCUMENTED` por la documentación de Hydrogen; no pude ejecutar una consulta de
- * Storefront API sin token de storefront.
- *
- * Por eso el adaptador acepta **las dos formas** y no asume ninguna. Eso no es
- * defensa de más: es la única manera honesta de escribirlo sin haber ejecutado
- * las dos.
- *
- * Sin dependencias, sin red, sin estado. Pura transformación.
- */
-
-/**
- * Desenvuelve una conexión GraphQL, en cualquiera de sus dos formas.
- * @param {unknown} connection
- * @returns {unknown[]}
- */
+/* generado desde src/lib/shopify-adapter.js — no editar, ver scripts/sync-theme-assets.mjs */
 function nodesOf(connection) {
   if (!connection || typeof connection !== 'object') return [];
   const c = /** @type {{nodes?: unknown, edges?: unknown}} */ (connection);
@@ -49,24 +11,10 @@ function nodesOf(connection) {
   return [];
 }
 
-/**
- * Acepta un array directo o una conexión.
- * @param {unknown} value
- * @returns {unknown[]}
- */
 function listOf(value) {
   return Array.isArray(value) ? value : nodesOf(value);
 }
 
-/**
- * Normaliza el precio desde cualquiera de las dos formas.
- *
- * Devuelve `{ price, currency }` con `undefined` en lo que no venga. No inventa
- * ninguno de los dos: sin precio no habrá oferta, y eso es correcto.
- *
- * @param {unknown} price
- * @returns {{price: string|undefined, currency: string|undefined}}
- */
 function normalizeMoney(price) {
   if (typeof price === 'string' && price.trim() !== '') {
     return { price: price.trim(), currency: undefined };
@@ -88,19 +36,10 @@ function normalizeMoney(price) {
   return { price: undefined, currency: undefined };
 }
 
-/**
- * @param {unknown} value
- * @returns {string|undefined}
- */
 function text(value) {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
 }
 
-/**
- * Imagen desde `{url, altText}` o desde `{preview: {image: {url}}}` del Admin API.
- * @param {unknown} source
- * @returns {{url: string, altText?: string}|undefined}
- */
 function normalizeImage(source) {
   if (!source || typeof source !== 'object') return undefined;
   const s = /** @type {Record<string, any>} */ (source);
@@ -115,18 +54,6 @@ function normalizeImage(source) {
   return undefined;
 }
 
-/**
- * Convierte una respuesta de producto de Shopify al contrato canónico.
- *
- * Tolera campos ausentes a propósito: una consulta mínima debe producir un
- * producto utilizable, no una excepción (§216).
- *
- * @param {Record<string, any>|null|undefined} raw Nodo `product` de Admin o Storefront API.
- * @param {object} [opts]
- * @param {string} [opts.currency] Moneda de la tienda, si la respuesta no la trae.
- * @param {string} [opts.urlBase] Base para construir la URL del producto desde el handle.
- * @returns {import('ne/product-contract').Product|null} null si no hay ni título.
- */
 export function fromShopifyProduct(raw, opts = {}) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -136,7 +63,6 @@ export function fromShopifyProduct(raw, opts = {}) {
   const handle = text(raw.handle);
   const urlBase = text(opts.urlBase);
 
-  /** @type {import('ne/product-contract').Product} */
   const product = { title };
 
   const id = text(raw.id);
@@ -146,15 +72,12 @@ export function fromShopifyProduct(raw, opts = {}) {
   const url = text(raw.onlineStoreUrl) ?? (urlBase && handle ? `${urlBase.replace(/\/+$/, '')}/products/${handle}` : undefined);
   if (url) product.url = url;
 
-  // `description` en texto plano se prefiere sobre `descriptionHtml` para datos
-  // estructurados: schema.org espera texto, no marcado.
   const description = text(raw.description) ?? text(raw.descriptionHtml);
   if (description) product.description = description;
 
   const brand = text(raw.vendor);
   if (brand) product.brand = brand;
 
-  // Opciones: `optionValues[].name` es la forma vigente; `values[]` la antigua.
   const rawOptions = listOf(raw.options);
   const options = [];
   for (const option of rawOptions) {
@@ -170,7 +93,6 @@ export function fromShopifyProduct(raw, opts = {}) {
   }
   if (options.length > 0) product.options = options;
 
-  // Variantes.
   const rawVariants = listOf(raw.variants);
   const variants = [];
   let detectedCurrency;
@@ -188,7 +110,6 @@ export function fromShopifyProduct(raw, opts = {}) {
       })
       .filter((o) => o !== null);
 
-    /** @type {import('ne/product-contract').ProductVariant} */
     const out = { id: text(v.id) ?? '', selectedOptions };
 
     const sku = text(v.sku);
@@ -200,9 +121,6 @@ export function fromShopifyProduct(raw, opts = {}) {
     if (price !== undefined) out.price = price;
     if (currency !== undefined && detectedCurrency === undefined) detectedCurrency = currency;
 
-    // `availableForSale` es la fuente de verdad. Si no viene, se deja ausente:
-    // "no se sabe" no es "no se puede comprar", y el resto del sistema ya
-    // distingue las dos cosas.
     if (typeof v.availableForSale === 'boolean') out.availableForSale = v.availableForSale;
 
     const image = normalizeImage(v.image ?? v.featuredImage ?? v.featuredMedia);
@@ -212,7 +130,6 @@ export function fromShopifyProduct(raw, opts = {}) {
   }
   if (variants.length > 0) product.variants = variants;
 
-  // Imágenes del producto: `images`, `media`, o la destacada.
   const images = [];
   for (const source of [...listOf(raw.images), ...listOf(raw.media)]) {
     const image = normalizeImage(source);
@@ -222,7 +139,6 @@ export function fromShopifyProduct(raw, opts = {}) {
   if (featured && !images.some((i) => i.url === featured.url)) images.unshift(featured);
   if (images.length > 0) product.images = images;
 
-  // Moneda: la de la variante, si no la pasada, si no la del rango de precios.
   const rangeCurrency = text(raw.priceRangeV2?.minVariantPrice?.currencyCode)
     ?? text(raw.priceRange?.minVariantPrice?.currencyCode);
   const currency = detectedCurrency ?? text(opts.currency) ?? rangeCurrency;
@@ -231,17 +147,6 @@ export function fromShopifyProduct(raw, opts = {}) {
   return product;
 }
 
-/**
- * Convierte entradas de un metaobject `size_chart` a las filas que espera
- * `size-advisor`.
- *
- * Acepta la forma del Admin API (`fields: [{key, value}]`) y una forma ya plana.
- * Los valores llegan como cadenas desde Shopify, así que se convierten; una fila
- * sin longitud utilizable se descarta en lugar de falsear un cero.
- *
- * @param {unknown} entries
- * @returns {{label: string, footLengthCm: number}[]}
- */
 export function fromSizeChartMetaobjects(entries) {
   const list = listOf(entries);
   const rows = [];
@@ -250,7 +155,6 @@ export function fromSizeChartMetaobjects(entries) {
     if (!entry || typeof entry !== 'object') continue;
     const e = /** @type {Record<string, any>} */ (entry);
 
-    /** @type {Record<string, string>} */
     const fields = {};
     if (Array.isArray(e.fields)) {
       for (const f of e.fields) {

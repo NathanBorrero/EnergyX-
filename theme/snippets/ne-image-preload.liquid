@@ -1,0 +1,38 @@
+{%- comment -%}
+  Preload de la imagen LCP.
+
+  POR QUÉ, SI YA LLEVA `fetchpriority="high"`
+
+  Porque el `<img>` del hero no está al principio de su sección: primero va el
+  bloque de texto, y el navegador no puede empezar a descargar la imagen hasta
+  que el parser llega al `<img>`, unas decenas de líneas de HTML después. Este
+  enlace va al PRINCIPIO de la sección, así que la descarga arranca antes.
+
+  NO DUPLICA LA DESCARGA. Usa exactamente la misma escalera de anchos y el mismo
+  descriptor `sizes` que `ne-image`, así que el navegador resuelve el mismo
+  candidato y reutiliza la petición. Si los dos se separaran, serían DOS
+  descargas de la imagen más grande de la página, que es justo lo contrario de
+  lo que esto busca: por eso los dos valores se pasan desde el mismo sitio.
+
+  No se emite nada si no hay imagen real: un preload de nada es una petición
+  perdida.
+
+  Parámetros: image, widths (cadena), sizes.
+{%- endcomment -%}
+
+{%- if image != blank and widths != blank and sizes != blank -%}
+  {%- capture ne_srcset -%}
+    {%- assign ne_list = widths | split: ',' -%}
+    {%- for w in ne_list -%}
+      {%- assign ne_w = w | strip -%}
+      {{ image | image_url: width: ne_w }} {{ ne_w }}w{% unless forloop.last %}, {% endunless %}
+    {%- endfor -%}
+  {%- endcapture -%}
+  <link
+    rel="preload"
+    as="image"
+    imagesrcset="{{ ne_srcset | strip | escape }}"
+    imagesizes="{{ sizes | escape }}"
+    fetchpriority="high"
+  >
+{%- endif -%}

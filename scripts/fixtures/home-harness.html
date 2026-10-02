@@ -34,9 +34,7 @@
         }
       }, 3000);
     </script>
-    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
-    <link rel="stylesheet" href="/theme/assets/ne-base.css">
-    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+    <link rel="stylesheet" href="/theme/assets/ne-core.css">
   </head>
   <body>
     <a class="ne-skip-link" href="#ne-main">Saltar al contenido</a>
@@ -170,6 +168,14 @@
       </div>
     </footer>
 
+    <!--
+      SIN IMPORT MAP Y SIN MÓDULO, igual que la plantilla real de portada.
+
+      Medido: cargarlos costaba 46 KB de JavaScript y 5 peticiones para CERO
+      componentes. La portada no tiene selector, ni guía de tallas, ni galería,
+      ni carrito. Si este banco los cargara, mediría una página que no existe.
+    -->
+
     <script type="application/json" id="ne-config">
       { "sizeSelectedEvent": true, "codPrevalidation": false, "codCoverage": [] }
     </script>
@@ -179,6 +185,5 @@
     </script>
     <!-- Lo rellena el runner con los textos reales. -->
     <script type="application/json" id="ne-strings">{}</script>
-    <script src="/theme/assets/ne-components.js" type="module"></script>
   </body>
 </html>

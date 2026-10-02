@@ -50,9 +50,29 @@
       }, 3000);
     </script>
 
-    {{ 'ne-tokens.css' | asset_url | stylesheet_tag }}
-    {{ 'ne-base.css' | asset_url | stylesheet_tag }}
-    {{ 'ne-components.css' | asset_url | stylesheet_tag }}
+    {%- comment -%}
+      CSS DEL PRIMER PAINT, TROCEADO POR USO.
+
+      Estos archivos bloquean el render, así que cada byte que una página carga
+      sin necesitarlo retrasa lo que el comprador ve. Medido: juntos pesaban
+      22 KB y se cargaban en TODAS las páginas; la portada usa 8.
+
+      `ne-core.css` lleva tokens, base y estructura: todo lo que va en cualquier
+      página, concatenado en UNA petición porque servirlo en tres no ahorraba un
+      byte a nadie. Los otros dos se cargan solo donde existen sus componentes, y
+      eso lo decide la plantilla, no el navegador.
+    {%- endcomment -%}
+    {{ 'ne-core.css' | asset_url | stylesheet_tag }}
+
+    {%- liquid
+      assign t = template.name
+      if t == 'product'
+        echo 'ne-product.css' | asset_url | stylesheet_tag
+      endif
+      if t == 'cart'
+        echo 'ne-cart.css' | asset_url | stylesheet_tag
+      endif
+    -%}
 
     {%- comment -%} Las familias tipográficas vienen de los ajustes del theme, así
       que no hay hosting de fuentes externo. La elección final de tipografía es
@@ -61,16 +81,58 @@
       assign body_font = settings.font_body
       assign display_font = settings.font_display
     -%}
-    {{ body_font | font_face: font_display: 'swap' }}
-    {{ body_font | font_modify: 'weight', '500' | font_face: font_display: 'swap' }}
-    {{ display_font | font_face: font_display: 'swap' }}
+    {%- comment -%}
+      FUENTES: CERO DESCARGAS POR DEFECTO.
 
-    <style>
+      Shopify documenta esto como la práctica de rendimiento de más impacto en
+      tipografía, y la razón es que cada archivo de fuente es una DEPENDENCIA DE
+      RENDER: el navegador tiene que parsear el HTML, descubrir el `@font-face`,
+      pedir el archivo, esperarlo y recién entonces pintar el texto. En móvil con
+      conexión apretada son cientos de milisegundos de texto invisible o de texto
+      que cambia de forma, y ese cambio además mueve la maquetación.
+
+      Los valores por defecto son fuentes DEL SISTEMA: ya están en el dispositivo.
+      En iPhone —el aparato que esta tienda tiene que servir primero— eso es
+      SF Pro para el cuerpo y New York para el display: dos tipografías de
+      primera, sin una sola petición de red, sin texto invisible y sin
+      desplazamiento por intercambio de fuente.
+
+      No es una renuncia a la tipografía: es la elección temporal hasta que haya
+      una decisión de marca. El día que haya una fuente propia se cambia en el
+      editor del theme SIN TOCAR CÓDIGO, y la rama de abajo ya hace lo correcto:
+      preconexión y preload del archivo, que es lo que una fuente web necesita
+      para no retrasar el texto.
+
+      `font_face` se llama sin condición a propósito: para una fuente del sistema
+      el filtro no devuelve nada. Lo que sí va guardado es todo lo que generaría
+      una petición muerta.
+    {%- endcomment -%}
+    {%- unless body_font.system? and display_font.system? -%}
+      <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+    {%- endunless -%}
+    {%- unless body_font.system? -%}
+      {{ body_font | font_url | preload_tag: as: 'font', type: 'font/woff2' }}
+    {%- endunless -%}
+    {%- unless display_font.system? -%}
+      {{ display_font | font_url | preload_tag: as: 'font', type: 'font/woff2' }}
+    {%- endunless -%}
+
+    {% style %}
+      {{ body_font | font_face: font_display: 'swap' }}
+      {{ display_font | font_face: font_display: 'swap' }}
       :root {
-        --ne-font-body-shopify: {{ body_font.family }}, {{ body_font.fallback_families }};
-        --ne-font-display-shopify: {{ display_font.family }}, {{ display_font.fallback_families }};
+        {%- if body_font.system? -%}
+          --ne-font-body-shopify: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        {%- else -%}
+          --ne-font-body-shopify: {{ body_font.family }}, {{ body_font.fallback_families }};
+        {%- endif -%}
+        {%- if display_font.system? -%}
+          --ne-font-display-shopify: ui-serif, 'New York', Georgia, Cambria, 'Times New Roman', serif;
+        {%- else -%}
+          --ne-font-display-shopify: {{ display_font.family }}, {{ display_font.fallback_families }};
+        {%- endif -%}
       }
-    </style>
+    {% endstyle %}
 
     <title>
       {{- page_title -}}
@@ -117,118 +179,150 @@
       no una herramienta de build: así el theme conserva la estructura de carpetas
       por defecto, que es lo único que admite la integración de GitHub de Shopify.
     {%- endcomment -%}
-    <script type="importmap">
-      {
-        "imports": {
-          "ne/semantics": {{ 'ne-shopify-semantics.js' | asset_url | json }},
-          "ne/variant-matrix": {{ 'ne-variant-matrix.js' | asset_url | json }},
-          "ne/size-advisor": {{ 'ne-size-advisor.js' | asset_url | json }},
-          "ne/cart-line": {{ 'ne-cart-line.js' | asset_url | json }},
-          "ne/size-selected-event": {{ 'ne-size-selected-event.js' | asset_url | json }},
-          "ne/cod-guard": {{ 'ne-cod-guard.js' | asset_url | json }},
-          "ne/responsive-image": {{ 'ne-responsive-image.js' | asset_url | json }},
-          "ne/a11y-contrast": {{ 'ne-a11y-contrast.js' | asset_url | json }},
-          "ne/product-contract": {{ 'ne-product-contract.js' | asset_url | json }},
-          "ne/shopify-adapter": {{ 'ne-shopify-adapter.js' | asset_url | json }},
-          "ne/product-jsonld": {{ 'ne-product-jsonld.js' | asset_url | json }},
-          "ne/analytics-taxonomy": {{ 'ne-analytics-taxonomy.js' | asset_url | json }}
+    {%- comment -%}
+      JAVASCRIPT SOLO DONDE HAY COMPONENTES.
+
+      Medido: la portada descargaba y PARSEABA 46 KB de JavaScript para CERO
+      componentes. No tiene selector de variantes, ni guía de tallas, ni galería,
+      ni carrito: sus tarjetas de producto son enlaces y el contador del carrito
+      lo renderiza Shopify. Nada de eso necesita una línea de script.
+
+      Así que ni el import map ni el módulo se emiten ahí. La portada —que es la
+      primera impresión y lo que tiene que sentirse instantáneo— se queda con
+      cero JavaScript propio.
+
+      Las plantillas que SÍ tienen componentes se declaran abajo. Si algún día una
+      sección nueva necesita el módulo en otra plantilla, se añade a esta lista:
+      es una línea, y es mejor que cargarlo en todas por si acaso.
+
+      NO ROMPE NADA AL FALTAR: los componentes son mejoras progresivas. Una
+      plantilla sin el módulo se comporta como una con el módulo bloqueado, que
+      es un caso ya probado en navegador.
+    {%- endcomment -%}
+    {%- liquid
+      assign js_templates = 'product,cart' | split: ','
+      assign needs_js = false
+      for name in js_templates
+        if template.name == name
+          assign needs_js = true
+        endif
+      endfor
+    -%}
+
+    {%- if needs_js -%}
+      <script type="importmap">
+        {
+          "imports": {
+            "ne/semantics": {{ 'ne-shopify-semantics.js' | asset_url | json }},
+            "ne/variant-matrix": {{ 'ne-variant-matrix.js' | asset_url | json }},
+            "ne/size-advisor": {{ 'ne-size-advisor.js' | asset_url | json }},
+            "ne/cart-line": {{ 'ne-cart-line.js' | asset_url | json }},
+            "ne/size-selected-event": {{ 'ne-size-selected-event.js' | asset_url | json }},
+            "ne/cod-guard": {{ 'ne-cod-guard.js' | asset_url | json }},
+            "ne/responsive-image": {{ 'ne-responsive-image.js' | asset_url | json }},
+            "ne/a11y-contrast": {{ 'ne-a11y-contrast.js' | asset_url | json }},
+            "ne/product-contract": {{ 'ne-product-contract.js' | asset_url | json }},
+            "ne/shopify-adapter": {{ 'ne-shopify-adapter.js' | asset_url | json }},
+            "ne/product-jsonld": {{ 'ne-product-jsonld.js' | asset_url | json }},
+            "ne/analytics-taxonomy": {{ 'ne-analytics-taxonomy.js' | asset_url | json }}
+          }
         }
-      }
-    </script>
+      </script>
 
-    {%- comment -%}
-      Los componentes son elementos personalizados y se registran con `defer`, así
-      que no bloquean el parser. Cada uno degrada a HTML utilizable si su script
-      no llega: el formulario de producto es un `<form>` real que postea a
-      `/cart/add`, así que la compra funciona sin JavaScript.
-    {%- endcomment -%}
-    {%- comment -%}
-      CONFIGURACIÓN.
+      {%- comment -%}
+        Los componentes son elementos personalizados y se registran con `defer`, así
+        que no bloquean el parser. Cada uno degrada a HTML utilizable si su script
+        no llega: el formulario de producto es un `<form>` real que postea a
+        `/cart/add`, así que la compra funciona sin JavaScript.
+      {%- endcomment -%}
+      {%- comment -%}
+        CONFIGURACIÓN.
 
-      Los ajustes del theme que el script necesita. Van por aquí y no por
-      atributos porque son de alcance global, no de una sección.
+        Los ajustes del theme que el script necesita. Van por aquí y no por
+        atributos porque son de alcance global, no de una sección.
 
-      Existe porque tres ajustes estaban declarados en el esquema y NINGÚN
-      archivo los leía: aparecían en el editor, el comerciante los podía
-      cambiar, y no pasaba nada. Un control que miente es peor que una función
-      que falta.
-    {%- endcomment -%}
-    <script type="application/json" id="ne-config">
-      {
-        "sizeSelectedEvent": {{ settings.analytics_size_selected_event | default: true | json }},
-        "codPrevalidation": {{ settings.cod_prevalidation | default: false | json }},
-        {%- comment -%}
-          La lista de cobertura llega como texto, una por línea, y se parte aquí.
-          Vacía significa «no se sabe», NO «no hay cobertura»: con la lista vacía
-          el módulo devuelve `unknown` y la interfaz no dice nada, porque
-          afirmar que no entregamos en una ciudad sin saberlo es un dato
-          inventado (§191).
-        {%- endcomment -%}
-        "codCoverage": {{ settings.cod_coverage_list | default: '' | strip | split: '
-' | json }}
-      }
-    </script>
+        Existe porque tres ajustes estaban declarados en el esquema y NINGÚN
+        archivo los leía: aparecían en el editor, el comerciante los podía
+        cambiar, y no pasaba nada. Un control que miente es peor que una función
+        que falta.
+      {%- endcomment -%}
+      <script type="application/json" id="ne-config">
+        {
+          "sizeSelectedEvent": {{ settings.analytics_size_selected_event | default: true | json }},
+          "codPrevalidation": {{ settings.cod_prevalidation | default: false | json }},
+          {%- comment -%}
+            La lista de cobertura llega como texto, una por línea, y se parte aquí.
+            Vacía significa «no se sabe», NO «no hay cobertura»: con la lista vacía
+            el módulo devuelve `unknown` y la interfaz no dice nada, porque
+            afirmar que no entregamos en una ciudad sin saberlo es un dato
+            inventado (§191).
+          {%- endcomment -%}
+          "codCoverage": {{ settings.cod_coverage_list | default: '' | strip | split: '
+  ' | json }}
+        }
+      </script>
 
-    {%- comment -%}
-      RUTAS.
+      {%- comment -%}
+        RUTAS.
 
-      Nunca se escriben a mano. Una tienda con varios mercados o idiomas sirve el
-      carrito bajo un prefijo —`/es-co/cart/add`— y un `/cart/add.js` incrustado
-      en el JavaScript fallaría exactamente en los mercados que importan. Las
-      rutas las da Shopify con el objeto `routes`.
-    {%- endcomment -%}
-    <script type="application/json" id="ne-routes">
-      {
-        "cart": {{ routes.cart_url | json }},
-        "cart_add": {{ routes.cart_add_url | json }},
-        "cart_change": {{ routes.cart_change_url | json }},
-        "predictive_search": {{ routes.predictive_search_url | json }}
-      }
-    </script>
+        Nunca se escriben a mano. Una tienda con varios mercados o idiomas sirve el
+        carrito bajo un prefijo —`/es-co/cart/add`— y un `/cart/add.js` incrustado
+        en el JavaScript fallaría exactamente en los mercados que importan. Las
+        rutas las da Shopify con el objeto `routes`.
+      {%- endcomment -%}
+      <script type="application/json" id="ne-routes">
+        {
+          "cart": {{ routes.cart_url | json }},
+          "cart_add": {{ routes.cart_add_url | json }},
+          "cart_change": {{ routes.cart_change_url | json }},
+          "predictive_search": {{ routes.predictive_search_url | json }}
+        }
+      </script>
 
-    {%- comment -%}
-      TEXTOS PARA JAVASCRIPT.
+      {%- comment -%}
+        TEXTOS PARA JAVASCRIPT.
 
-      Todo lo que el navegador escribe en pantalla sale de los archivos de
-      idioma de Shopify, no de cadenas incrustadas en el JavaScript. Así la
-      traducción se edita donde Shopify espera que se edite y el theme sigue
-      siendo traducible desde el admin.
+        Todo lo que el navegador escribe en pantalla sale de los archivos de
+        idioma de Shopify, no de cadenas incrustadas en el JavaScript. Así la
+        traducción se edita donde Shopify espera que se edite y el theme sigue
+        siendo traducible desde el admin.
 
-      Van como JSON, no como atributos: un solo parseo y sin escapado frágil.
-    {%- endcomment -%}
-    <script type="application/json" id="ne-strings">
-      {
-        "selected": {{ 'accessibility.selected' | t | json }},
-        "unavailable": {{ 'accessibility.unavailable' | t | json }},
-        "nonexistent": {{ 'accessibility.nonexistent' | t | json }},
-        "sold_out": {{ 'products.product.sold_out' | t | json }},
-        "add_to_cart": {{ 'products.product.add_to_cart' | t | json }},
-        "adding": {{ 'products.product.adding' | t | json }},
-        "added": {{ 'products.product.added' | t | json }},
-        "choose_option": {{ 'products.product.choose_option' | t: option: '[[option]]' | json }},
-        "view_3d": {{ 'products.product.view_3d' | t | json }},
-        "view_3d_loading": {{ 'products.product.view_3d_loading' | t | json }},
-        "hide_3d": {{ 'products.product.hide_3d' | t | json }},
-        "recommended": {{ 'products.size_guide.recommended' | t: size: '[[size]]' | json }},
-        "recommended_rounded": {{ 'products.size_guide.recommended_rounded' | t: size: '[[size]]' | json }},
-        "recommended_substituted": {{ 'products.size_guide.recommended_substituted' | t: size: '[[size]]', original: '[[original]]' | json }},
-        "choose_size": {{ 'products.size_guide.choose_size' | t: size: '[[size]]' | json }},
-        "out_of_range": {{ 'products.size_guide.out_of_range' | t | json }},
-        "no_data": {{ 'products.size_guide.no_data' | t | json }},
-        "invalid_measurement": {{ 'products.size_guide.invalid_measurement' | t | json }},
-        "recommended_out_of_stock": {{ 'products.size_guide.recommended_out_of_stock' | t | json }},
-        "cart_updated": {{ 'cart.general.updated' | t | json }},
-        "cart_updating": {{ 'cart.general.updating' | t | json }},
-        "cod_covered": {{ 'cart.cod.covered' | t: place: '[[place]]' | json }},
-        "cod_not_covered": {{ 'cart.cod.not_covered' | t: place: '[[place]]' | json }},
-        "cod_missing": {{ 'cart.cod.missing' | t | json }},
-        "error_cart_update": {{ 'errors.cart_update' | t | json }},
-        "error_add_to_cart": {{ 'errors.add_to_cart' | t | json }},
-        "error_network": {{ 'errors.network' | t | json }},
-        "error_generic": {{ 'errors.generic' | t | json }}
-      }
-    </script>
+        Van como JSON, no como atributos: un solo parseo y sin escapado frágil.
+      {%- endcomment -%}
+      <script type="application/json" id="ne-strings">
+        {
+          "selected": {{ 'accessibility.selected' | t | json }},
+          "unavailable": {{ 'accessibility.unavailable' | t | json }},
+          "nonexistent": {{ 'accessibility.nonexistent' | t | json }},
+          "sold_out": {{ 'products.product.sold_out' | t | json }},
+          "add_to_cart": {{ 'products.product.add_to_cart' | t | json }},
+          "adding": {{ 'products.product.adding' | t | json }},
+          "added": {{ 'products.product.added' | t | json }},
+          "choose_option": {{ 'products.product.choose_option' | t: option: '[[option]]' | json }},
+          "view_3d": {{ 'products.product.view_3d' | t | json }},
+          "view_3d_loading": {{ 'products.product.view_3d_loading' | t | json }},
+          "hide_3d": {{ 'products.product.hide_3d' | t | json }},
+          "recommended": {{ 'products.size_guide.recommended' | t: size: '[[size]]' | json }},
+          "recommended_rounded": {{ 'products.size_guide.recommended_rounded' | t: size: '[[size]]' | json }},
+          "recommended_substituted": {{ 'products.size_guide.recommended_substituted' | t: size: '[[size]]', original: '[[original]]' | json }},
+          "choose_size": {{ 'products.size_guide.choose_size' | t: size: '[[size]]' | json }},
+          "out_of_range": {{ 'products.size_guide.out_of_range' | t | json }},
+          "no_data": {{ 'products.size_guide.no_data' | t | json }},
+          "invalid_measurement": {{ 'products.size_guide.invalid_measurement' | t | json }},
+          "recommended_out_of_stock": {{ 'products.size_guide.recommended_out_of_stock' | t | json }},
+          "cart_updated": {{ 'cart.general.updated' | t | json }},
+          "cart_updating": {{ 'cart.general.updating' | t | json }},
+          "cod_covered": {{ 'cart.cod.covered' | t: place: '[[place]]' | json }},
+          "cod_not_covered": {{ 'cart.cod.not_covered' | t: place: '[[place]]' | json }},
+          "cod_missing": {{ 'cart.cod.missing' | t | json }},
+          "error_cart_update": {{ 'errors.cart_update' | t | json }},
+          "error_add_to_cart": {{ 'errors.add_to_cart' | t | json }},
+          "error_network": {{ 'errors.network' | t | json }},
+          "error_generic": {{ 'errors.generic' | t | json }}
+        }
+      </script>
 
-    <script src="{{ 'ne-components.js' | asset_url }}" type="module"></script>
+      <script src="{{ 'ne-components.js' | asset_url }}" type="module"></script>
+    {%- endif -%}
   </body>
 </html>

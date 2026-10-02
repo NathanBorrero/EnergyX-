@@ -952,3 +952,123 @@ se desactiva.
 
 Decía que el stack estaba sin decidir y que había diez comprobaciones. Reescrito: el punto de
 entrada del repositorio no puede contradecir el estado del repositorio.
+
+---
+
+## 18. Optimización de carga — medida antes y después
+
+Punto de partida y de llegada, mediana de 5 ejecuciones con **CPU 4× y 4G lento a la vez**, iPhone
+390×844@3x:
+
+| | Portada antes | Portada ahora | Ficha antes | Ficha ahora |
+| --- | --- | --- | --- | --- |
+| **LCP** | 752 ms | **516 ms** | 736 ms | **600 ms** |
+| **FCP** | 752 ms | **516 ms** | 736 ms | **600 ms** |
+| **CLS** | 0.0000 | **0.0000** | 0.0000 | **0.0000** |
+| **TBT** | 9 ms | **1 ms** | 73 ms | **21 ms** |
+| **INP** | — | — | 40 ms | 56 ms |
+| load | 825 ms | **504 ms** | 1312 ms | **937 ms** |
+| Peticiones | 6 | **3** | 11 | **10** |
+| Peso | 96,2 KB | **23,8 KB** | 148,8 KB | **85,9 KB** |
+| JavaScript | 49,6 KB | **0 KB** | 92,6 KB | **46,4 KB** |
+
+**La portada: −31 % de LCP, −75 % de peso, la mitad de peticiones y cero JavaScript.**
+La ficha: −18 % de LCP, −42 % de peso, **−71 % de tiempo de bloqueo**.
+
+Sobre el INP de 40 → 56 ms: **no es una regresión del código.** Se perfiló con siete ejecuciones
+mirando el desglose del Event Timing API, y el **tiempo de procesamiento del manejador es 0 ms en
+todas**. Los 40–112 ms son retardo de presentación, es decir, el presupuesto de frame del navegador
+con la CPU estrangulada 4×. La mediana real son 48 ms y la varianza es del entorno de medición.
+
+### 18.1 Lo que pagó, y cuánto
+
+| Cambio | Efecto medido |
+| --- | --- |
+| **La portada no emite JavaScript** | −46 KB y −5 peticiones. No tiene selector, ni guía de tallas, ni galería, ni carrito: sus tarjetas son enlaces y el contador lo renderiza Shopify. Cargaba 46 KB para cero componentes. |
+| **Partir la tarea larga del montaje** | TBT de la ficha **~100 ms → ~20 ms, sin quitar un byte.** Había una tarea de 112–145 ms a los ~900 ms: este archivo montando los cinco componentes de una sentada. La guía, la galería y la cobertura ceden el hilo; el selector monta ya, porque es lo que se toca primero. |
+| **CSS troceado por uso y concatenado** | De 3 hojas y 38,4 KB en toda página a **una de 15,5 KB**, más 6 KB solo en la ficha y 2,5 KB solo en el carrito. −2 peticiones en todas las páginas. |
+| **Comentarios fuera del código servido** | JavaScript −45 %, CSS −39 %. Eran el 39 % del CSS y casi la mitad del JS. |
+| **Fuentes del sistema por defecto** | **Cero descargas de fuente.** Era una dependencia de render: parsear, pedir, esperar, pintar. En iPhone da SF Pro y New York, sin una petición, sin texto invisible y sin desplazamiento por intercambio. |
+| **Una fuente menos** | El peso 500 se usaba en UNA regla. Un archivo de fuente entero compitiendo con el primer paint por un título de tarjeta. |
+| **`preload` de la imagen del hero** | El `<img>` no está al principio de su sección; el enlace sí. Comparte la escalera de anchos con el `<img>` para que no sean dos descargas. |
+
+### 18.2 Lo que NO pagó, y se quitó
+
+Se probó diferir `size-advisor`, `cart-line` y `size-selected-event` —12 KB que solo hacen falta al
+abrir la guía o tocar una talla— con precarga en reposo. Resultado:
+
+```
+TBT de la ficha    75 ms -> 86 ms
+peso de la ficha   85,7 KB -> 86,9 KB
+```
+
+**Se revirtió.** Son módulos de 3 a 5 KB que bajan en paralelo por la misma conexión; a ese tamaño
+el parseo es ruido. Lo que sí añadía era 1,3 KB de maquinaria y un riesgo real: un toque antes de
+que llegara el módulo se quedaba sin publicar el evento y sin escribir las atribuciones de línea.
+
+La regla del proyecto aplicada a sí misma: **si una optimización no se gana su complejidad con un
+número, se quita.**
+
+### 18.3 Dos fallos que envenenaban la medición
+
+Los dos eran invisibles, y los dos daban números MEJORES de lo real.
+
+**Un banco pedía tres archivos que ya no existían.** Al fusionar el CSS, el banco de la ficha quedó
+apuntando a `ne-tokens.css`, `ne-base.css` y `ne-shell.css`. Un 404 de hoja de estilo no rompe la
+página: la deja sin estilos. La medición dio 6,1 KB de CSS y un LCP buenísimo de una página sin
+maquetar.
+
+**El banco de la portada no tenía import map.** `ne-components.js` lanzaba «Failed to resolve module
+specifier» y **ningún elemento personalizado se definía**. La portada no tiene componentes que
+mejorar, así que se veía perfecta, y se midió una página con el JavaScript roto.
+
+Dos comprobaciones nuevas, las dos validadas inyectando el fallo:
+
+- **`assets referenciados existen`** ahora cubre los bancos, no solo el Liquid.
+- **`todos los bancos definen sus componentes sin errores`** carga los cuatro y exige cero errores de
+  página y los cinco elementos definidos. Más su recíproca: la portada tiene que cargar **sin
+  descargar JavaScript y sin definir ningún componente** — si apareciera alguno, estaría cargando
+  código que no usa.
+
+Un error de módulo no se ve. Hay que preguntarlo.
+
+### 18.4 El barrido de comentarios, probado por comportamiento
+
+El razonamiento de por qué un barrido por líneas es seguro está en el propio script: ningún módulo
+tiene un literal de plantilla multilínea, y ni una cadena ni una expresión regular pueden abarcar
+varias líneas, así que una línea cuyo primer carácter no blanco es `//` es inequívocamente un
+comentario.
+
+**Pero un razonamiento no es una prueba.** `sync-theme-assets.mjs --verify` monta un espejo de
+`src/lib` con el contenido **que se sirve**, le copia las pruebas de verdad y las ejecuta:
+
+```
+OK  321 pruebas pasan contra el código SERVIDO, sin comentarios
+```
+
+Está dentro de `scripts/check.mjs`, así que corre en cada ejecución de la suite.
+
+### 18.5 Un falso positivo que iba a dar ruido para siempre
+
+La comprobación de marcadores pendientes buscaba la palabra `TODO`, y este código está comentado en
+español: «TODO ES MEJORA PROGRESIVA», «TODO ESTÁTICO», «TODO LO COMERCIAL». Tres falsos positivos de
+golpe en cuanto el archivo entró en el ámbito escaneado.
+
+Afinada a la convención real del marcador —`TODO:` o `TODO(alguien)`, con dos puntos o paréntesis—.
+Verificada en los dos sentidos: un marcador de verdad falla, la palabra española no.
+
+### 18.6 Presupuestos apretados al nuevo mínimo
+
+Los presupuestos de regresión estaban puestos sobre los valores antiguos y sobraban por todas
+partes. Ahora:
+
+| | Medido | Presupuesto |
+| --- | --- | --- |
+| CSS de toda página | 3 549 B | 4 200 |
+| CSS extra de ficha | 1 423 B | 1 800 |
+| CSS extra de carrito | 802 B | 1 100 |
+| Componentes JS | 7 201 B | 8 000 |
+| Módulos de la ficha | 6 290 B | 7 200 |
+| **JavaScript de la portada** | **0** | **0** |
+
+**Total de la ficha: 17 KB comprimidos** de CSS más JavaScript.

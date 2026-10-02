@@ -100,6 +100,14 @@ function withoutComments(source) {
 /** Igual que `liquidSource`, sin comentarios. Es lo que se escanea. */
 const liquidCode = new Map([...liquidSource].map(([f, src]) => [f, withoutComments(src)]));
 const allLiquid = [...liquidCode.values()].join('\n');
+/** Los bancos de pruebas. Declarados en un sitio para que no se olvide ninguno. */
+const HARNESSES = [
+  'product-harness.html',
+  'cart-harness.html',
+  'cart-empty-harness.html',
+  'home-harness.html',
+];
+
 const js = await readFile(COMPONENTS, 'utf8');
 const layout = await readFile(LAYOUT, 'utf8');
 
@@ -299,6 +307,25 @@ await check('assets referenciados existen', async () => {
   for (const m of sources.matchAll(/'([A-Za-z0-9._-]+\.(?:css|js|svg|png|jpg|webp|woff2?))'\s*\|\s*asset_url/g)) {
     if (!present.has(m[1])) problems.push(`asset_url referencia '${m[1]}', que no está en theme/assets`);
   }
+
+  // LOS BANCOS TAMBIÉN, y esta parte nació de un fallo real: al fusionar el CSS,
+  // un banco quedó pidiendo tres archivos que ya no existían. Los 404 no rompen
+  // la página, simplemente la dejan sin estilos, así que la medición de
+  // rendimiento dio un número BUENÍSIMO y falso. Una referencia muerta en un
+  // banco no es un detalle de prueba: envenena la medición.
+  for (const name of HARNESSES) {
+    const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+    for (const m of text.matchAll(/(?:href|src)="\/theme\/assets\/([A-Za-z0-9._-]+)"/g)) {
+      if (!present.has(m[1])) {
+        problems.push(`${name} pide /theme/assets/${m[1]}, que no existe: la página se mediría sin estilos`);
+      }
+    }
+    for (const m of text.matchAll(/"\/theme\/assets\/([A-Za-z0-9._-]+)"/g)) {
+      if (!present.has(m[1])) {
+        problems.push(`${name} mapea /theme/assets/${m[1]} en su import map, y no existe`);
+      }
+    }
+  }
   return problems;
 });
 
@@ -387,14 +414,6 @@ await check('ninguna variable de bucle usa .index', () => {
 // ---------------------------------------------------------------------------
 await check('el banco de pruebas lleva las clases del marcado real', async () => {
   const problems = [];
-
-  /** Los bancos de pruebas. Declarados en un sitio para que no se olvide ninguno. */
-  const HARNESSES = [
-    'product-harness.html',
-    'cart-harness.html',
-    'cart-empty-harness.html',
-    'home-harness.html',
-  ];
 
   /** Piezas que los bancos reproducen. */
   const MIRRORED = [
@@ -604,8 +623,14 @@ await check('JSON-LD sin interpolación cruda', () => {
 await check('los modificadores usados solos se sostienen solos', async () => {
   const problems = [];
   const css = [
-    await readFile(path.join(ROOT, 'theme', 'assets', 'ne-base.css'), 'utf8'),
-    await readFile(path.join(ROOT, 'theme', 'assets', 'ne-components.css'), 'utf8'),
+
+    // El CSS FUENTE, no el generado: es donde se edita, y donde una regla mal
+    // escrita hay que arreglarla.
+    await readFile(path.join(ROOT, 'src', 'theme', 'css', 'tokens.css'), 'utf8'),
+    await readFile(path.join(ROOT, 'src', 'theme', 'css', 'base.css'), 'utf8'),
+    await readFile(path.join(ROOT, 'src', 'theme', 'css', 'shell.css'), 'utf8'),
+    await readFile(path.join(ROOT, 'src', 'theme', 'css', 'product.css'), 'utf8'),
+    await readFile(path.join(ROOT, 'src', 'theme', 'css', 'cart.css'), 'utf8'),
   ].join('\n');
 
   /** Modificadores usados sin su base, en todo el marcado. */

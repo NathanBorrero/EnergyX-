@@ -17,6 +17,16 @@
   endif
 -%}
 
+{%- comment -%}
+  Una sola declaración de la escalera de anchos y del descriptor `sizes`, usada
+  por el preload y por el `<img>`. Separarlas haría que el navegador resolviera
+  candidatos distintos y descargara la imagen más grande de la página DOS veces.
+{%- endcomment -%}
+{%- assign hero_widths = '480, 640, 768, 960, 1280, 1536, 1920' -%}
+{%- assign hero_sizes = '(max-width: 47.99em) calc(100vw - 2rem), 42vw' -%}
+
+{% render 'ne-image-preload', image: hero_image, widths: hero_widths, sizes: hero_sizes %}
+
 <section
   class="ne-hero ne-section--vast{% if section.settings.inverse %} ne-inverse{% endif %} ne-hero--{{ section.settings.alignment | escape }}"
   aria-labelledby="ne-hero-heading-{{ section.id }}"
@@ -58,8 +68,8 @@
         {% render 'ne-image',
           image: hero_image,
           role: 'lcp',
-          sizes: '(max-width: 47.99em) calc(100vw - 2rem), 42vw',
-          widths: '480, 640, 768, 960, 1280, 1536, 1920',
+          sizes: hero_sizes,
+          widths: hero_widths,
           max: 1920,
           ratio: '3 / 4',
           class: 'ne-hero__image',
@@ -74,7 +84,7 @@
 </section>
 
 {%- comment -%}
-  Los estilos de esta pieza viven en `assets/ne-components.css`.
+  Los estilos de esta pieza viven en `src/theme/css/shell.css`.
 
   Razón única y verificable: la auditoría de accesibilidad y las pruebas en
   navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido

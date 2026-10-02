@@ -61,16 +61,28 @@ async function check(name, fn) {
  * comprobación falla aquí, la pregunta no es «subo el número», es «qué entró».
  */
 const BUDGET = Object.freeze({
-  /** Los tres CSS del primer paint, juntos. */
-  cssFirstPaint: 12_000,
-  /** El único JavaScript escrito a mano. */
-  componentsJs: 17_000,
-  /** Los módulos que la ficha de producto necesita de verdad. */
-  productModules: 20_000,
+  /** El CSS que carga TODA página. Medido: 3 559 B. */
+  cssFirstPaint: 4_200,
+  /** El CSS extra de la ficha de producto. Medido: 1 423 B. */
+  cssProduct: 1_800,
+  /** El CSS extra del carrito. Medido: 802 B. */
+  cssCart: 1_100,
+  /** Los componentes del theme. Medido: 7 213 B. */
+  componentsJs: 8_000,
+  /** Los módulos que la ficha de producto necesita. Medido: 6 282 B. */
+  productModules: 7_200,
   /** Módulos que la ficha de producto NO debe descargar. */
   unusedModulesFetched: 0,
   /** Desplazamiento de maquetación acumulado. */
   cls: 0.01,
+  /**
+   * JavaScript que la PORTADA puede descargar: ninguno.
+   *
+   * No es un presupuesto apretado, es un cero. La portada no tiene selector, ni
+   * guía de tallas, ni galería, ni carrito; sus tarjetas son enlaces. Cargaba
+   * 46 KB sin comprimir para nada, y ahora su plantilla no emite el módulo.
+   */
+  homepageJsBytes: 0,
 });
 
 // ---------------------------------------------------------------------------
@@ -85,14 +97,23 @@ await check('presupuesto de bytes del primer paint', async () => {
     return gzipSync(await readFile(path.join(THEME, 'assets', file)), { level: 9 }).length;
   }
 
-  const css = (await gz('ne-tokens.css')) + (await gz('ne-base.css')) + (await gz('ne-components.css'));
+  const css = await gz('ne-core.css');
+  const cssProduct = await gz('ne-product.css');
+  const cssCart = await gz('ne-cart.css');
   const js = await gz('ne-components.js');
 
-  notes.push(`CSS del primer paint: ${css} B comprimidos (presupuesto ${BUDGET.cssFirstPaint})`);
+  notes.push(`CSS de toda página: ${css} B comprimidos (presupuesto ${BUDGET.cssFirstPaint})`);
+  notes.push(`CSS extra de ficha: ${cssProduct} B · de carrito: ${cssCart} B`);
   notes.push(`ne-components.js: ${js} B comprimidos (presupuesto ${BUDGET.componentsJs})`);
 
   if (css > BUDGET.cssFirstPaint) {
-    problems.push(`el CSS del primer paint pesa ${css} B comprimidos, por encima de ${BUDGET.cssFirstPaint}`);
+    problems.push(`el CSS de toda página pesa ${css} B comprimidos, por encima de ${BUDGET.cssFirstPaint}`);
+  }
+  if (cssProduct > BUDGET.cssProduct) {
+    problems.push(`el CSS de la ficha pesa ${cssProduct} B comprimidos, por encima de ${BUDGET.cssProduct}`);
+  }
+  if (cssCart > BUDGET.cssCart) {
+    problems.push(`el CSS del carrito pesa ${cssCart} B comprimidos, por encima de ${BUDGET.cssCart}`);
   }
   if (js > BUDGET.componentsJs) {
     problems.push(`ne-components.js pesa ${js} B comprimidos, por encima de ${BUDGET.componentsJs}`);
@@ -123,6 +144,38 @@ await check('presupuesto de bytes del primer paint', async () => {
 
   notes.push(`total CSS + JS de la ficha: ${css + js + modules} B comprimidos`);
   return { problems, notes };
+});
+
+// ---------------------------------------------------------------------------
+// 1bis · La portada no descarga JavaScript. Ninguno.
+//
+//        Medido: cargaba 46 KB sin comprimir y 5 peticiones para CERO
+//        componentes. Su plantilla ya no emite el módulo, y esto lo sostiene.
+// ---------------------------------------------------------------------------
+await check('la plantilla de portada no emite JavaScript', async () => {
+  const problems = [];
+  const layout = (await readFile(path.join(THEME, 'layout', 'theme.liquid'), 'utf8')).replace(
+    /\{%-?\s*comment\s*-?%\}[\s\S]*?\{%-?\s*endcomment\s*-?%\}/g,
+    '',
+  );
+
+  // La lista de plantillas que reciben el módulo tiene que existir y no incluir
+  // la portada: si alguien la añade «por si acaso», esto lo detiene.
+  const list = layout.match(/assign js_templates = '([^']*)'/);
+  if (!list) {
+    problems.push('theme.liquid ya no declara qué plantillas reciben el módulo: volvería a cargarse en todas');
+    return problems;
+  }
+  const templates = list[1].split(',').map((t) => t.trim());
+  if (templates.includes('index')) {
+    problems.push("la portada ('index') está en la lista de plantillas con JavaScript: no tiene ni un componente");
+  }
+  for (const needed of ['product', 'cart']) {
+    if (!templates.includes(needed)) {
+      problems.push(`la plantilla '${needed}' NO recibe el módulo y sí tiene componentes: quedaría sin mejorar`);
+    }
+  }
+  return problems;
 });
 
 // ---------------------------------------------------------------------------
