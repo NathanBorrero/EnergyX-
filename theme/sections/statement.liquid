@@ -27,19 +27,15 @@
   </div>
 </section>
 
-{% stylesheet %}
-  .ne-statement { background: var(--ne-paper); color: var(--ne-text); }
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
 
-  .ne-statement__body { grid-column: 1 / -1; }
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
 
-  @media (min-width: 48em) {
-    /* Desplazado dos columnas: el aire a la izquierda es lo que hace que una
-       declaración se lea como una declaración y no como un párrafo más. */
-    .ne-statement__body { grid-column: 3 / span 8; }
-  }
-
-  .ne-statement__text { margin-top: var(--ne-space-m); }
-{% endstylesheet %}
 
 {% schema %}
 {

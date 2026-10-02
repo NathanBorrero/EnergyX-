@@ -73,53 +73,15 @@
   </div>
 </section>
 
-{% stylesheet %}
-  .ne-hero {
-    background: var(--ne-paper);
-    color: var(--ne-text);
-    overflow: clip;
-  }
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
 
-  .ne-hero__grid {
-    align-items: end;
-    row-gap: var(--ne-space-l);
-  }
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
 
-  .ne-hero__copy { grid-column: 1 / -1; }
-  .ne-hero__figure { grid-column: 1 / -1; margin: 0; }
-
-  @media (min-width: 48em) {
-    .ne-hero__copy {
-      grid-column: 1 / span 7;
-      /* El texto baja respecto a la imagen para que la lectura empiece abajo a la
-         izquierda, no en el centro óptico. Es composición, no decoración. */
-      padding-bottom: var(--ne-space-l);
-    }
-    .ne-hero__figure { grid-column: 8 / span 5; }
-
-    /* Variante desplazada: el titular rompe hacia el margen izquierdo y la
-       imagen se adentra una columna. Da la tensión editorial sin ningún efecto. */
-    .ne-hero--offset .ne-hero__copy { grid-column: 1 / span 6; }
-    .ne-hero--offset .ne-hero__figure {
-      grid-column: 7 / span 6;
-      margin-bottom: calc(var(--ne-space-2xl) * -1);
-    }
-  }
-
-  .ne-hero__eyebrow { margin-bottom: var(--ne-space-m); }
-
-  .ne-hero__heading {
-    /* El titular puede exceder la columna a propósito en pantallas grandes: es
-       lo que separa una portada compuesta de una centrada. */
-    margin-bottom: var(--ne-space-m);
-  }
-
-  .ne-hero__body { margin-bottom: var(--ne-space-l); }
-
-  .ne-hero__image { width: 100%; object-fit: cover; }
-
-  .ne-hero__caption { margin-top: var(--ne-space-2xs); }
-{% endstylesheet %}
 
 {% schema %}
 {

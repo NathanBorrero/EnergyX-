@@ -72,7 +72,13 @@
      comprador puede querer verlo o pedir aviso. */
   .ne-picker__chip[data-ne-state='unavailable'] .ne-picker__chip-face {
     color: var(--ne-text-soft);
-    border-color: var(--ne-rule);
+    /* `--ne-border`, no `--ne-rule`. El borde de un chip es el límite del
+       control y comunica su estado, así que le aplica el mínimo no textual de
+       3:1; `--ne-rule` es decorativo y da 1.34:1 contra el papel, con lo que el
+       chip agotado se quedaba prácticamente sin contorno. Lo midió la auditoría
+       sobre la página renderizada. La distinción vive en la FORMA —tachado—, no
+       en un color invisible. */
+    border-color: var(--ne-border);
     text-decoration: line-through;
     text-decoration-thickness: 1px;
   }
@@ -81,9 +87,14 @@
      agotado y no seleccionable. Confundir los dos es lo que rompe la ficha. */
   .ne-picker__chip[data-ne-state='nonexistent'] .ne-picker__chip-face {
     color: var(--ne-text-soft);
-    border-color: var(--ne-rule);
+    border-color: var(--ne-border);
+    /* Discontinuo: una diferencia de forma, legible incluso sin distinguir
+       colores. Es lo que separa «no se fabrica» de «agotado», que va tachado. */
     border-style: dashed;
-    opacity: 0.65;
+    /* SIN `opacity`. Rebajaba el contraste de todo lo de dentro, texto incluido,
+       y la opacidad no aparece en el color computado, así que ninguna medición
+       de color la detecta: un fallo de contraste invisible para la auditoría y
+       visible para el comprador. El color suave ya cumple 7.26:1. */
   }
   .ne-picker__chip[data-ne-state='nonexistent'] { cursor: not-allowed; }
 
@@ -292,6 +303,16 @@
 
   .ne-cart__price { font-variant-numeric: tabular-nums; }
 
+  /* QUITAR es destructivo y es el control que más se pulsa por error en un
+     carrito en móvil. `.ne-button--text` cumple el mínimo de 24px, pero aquí se
+     sube al objetivo de 44: la auditoría lo midió a 53×27 y lo marcó. Un
+     objetivo pequeño en una acción destructiva es un error esperando a pasar. */
+  .ne-cart__controls .ne-button--text {
+    min-height: var(--ne-touch);
+    display: inline-flex;
+    align-items: center;
+  }
+
   .ne-cart__foot {
     display: grid;
     gap: var(--ne-space-m);
@@ -316,3 +337,285 @@ ne-cart[data-ne-busy] {
 
 /* Sin `transition` en la opacidad a propósito: el parpadeo tiene que ser
    inmediato para que se lea como «estoy trabajando», no como una animación. */
+
+/* === Cabecera ==================================================== */
+  .ne-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ne-paper);
+  }
+
+  .ne-header__inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-m);
+    padding-block: var(--ne-space-s);
+  }
+
+  .ne-header__brand {
+    color: inherit;
+    text-decoration: none;
+    min-height: var(--ne-touch-min);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ne-header__wordmark {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-lead);
+    letter-spacing: var(--ne-tracking-title);
+  }
+
+  .ne-header__nav { display: none; }
+
+  @media (min-width: 48em) {
+    .ne-header__nav { display: block; }
+  }
+
+  .ne-header__list {
+    display: flex;
+    gap: var(--ne-space-m);
+  }
+
+  .ne-header__link,
+  .ne-header__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ne-space-3xs);
+    /* 44px de alto real: el mínimo exigido es 24, pero en móvil 44 es el tamaño
+       que de verdad se acierta con el pulgar. */
+    min-height: var(--ne-touch);
+    padding-inline: 2px;
+    color: inherit;
+    text-decoration: none;
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+  }
+
+  .ne-header__link[aria-current='page'] { color: var(--ne-accent); }
+
+  .ne-header__count {
+    font-variant-numeric: tabular-nums;
+  }
+
+/* === Pie ========================================================= */
+  .ne-footer__inner {
+    display: grid;
+    gap: var(--ne-space-l);
+    padding-top: var(--ne-space-xl);
+  }
+
+  @media (min-width: 48em) {
+    .ne-footer__inner {
+      grid-template-columns: 1fr auto auto;
+      align-items: start;
+      gap: var(--ne-space-2xl);
+    }
+  }
+
+  .ne-footer__wordmark {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-title);
+    letter-spacing: var(--ne-tracking-title);
+  }
+
+  .ne-footer__list,
+  .ne-footer__policies {
+    display: grid;
+    gap: var(--ne-space-2xs);
+  }
+
+  .ne-footer__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--ne-touch-min);
+    color: inherit;
+    text-decoration: none;
+    border-bottom: var(--ne-hairline) solid transparent;
+  }
+  .ne-footer__link:hover { border-bottom-color: var(--ne-accent); }
+
+  .ne-footer__legal { display: grid; gap: var(--ne-space-s); }
+
+/* === Portada editorial =========================================== */
+  .ne-hero {
+    background: var(--ne-paper);
+    color: var(--ne-text);
+    overflow: clip;
+  }
+
+  .ne-hero__grid {
+    align-items: end;
+    row-gap: var(--ne-space-l);
+  }
+
+  .ne-hero__copy { grid-column: 1 / -1; }
+  .ne-hero__figure { grid-column: 1 / -1; margin: 0; }
+
+  @media (min-width: 48em) {
+    .ne-hero__copy {
+      grid-column: 1 / span 7;
+      /* El texto baja respecto a la imagen para que la lectura empiece abajo a la
+         izquierda, no en el centro óptico. Es composición, no decoración. */
+      padding-bottom: var(--ne-space-l);
+    }
+    .ne-hero__figure { grid-column: 8 / span 5; }
+
+    /* Variante desplazada: el titular rompe hacia el margen izquierdo y la
+       imagen se adentra una columna. Da la tensión editorial sin ningún efecto. */
+    .ne-hero--offset .ne-hero__copy { grid-column: 1 / span 6; }
+    .ne-hero--offset .ne-hero__figure {
+      grid-column: 7 / span 6;
+      margin-bottom: calc(var(--ne-space-2xl) * -1);
+    }
+  }
+
+  .ne-hero__eyebrow { margin-bottom: var(--ne-space-m); }
+
+  .ne-hero__heading {
+    /* El titular puede exceder la columna a propósito en pantallas grandes: es
+       lo que separa una portada compuesta de una centrada. */
+    margin-bottom: var(--ne-space-m);
+  }
+
+  .ne-hero__body { margin-bottom: var(--ne-space-l); }
+
+  .ne-hero__image { width: 100%; object-fit: cover; }
+
+  .ne-hero__caption { margin-top: var(--ne-space-2xs); }
+
+/* === Declaración ================================================= */
+  .ne-statement { background: var(--ne-paper); color: var(--ne-text); }
+
+  .ne-statement__body { grid-column: 1 / -1; }
+
+  @media (min-width: 48em) {
+    /* Desplazado dos columnas: el aire a la izquierda es lo que hace que una
+       declaración se lea como una declaración y no como un párrafo más. */
+    .ne-statement__body { grid-column: 3 / span 8; }
+  }
+
+  .ne-statement__text { margin-top: var(--ne-space-m); }
+
+/* === Rejilla de producto (sección) =============================== */
+  .ne-grid-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-m);
+    margin-bottom: var(--ne-space-l);
+  }
+
+  /* `.ne-product-grid` vive en ne-base.css: la comparten la colección, la
+     búsqueda y esta sección, y definirla aquí la dejaría sin estilos en las
+     páginas donde esta sección no esté presente. */
+
+/* === Tarjeta de producto ========================================= */
+  .ne-card { position: relative; }
+
+  .ne-card__link {
+    display: grid;
+    gap: var(--ne-space-xs);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ne-card__media { position: relative; background: var(--ne-paper-deep); }
+
+  .ne-card__image {
+    width: 100%;
+    object-fit: cover;
+    transition: opacity var(--ne-dur) var(--ne-ease);
+  }
+  .ne-card__link:hover .ne-card__image { opacity: 0.88; }
+
+  .ne-card__flag {
+    position: absolute;
+    inset: auto auto var(--ne-space-2xs) var(--ne-space-2xs);
+    padding: 0.2em 0.5em;
+    background: var(--ne-paper);
+    color: var(--ne-text);
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+  }
+
+  .ne-card__meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-s);
+  }
+
+  .ne-card__title {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-body);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  .ne-card__price { font-variant-numeric: tabular-nums; }
+
+/* === Ficha técnica =============================================== */
+  .ne-specs {
+    display: grid;
+    gap: var(--ne-space-2xs);
+    margin: 0;
+    padding-top: var(--ne-space-xs);
+    border-top: var(--ne-hairline) solid var(--ne-rule);
+  }
+  .ne-specs__row {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: var(--ne-space-2xs);
+    align-items: baseline;
+  }
+  .ne-specs dd { margin: 0; }
+
+/* === Colección =================================================== */
+  .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
+  .ne-collection__intro { max-width: var(--ne-measure); }
+  .ne-pagination { display: flex; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+
+/* === Búsqueda ==================================================== */
+  .ne-search__form { display: flex; gap: var(--ne-space-2xs); margin-block: var(--ne-space-l); }
+  .ne-search__input {
+    flex: 1;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs) var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+  }
+
+/* === Listado de colecciones ====================================== */
+  .ne-collection-list { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--ne-space-xl); row-gap: var(--ne-space-l); }
+  @media (min-width: 48em) { .ne-collection-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ne-collection-list__link { display: grid; gap: var(--ne-space-xs); color: inherit; text-decoration: none; }
+
+/* === Blog ======================================================== */
+  .ne-article-list { margin-top: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
+  .ne-article-list__item { padding-bottom: var(--ne-space-m); border-bottom: var(--ne-hairline) solid var(--ne-rule); }
+  .ne-article-list__link { display: grid; gap: var(--ne-space-3xs); color: inherit; text-decoration: none; }
+
+/* === Artículo ==================================================== */
+  .ne-article__content { margin-top: var(--ne-space-l); }
+  .ne-article__content > * + * { margin-top: var(--ne-space-s); }
+
+/* === Página ====================================================== */
+  .ne-page__content { margin-top: var(--ne-space-l); }
+  .ne-page__content > * + * { margin-top: var(--ne-space-s); }
+
+/* === Contraseña ================================================== */
+  .ne-password__field { display: grid; gap: var(--ne-space-2xs); margin-top: var(--ne-space-l); max-width: 24rem; }
+  .ne-password__field input {
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs) var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+  }
+
+/* === 404 ========================================================= */
+  .ne-404__actions { display: flex; flex-wrap: wrap; gap: var(--ne-space-2xs); margin-top: var(--ne-space-l); }

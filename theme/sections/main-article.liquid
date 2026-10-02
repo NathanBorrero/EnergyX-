@@ -9,10 +9,15 @@
     </div>
   </div>
 </article>
-{% stylesheet %}
-  .ne-article__content { margin-top: var(--ne-space-l); }
-  .ne-article__content > * + * { margin-top: var(--ne-space-s); }
-{% endstylesheet %}
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 {% schema %}
 { "name": "Artículo", "tag": "section" }
 {% endschema %}

@@ -62,69 +62,15 @@
   <hr class="ne-rule">
 </header>
 
-{% stylesheet %}
-  .ne-header {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: var(--ne-paper);
-  }
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
 
-  .ne-header__inner {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--ne-space-m);
-    padding-block: var(--ne-space-s);
-  }
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
 
-  .ne-header__brand {
-    color: inherit;
-    text-decoration: none;
-    min-height: var(--ne-touch-min);
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .ne-header__wordmark {
-    font-family: var(--ne-font-display);
-    font-size: var(--ne-size-lead);
-    letter-spacing: var(--ne-tracking-title);
-  }
-
-  .ne-header__nav { display: none; }
-
-  @media (min-width: 48em) {
-    .ne-header__nav { display: block; }
-  }
-
-  .ne-header__list {
-    display: flex;
-    gap: var(--ne-space-m);
-  }
-
-  .ne-header__link,
-  .ne-header__cart {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ne-space-3xs);
-    /* 44px de alto real: el mínimo exigido es 24, pero en móvil 44 es el tamaño
-       que de verdad se acierta con el pulgar. */
-    min-height: var(--ne-touch);
-    padding-inline: 2px;
-    color: inherit;
-    text-decoration: none;
-    font-size: var(--ne-size-caption);
-    letter-spacing: var(--ne-tracking-caption);
-    text-transform: uppercase;
-  }
-
-  .ne-header__link[aria-current='page'] { color: var(--ne-accent); }
-
-  .ne-header__count {
-    font-variant-numeric: tabular-nums;
-  }
-{% endstylesheet %}
 
 {% schema %}
 {

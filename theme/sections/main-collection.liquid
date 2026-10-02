@@ -34,11 +34,15 @@
   </div>
 </section>
 
-{% stylesheet %}
-  .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
-  .ne-collection__intro { max-width: var(--ne-measure); }
-  .ne-pagination { display: flex; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
-{% endstylesheet %}
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 
 {% schema %}
 { "name": "t:sections.main_collection.name", "tag": "section" }

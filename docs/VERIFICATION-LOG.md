@@ -439,3 +439,93 @@ aproximadamente lo que Theme Check ya verifica en local, con 0 infracciones sobr
 Para desbloquearlo hay que permitir el dominio de la tienda en los ajustes de red del entorno, o
 desplegar por la integración de GitHub de Shopify una vez exista la tienda de Nathan & Esteban
 (`DISCOVERY.md`, integración de GitHub).
+
+---
+
+## 12. Accesibilidad — medida sobre la página renderizada
+
+La paleta ya se había validado con `a11y-contrast.js` **antes** de escribir una línea de CSS, y eso
+encontró un borde a 2.37:1 contra un mínimo de 3:1. Pero validar los tokens no dice nada de lo que
+el comprador ve. Esta sección registra lo que apareció al medir la página.
+
+El módulo que mide es **el mismo** que validó la paleta, importado en la página por su URL. No hay
+un segundo cálculo de contraste sin pruebas.
+
+### 12.1 Dos violaciones reales de contraste
+
+| Violación | Medido | Exige |
+| --- | --- | --- |
+| Borde de los chips «agotado» y «no se fabrica», en `--ne-rule` | **1.34:1** | 3:1 |
+| `opacity: 0.65` sobre el chip «no se fabrica» | rebajaba todo lo de dentro | — |
+
+**El borde de un chip no es decoración.** Es el límite del control y comunica su estado, así que le
+aplica el mínimo no textual de 3:1. `--ne-rule` está declarado como decorativo y da 1.34:1 contra el
+papel: el chip agotado se quedaba prácticamente sin contorno. Corregido a `--ne-border`, que pasa, y
+la distinción entre los dos estados vive donde debe —tachado frente a discontinuo, que son
+diferencias de **forma**— en lugar de en un color invisible.
+
+**La `opacity` era peor, porque era indetectable.** Rebaja el contraste de todo lo que contiene,
+texto incluido, y **no aparece en `getComputedStyle().color`**: cualquier medición que solo lea
+colores da un pase falso exactamente donde el contraste se ha roto. Retirada; el color de texto
+suave ya cumple 7.26:1.
+
+La auditoría ahora compone el color contra el fondo por el producto de las opacidades de la cadena
+de ancestros, que es lo que el navegador pinta. Verificado inyectando `opacity: 0.35`: detectado,
+2.95:1 contra 4.5:1 exigido.
+
+### 12.2 Un objetivo destructivo por debajo del objetivo de 44px
+
+«Quitar» en el carrito medía 53×27: cumple el mínimo de 24, no llegaba al objetivo de 44. Es la
+acción más destructiva del carrito y la que más se pulsa por error en móvil. Subida a 44.
+
+### 12.3 Tres fallos en mi propia auditoría
+
+Una auditoría con falsos positivos se desactiva, así que se corrigieron:
+
+| Fallo | Por qué era falso |
+| --- | --- |
+| Contaba toda `label[for]` como objetivo | Una etiqueta junto a un campo **visible** no es el objetivo: el objetivo es el campo. Solo lo es cuando su control está oculto a la vista, como en los chips. |
+| Tomaba la vuelta de la tabulación por un salto de orden | Tras el último elemento, Tab vuelve al primero. Es el comportamiento normal del navegador. |
+| Medía duplicados decorativos | La foto de una línea de carrito es `aria-hidden="true"` con `tabindex="-1"`: fuera del árbol de accesibilidad y del orden de tabulación, y repite el enlace de texto contiguo. Es el caso «objetivo equivalente»; el objetivo que cuenta es el enlace, y ese se mide. |
+
+### 12.4 La tercera forma de la misma deriva, y la peor
+
+El banco de pruebas había llevado **CSS copiado** (resuelto cargando el archivo real), **textos
+copiados** (resuelto resolviéndolos del archivo de idioma) y, todavía, **marcado simplificado**.
+
+Esta última es la que más engaña. Al inyectar a propósito un fallo de contraste en
+`.ne-picker__chosen`, **no se detectó nada**: el banco escribía ese `<span>` sin la clase, así que la
+regla nunca se aplicaba. La auditoría estaba midiendo elementos **sin los estilos del theme**, es
+decir, aprobando cosas que en la tienda pueden fallar.
+
+Medidas: **15 clases del marcado real no existían en el banco.** Alineado clase por clase, y añadida
+la comprobación `el banco de pruebas lleva las clases del marcado real`, que falla si una clase usada
+en una pieza espejada no aparece en ningún banco. Verificada retirando `.ne-picker__chosen`:
+detectada.
+
+También se añadió un tercer banco para el **carrito vacío**: es un estado aparte, es lo primero que
+ve quien llega al carrito por error, y es la única pantalla que es solo texto y un botón.
+
+Como efecto colateral, los `{% stylesheet %}` de las **19** piezas del theme pasaron a
+`assets/ne-components.css`. Una sola fuente, y es la que carga tanto la tienda como la auditoría.
+
+### 12.5 Las ocho comprobaciones, validadas inyectando el fallo
+
+| Fallo inyectado | Detectado |
+| --- | --- |
+| Texto a 1.51:1 | sí |
+| Borde de control a 1.34:1 | sí |
+| Objetivo de pulsado de 64×18 | sí |
+| `:focus-visible { outline: none }` | sí |
+| Imagen sin `alt` | sí |
+| `<h1>` convertido en `<h3>` | sí |
+| Campo sin nombre accesible | sí |
+| `opacity: 0.35` | sí |
+
+### 12.6 Lo que esto NO cubre
+
+**No sustituye a una auditoría con lector de pantalla real.** Lo que una máquina puede decidir se
+decide aquí: contraste, tamaño de objetivo, orden de foco, estructura de encabezados, nombres
+accesibles, `alt`. Lo que exige a una persona escuchando la página —si los anuncios de `aria-live`
+llegan en el momento útil, si el orden narrativo tiene sentido, si los textos describen de verdad lo
+que pasa— sigue **pendiente**, y así está declarado en `STATUS.md`.

@@ -21,11 +21,15 @@
     </ul>
   </div>
 </section>
-{% stylesheet %}
-  .ne-collection-list { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--ne-space-xl); row-gap: var(--ne-space-l); }
-  @media (min-width: 48em) { .ne-collection-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  .ne-collection-list__link { display: grid; gap: var(--ne-space-xs); color: inherit; text-decoration: none; }
-{% endstylesheet %}
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 {% schema %}
 { "name": "Lista de colecciones", "tag": "section" }
 {% endschema %}

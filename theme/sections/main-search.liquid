@@ -34,16 +34,15 @@
     {%- endif -%}
   </div>
 </section>
-{% stylesheet %}
-  .ne-search__form { display: flex; gap: var(--ne-space-2xs); margin-block: var(--ne-space-l); }
-  .ne-search__input {
-    flex: 1;
-    min-height: var(--ne-touch);
-    padding: var(--ne-space-2xs) var(--ne-space-xs);
-    border: var(--ne-hairline) solid var(--ne-border);
-    background: var(--ne-paper);
-  }
-{% endstylesheet %}
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 {% schema %}
 { "name": "Búsqueda", "tag": "section" }
 {% endschema %}

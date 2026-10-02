@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DEL CARRITO VACÍO.
+
+  Es un estado aparte y merece auditarse aparte: es lo primero que ve un
+  comprador que llega al carrito por error, y es la única pantalla de la tienda
+  cuyo contenido es solo texto y un botón. Si ahí el contraste o el objetivo de
+  pulsado fallan, falla en la pantalla más simple que hay.
+
+  Reproduce la rama `{%- else -%}` de `sections/main-cart.liquid`.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <link rel="icon" href="data:,">
+    <title>Banco de pruebas · carrito vacío</title>
+    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
+    <link rel="stylesheet" href="/theme/assets/ne-base.css">
+    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+  </head>
+  <body>
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <div class="ne-shell ne-header__inner">
+          <a class="ne-header__brand" href="/" aria-label="Banco de pruebas">
+            <span class="ne-header__wordmark">BANCO DE PRUEBAS</span>
+          </a>
+          <nav class="ne-header__nav" aria-label="Menú">
+            <ul class="ne-header__list">
+              <li><a class="ne-header__link" href="/collections/all">Colección</a></li>
+            </ul>
+          </nav>
+          <a class="ne-header__cart" href="/cart">
+            <span>Carrito</span>
+            <span class="ne-header__count" data-ne-cart-count aria-hidden="true">0</span>
+            <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+          </a>
+        </div>
+        <hr class="ne-rule">
+      </header>
+    </div>
+
+    <div id="shopify-section-banco-cart">
+      <ne-cart class="ne-section" data-ne-cart data-ne-section-id="banco-cart">
+        <section aria-labelledby="ne-cart-title">
+          <div class="ne-shell">
+            <h1 class="ne-display" id="ne-cart-title">Carrito</h1>
+            <p class="ne-visually-hidden" data-ne-cart-status role="status" aria-live="polite"></p>
+            <p class="ne-notice ne-notice--alert" data-ne-cart-error hidden role="alert"></p>
+
+            <p class="ne-lead">Tu carrito está vacío.</p>
+            <p><a class="ne-button" href="/collections/all">Seguir viendo</a></p>
+          </div>
+        </section>
+      </ne-cart>
+    </div>
+
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+    <!-- Lo rellena el runner con los textos reales. -->
+    <script type="application/json" id="ne-strings">{}</script>
+    <script src="/theme/assets/ne-components.js" type="module"></script>
+  </body>
+</html>

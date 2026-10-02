@@ -40,19 +40,15 @@
   </div>
 </section>
 
-{% stylesheet %}
-  .ne-grid-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--ne-space-m);
-    margin-bottom: var(--ne-space-l);
-  }
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
 
-  /* `.ne-product-grid` vive en ne-base.css: la comparten la colección, la
-     búsqueda y esta sección, y definirla aquí la dejaría sin estilos en las
-     páginas donde esta sección no esté presente. */
-{% endstylesheet %}
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 
 {% schema %}
 {

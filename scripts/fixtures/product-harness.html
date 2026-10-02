@@ -63,12 +63,26 @@
   </head>
 
   <body>
-    <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
-      <a href="/cart"><span>Carrito</span>
-        <span data-ne-cart-count aria-hidden="true">0</span>
-        <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
-      </a>
-    </header>
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <div class="ne-shell ne-header__inner">
+          <a class="ne-header__brand" href="/" aria-label="Banco de pruebas">
+            <span class="ne-header__wordmark">BANCO DE PRUEBAS</span>
+          </a>
+          <nav class="ne-header__nav" aria-label="Menú">
+            <ul class="ne-header__list">
+              <li><a class="ne-header__link" href="/collections/all">Colección</a></li>
+            </ul>
+          </nav>
+          <a class="ne-header__cart" href="/cart">
+            <span>Carrito</span>
+            <span class="ne-header__count" data-ne-cart-count aria-hidden="true">0</span>
+            <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+          </a>
+        </div>
+        <hr class="ne-rule">
+      </header>
+    </div>
 
     <section
       class="ne-pdp"
@@ -122,11 +136,11 @@
           </script>
 
           <fieldset class="ne-picker__group" data-ne-option="Color">
-            <legend class="ne-caption">Color <span data-ne-chosen aria-live="polite"></span></legend>
+            <legend class="ne-caption ne-picker__legend">Color <span class="ne-picker__chosen" data-ne-chosen aria-live="polite"></span></legend>
             <div class="ne-picker__values">
               <label class="ne-picker__chip" for="c-negro">
                 <input class="ne-visually-hidden" type="radio" id="c-negro" name="ne-option-0" value="Negro" data-ne-option-input data-ne-option-name="Color" checked>
-                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">Negro</span></span>
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__swatch" style="--ne-swatch: #14120e"></span><span class="ne-picker__label">Negro</span></span>
                 <span class="ne-visually-hidden" data-ne-chip-state></span>
               </label>
               <label class="ne-picker__chip" for="c-cuero">
@@ -138,7 +152,7 @@
           </fieldset>
 
           <fieldset class="ne-picker__group" data-ne-option="Talla">
-            <legend class="ne-caption">Talla <span data-ne-chosen aria-live="polite"></span></legend>
+            <legend class="ne-caption ne-picker__legend">Talla <span class="ne-picker__chosen" data-ne-chosen aria-live="polite"></span></legend>
             <div class="ne-picker__values">
               <label class="ne-picker__chip" for="t-40">
                 <input class="ne-visually-hidden" type="radio" id="t-40" name="ne-option-1" value="40" data-ne-option-input data-ne-option-name="Talla" checked>
@@ -183,12 +197,34 @@
           <details class="ne-sizeguide__details">
             <summary class="ne-sizeguide__summary"><span class="ne-caption">Guía de tallas</span></summary>
             <div class="ne-sizeguide__body">
-              <div class="ne-sizeguide__field">
-                <label for="ne-foot">Tu medida en centímetros</label>
-                <input id="ne-foot" type="text" inputmode="decimal" autocomplete="off" maxlength="5" data-ne-foot-input>
-                <button class="ne-button ne-button--quiet" type="button" data-ne-recommend>Ver mi talla</button>
+              <p class="ne-sizeguide__fit">
+                <span class="ne-caption">Horma</span>
+                Horma pendiente de definir.
+              </p>
+
+              <div class="ne-sizeguide__recommender">
+                <p class="ne-sizeguide__intro">Mide tu pie y elige con el dato.</p>
+                <div class="ne-sizeguide__field">
+                  <label for="ne-foot">Tu medida en centímetros</label>
+                  <input id="ne-foot" type="text" inputmode="decimal" autocomplete="off" maxlength="5" data-ne-foot-input>
+                  <button class="ne-button ne-button--quiet" type="button" data-ne-recommend>Ver mi talla</button>
+                </div>
+                <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
+                <details class="ne-sizeguide__how">
+                  <summary><span class="ne-caption">Cómo medir</span></summary>
+                  <p class="ne-soft">Apoya el talón contra una pared y mide del talón a la punta.</p>
+                </details>
               </div>
-              <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
+
+              <table class="ne-sizeguide__table">
+                <caption class="ne-visually-hidden">Guía de tallas</caption>
+                <thead><tr><th scope="col">Talla</th><th scope="col">Largo de pie (cm)</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">40</th><td>25,2</td></tr>
+                  <tr><th scope="row">41</th><td>25,9</td></tr>
+                  <tr><th scope="row">42</th><td>26,6</td></tr>
+                </tbody>
+              </table>
             </div>
           </details>
         </ne-size-guide>
@@ -200,7 +236,7 @@
             <div class="ne-buy__row">
               <label class="ne-visually-hidden" for="ne-qty">Cantidad</label>
               <input class="ne-buy__qty" id="ne-qty" type="number" name="quantity" value="1" min="1" step="1">
-              <button class="ne-button ne-button--accent ne-buy__submit" type="submit" name="add" data-ne-add-to-cart>
+              <button class="ne-button ne-button--accent ne-button--block ne-buy__submit" type="submit" name="add" data-ne-add-to-cart>
                 <span data-ne-add-label>Añadir al carrito</span>
               </button>
             </div>
@@ -211,12 +247,15 @@
             <input type="hidden" name="properties[_ne_foot_length_cm]" value="" data-ne-attr="_ne_foot_length_cm" disabled>
             <input type="hidden" name="properties[_ne_size_guide_used]" value="" data-ne-attr="_ne_size_guide_used" disabled>
 
-            <p class="ne-notice ne-notice--alert" data-ne-buy-error hidden role="alert"></p>
+            <p class="ne-notice ne-notice--alert ne-buy__error" data-ne-buy-error hidden role="alert"></p>
             <p class="ne-visually-hidden" data-ne-buy-status role="status" aria-live="polite"></p>
           </form>
         </div>
 
-        <dl class="ne-specs"><dt>Referencia</dt><dd data-ne-sku>BP-NEG-40</dd></dl>
+        <dl class="ne-specs">
+          <div class="ne-specs__row"><dt class="ne-caption">Referencia</dt><dd data-ne-sku>BP-NEG-40</dd></div>
+          <div class="ne-specs__row"><dt class="ne-caption">Corte</dt><dd><span class="ne-placeholder">PENDIENTE</span></dd></div>
+        </dl>
       </div>
     </section>
 

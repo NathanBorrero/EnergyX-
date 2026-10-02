@@ -447,6 +447,51 @@ await check('componentes en navegador', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 15 · Accesibilidad MEDIDA sobre la página renderizada.
+//
+//      No es lo mismo que validar la paleta. Los tokens ya se validaron antes
+//      de escribir CSS, y eso no dice nada de lo que el comprador ve: un color
+//      heredado que nadie declaró, un control que encoge al envolverse, una
+//      `opacity` que rebaja el contraste de todo lo de dentro sin aparecer en
+//      ningún color computado.
+//
+//      Encontró dos violaciones reales: el borde de los chips agotado e
+//      inexistente a 1.34:1 contra un mínimo de 3:1, y una `opacity: 0.65` que
+//      ninguna medición de color podía detectar.
+//
+//      Usa el MISMO módulo probado que validó la paleta, importado en la
+//      página: no hay un segundo cálculo de contraste sin pruebas.
+// ---------------------------------------------------------------------------
+await check('accesibilidad en navegador', async () => {
+  try {
+    const { stdout } = await run('node', ['scripts/check-a11y.mjs'], {
+      cwd: ROOT,
+      maxBuffer: 1024 * 1024 * 20,
+      timeout: 600_000,
+    });
+    if (stdout.includes('NO EJECUTADA')) {
+      if (!QUIET) console.log('  NO EJECUTADA: Playwright no disponible (define NE_PLAYWRIGHT con su ruta)');
+      notRun.push('accesibilidad en navegador');
+      return [];
+    }
+    if (!QUIET) {
+      const line = /(\d+)\/(\d+) comprobaciones de accesibilidad pasan/.exec(stdout);
+      if (line) console.log(`  ${line[0]}`);
+      // Las notas no fallan, pero se ven: un objetivo que cumple el mínimo y no
+      // llega al objetivo de 44 es información, no un defecto.
+      const notes = stdout.split('\n').filter((l) => l.includes('nota:')).length;
+      if (notes > 0) console.log(`  ${notes} nota(s) informativa(s)`);
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    const fails = out.split('\n').filter((l) => l.startsWith('FALLA')).map((l) => l.replace(/^FALLA\s+/, ''));
+    const detail = out.split('\n').filter((l) => /^\s{7}[^n]/.test(l)).slice(0, 8).map((l) => l.trim());
+    return fails.length > 0 ? [...fails, ...detail] : ['el runner de accesibilidad salió con error'];
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);

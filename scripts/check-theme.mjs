@@ -372,6 +372,76 @@ await check('ninguna variable de bucle usa .index', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 6ter. El banco de pruebas no se aparta del marcado real.
+//
+//   TERCERA FORMA DEL MISMO PROBLEMA. El banco llevaba CSS copiado —resuelto
+//   cargando el archivo real—, textos copiados —resuelto resolviéndolos del
+//   locale— y marcado simplificado, que es la que más engaña: la auditoría medía
+//   elementos SIN las clases del theme, así que aprobaba cosas que en la tienda
+//   pueden fallar, y una inyección deliberada de un fallo de contraste no
+//   disparó nada porque la regla no llegaba a aplicarse.
+//
+//   Comparar el marcado completo es imposible sin renderizar Liquid. Comparar
+//   las CLASES sí: si una pieza usa `.ne-picker__chosen` y el banco no la lleva,
+//   nada de lo que esa clase estila está siendo medido.
+// ---------------------------------------------------------------------------
+await check('el banco de pruebas lleva las clases del marcado real', async () => {
+  const problems = [];
+
+  /** Piezas que los bancos reproducen. */
+  const MIRRORED = [
+    'theme/snippets/ne-variant-picker.liquid',
+    'theme/snippets/ne-size-guide.liquid',
+    'theme/snippets/ne-buy-buttons.liquid',
+    'theme/snippets/ne-price.liquid',
+    'theme/snippets/ne-product-specs.liquid',
+    'theme/sections/main-cart.liquid',
+    'theme/sections/header.liquid',
+  ];
+
+  /**
+   * Clases `ne-*` literales de un marcado. Se ignoran las que llevan Liquid
+   * dentro, porque su valor depende de los datos.
+   * @param {string} text
+   */
+  function neClasses(text) {
+    const out = new Set();
+    for (const m of text.matchAll(/class="([^"]*)"/g)) {
+      for (const token of m[1].split(/\s+/)) {
+        if (token.startsWith('ne-') && !token.includes('{')) out.add(token);
+      }
+    }
+    return out;
+  }
+
+  const wanted = new Set();
+  for (const file of MIRRORED) {
+    const full = path.join(ROOT, file);
+    const source = liquidCode.get(full);
+    if (source === undefined) {
+      problems.push(`${file} está declarado como espejado y no existe`);
+      continue;
+    }
+    for (const c of neClasses(source)) wanted.add(c);
+  }
+
+  const present = new Set();
+  for (const name of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+    const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+    for (const c of neClasses(text)) present.add(c);
+  }
+
+  for (const c of wanted) {
+    if (!present.has(c)) {
+      problems.push(
+        `la clase .${c} se usa en el marcado real y ningún banco la lleva: nada de lo que estila se está midiendo`,
+      );
+    }
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 7. Elegibilidad de streaming. Verificado contra la documentación de Shopify:
 //    si se incumple, la página deja de streamearse EN SILENCIO.
 // ---------------------------------------------------------------------------

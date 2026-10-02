@@ -17,9 +17,15 @@
     </div>
   </div>
 </section>
-{% stylesheet %}
-  .ne-404__actions { display: flex; flex-wrap: wrap; gap: var(--ne-space-2xs); margin-top: var(--ne-space-l); }
-{% endstylesheet %}
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
 {% schema %}
 { "name": "404", "tag": "section" }
 {% endschema %}
