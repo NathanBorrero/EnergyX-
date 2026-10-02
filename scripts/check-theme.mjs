@@ -442,6 +442,129 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
 });
 
 // ---------------------------------------------------------------------------
+// 6quater. El pixel personalizado: vocabulario compartido y sin dinero.
+//
+//   Un pixel personalizado es un script suelto en un sandbox de Shopify: NO
+//   puede importar módulos, así que repite el vocabulario de etapas de
+//   `analytics-taxonomy.js`. La repetición es inevitable; la deriva no.
+//
+//   Y comprueba lo que de verdad importa: que el pixel NO reenvíe dinero.
+//   Tenerlo en un evento de cliente invita a sumar ingresos desde el navegador,
+//   que es la cifra falsa que todo el diseño de analítica evita. El ingreso vive
+//   en `orders/paid`.
+// ---------------------------------------------------------------------------
+await check('el pixel usa el vocabulario de la taxonomía y no envía dinero', async () => {
+  const problems = [];
+  const pixelPath = path.join(ROOT, 'shopify', 'pixel', 'custom-pixel.js');
+
+  let pixel;
+  try {
+    pixel = await readFile(pixelPath, 'utf8');
+  } catch {
+    return ['shopify/pixel/custom-pixel.js no existe'];
+  }
+
+  const taxonomy = await readFile(path.join(ROOT, 'src', 'lib', 'analytics-taxonomy.js'), 'utf8');
+
+  // Etapas que declara cada lado.
+  const taxonomyStages = new Set(
+    [...taxonomy.matchAll(/^\s{2}[A-Z_]+:\s*'([a-z_]+)',/gm)].map((m) => m[1]),
+  );
+  const pixelBlock = pixel.match(/const STAGE = \{([\s\S]*?)\};/);
+  if (!pixelBlock) return ['el pixel no declara un bloque STAGE reconocible'];
+  const pixelStages = [...pixelBlock[1].matchAll(/[A-Z_]+:\s*'([a-z_]+)'/g)].map((m) => m[1]);
+
+  if (pixelStages.length === 0) problems.push('el pixel no declara ninguna etapa');
+  for (const stage of pixelStages) {
+    if (!taxonomyStages.has(stage)) {
+      problems.push(
+        `el pixel usa la etapa '${stage}', que no existe en analytics-taxonomy.js: los dos vocabularios se han separado`,
+      );
+    }
+  }
+
+  // El pixel solo puede medir las etapas de cliente. Una etapa de servidor aquí
+  // significa que alguien está a punto de contar pedidos desde el navegador.
+  const SERVER_SIDE = ['order_created', 'order_confirmed', 'order_shipped', 'order_delivered', 'order_returned'];
+  for (const stage of pixelStages) {
+    if (SERVER_SIDE.includes(stage)) {
+      problems.push(
+        `el pixel declara la etapa de servidor '${stage}': eso se mide con webhooks de pedido, no en el cliente`,
+      );
+    }
+  }
+
+  // Sin comentarios: el pixel EXPLICA por qué no envía dinero, y esa
+  // explicación no puede contar como enviarlo.
+  const code = pixel
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map((l) => l.replace(/(^|\s)\/\/.*$/, '$1'))
+    .join('\n');
+
+  // Claves de dinero en la construcción del payload.
+  for (const m of code.matchAll(/^\s*([a-z_]*(?:price|amount|total|revenue|value)[a-z_]*)\s*:/gim)) {
+    problems.push(`el pixel construye el campo '${m[1]}': ningún importe sale de un evento de cliente`);
+  }
+
+  // `checkout_completed` señalaría lo mismo que `orders/create` pero sujeto a
+  // consentimiento, así que daría una cifra MENOR para el mismo hecho.
+  if (/analytics\.subscribe\(\s*['"]checkout_completed['"]/.test(code)) {
+    problems.push(
+      "el pixel se suscribe a 'checkout_completed': duplica `orders/create` con una cifra menor, y dos números para el mismo hecho producen un informe que miente",
+    );
+  }
+
+  // El consentimiento no es opcional.
+  if (!/analyticsProcessingAllowed/.test(code)) {
+    problems.push('el pixel no comprueba `analyticsProcessingAllowed`: enviaría datos sin consentimiento');
+  }
+  if (!/visitorConsentCollected/.test(code)) {
+    problems.push(
+      'el pixel no escucha `visitorConsentCollected`: mediría toda la sesión con el consentimiento inicial, ignorando una aceptación posterior',
+    );
+  }
+
+  // El evento propio es entrada no confiable y tiene que viajar marcado.
+  if (!/trusted/.test(code)) {
+    problems.push('el pixel no marca la confianza del evento: un informe no podría distinguir el dato manipulable');
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6quinquies. JSON-LD sin interpolación cruda.
+//
+//   Dentro de un bloque `application/ld+json`, TODA interpolación tiene que
+//   pasar por el filtro `json`. Es el fallo clásico de los datos estructurados:
+//   un título de producto con una comilla —«Botín "Andes"»— rompe el JSON, y un
+//   bloque roto no da un dato peor, da NINGÚN dato, porque el buscador descarta
+//   el script entero. Y se descubre semanas después, en una caída de tráfico.
+//
+//   Los literales de Liquid dentro del bloque —`"https://schema.org/InStock"`
+//   elegido por un `if`— no son interpolación y no necesitan filtro.
+// ---------------------------------------------------------------------------
+await check('JSON-LD sin interpolación cruda', () => {
+  const problems = [];
+  for (const [file, source] of liquidCode) {
+    for (const block of source.matchAll(
+      /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g,
+    )) {
+      for (const tag of block[1].matchAll(/\{\{-?([\s\S]*?)-?\}\}/g)) {
+        const expression = tag[1].trim();
+        if (!/\|\s*json\s*$/.test(expression)) {
+          problems.push(
+            `${rel(file)}: \`{{ ${expression} }}\` dentro de JSON-LD no acaba en \`| json\`: un valor con una comilla rompería el bloque entero`,
+          );
+        }
+      }
+    }
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 7. Elegibilidad de streaming. Verificado contra la documentación de Shopify:
 //    si se incumple, la página deja de streamearse EN SILENCIO.
 // ---------------------------------------------------------------------------

@@ -529,3 +529,86 @@ decide aquí: contraste, tamaño de objetivo, orden de foco, estructura de encab
 accesibles, `alt`. Lo que exige a una persona escuchando la página —si los anuncios de `aria-live`
 llegan en el momento útil, si el orden narrativo tiene sentido, si los textos describen de verdad lo
 que pasa— sigue **pendiente**, y así está declarado en `STATUS.md`.
+
+---
+
+## 13. Analítica y SEO
+
+### 13.1 El pixel personalizado — nativo de Shopify, sin app
+
+`shopify/pixel/custom-pixel.js` es el cuerpo de un **pixel personalizado**: se pega en
+Shopify admin → Settings → Customer events → Add custom pixel. Es capacidad nativa, no hace falta
+app ni infraestructura. Instrucciones completas en `shopify/pixel/README.md`.
+
+API confirmada contra la documentación: en un pixel personalizado los globales son `analytics`,
+`init` y `api`, el consentimiento inicial se lee de `init.customerPrivacy`, los cambios se escuchan
+con `api.customerPrivacy.subscribe('visitorConsentCollected', ...)` —el único evento que esa API
+acepta hoy— y las banderas son `analyticsProcessingAllowed`, `marketingAllowed`,
+`preferencesProcessingAllowed` y `saleOfDataAllowed`.
+
+Tres decisiones que el código hace cumplir:
+
+1. **Sin consentimiento no sale nada.** Y se escucha la aceptación posterior, porque el comprador
+   puede aceptar sin recargar: medir toda la sesión con el estado inicial perdería justo a quien
+   aceptó.
+2. **`checkout_completed` está disponible y NO se usa.** Señalaría lo mismo que `orders/create`
+   pero sujeto a consentimiento y a bloqueadores, así que daría una cifra **menor** para el mismo
+   hecho. Dos números para un hecho es cómo se construye un informe que miente.
+3. **Ningún importe viaja.** No por olvido: tenerlo en un evento de cliente invita a sumar ingresos
+   desde el navegador. El ingreso vive en `orders/paid`.
+
+El evento propio `ne:size_selected` se trata como **entrada hostil**, porque Shopify documenta que
+un visitante puede publicar eventos personalizados desde la consola. El estado se valida contra la
+lista cerrada que el theme emite, las cadenas se recortan, y el payload lleva `trusted: false`.
+
+**Destino: PLACEHOLDER.** No hay servicio de analítica definido, así que no se inventa: con
+`DESTINATION` vacío el pixel **no hace ninguna petición de red** y deja los eventos en un buffer
+local. Apuntarlo a un endpoint inexistente sería fingir una integración.
+
+Seis comprobaciones, **validadas inyectando el fallo de cada una: 6 de 6**.
+
+| Fallo inyectado | Detectado |
+| --- | --- |
+| Etapa de servidor (`order_created`) en el pixel | sí |
+| Etapa inventada, fuera de la taxonomía | sí |
+| Un importe en el payload | sí |
+| Suscripción a `checkout_completed` | sí |
+| No comprobar `analyticsProcessingAllowed` | sí |
+| No escuchar `visitorConsentCollected` | sí |
+
+El vocabulario de etapas está repetido en el pixel porque un pixel personalizado **no puede
+importar módulos**: es un script suelto en un sandbox. La repetición es inevitable; la deriva está
+vigilada.
+
+### 13.2 JSON-LD — dos defectos corregidos
+
+#### Interpolación cruda en `variesBy`
+
+El bloque construía el array de `variesBy` como **cadena de JSON a mano** e interpolaba el
+resultado sin filtro. Los URIs son literales que controlamos, así que era seguro **hoy**. El
+problema es otro: una interpolación cruda dentro de un bloque JSON-LD es la forma en que ese bloque
+se rompe mañana —un título como `Botín "Andes"` basta—, y **un bloque roto no da un dato peor: da
+ningún dato**, porque el buscador descarta el script entero. Y se descubre semanas después, en una
+caída de tráfico.
+
+Reescrito como lista emitida con `| json`, y añadida la comprobación **`JSON-LD sin interpolación
+cruda`**, que exige que toda interpolación dentro de un bloque `application/ld+json` acabe en
+`| json`. Verificada inyectando `"name": "{{ product.title }}"`: detectada.
+
+#### Un precio de cero se declaraba
+
+La condición era `variant.price != blank`. **En Liquid el cero no es blank**, así que un producto
+todavía sin precio real —un PLACEHOLDER, que es lo que hay ahora— habría emitido `"price": 0.0` ante
+un buscador: una declaración de que el zapato es gratis. Corregido a `> 0`: sin precio real no hay
+oferta.
+
+Es exactamente el tipo de dato inventado que §191 prohíbe, y había entrado por una comparación mal
+elegida, no por una decisión.
+
+### 13.3 Lo que sigue sin verificar en SEO
+
+| Pendiente | Por qué |
+| --- | --- |
+| Prueba de resultados enriquecidos de Google | `developers.google.com` denegado por la política de red |
+| Niveles de requisito de las propiedades | mismo bloqueo: siguen en `DOCUMENTED`, nunca `VERIFIED` |
+| Indexación real | exige una tienda publicada |

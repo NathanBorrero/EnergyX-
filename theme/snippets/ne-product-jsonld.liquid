@@ -19,18 +19,26 @@
 {%- endcomment -%}
 
 {%- liquid
+  comment
+    Se construye una LISTA y se emite con `| json`, no una cadena de JSON a
+    mano. Los URIs son literales que controlamos, así que la cadena habría sido
+    segura hoy; el problema es que una interpolación cruda dentro de un bloque
+    JSON-LD es la forma en que ese bloque se rompe mañana, y un bloque roto no
+    es un dato peor: es ningún dato, porque el buscador descarta el script
+    entero. La comprobación `JSON-LD sin interpolación cruda` lo prohíbe.
+  endcomment
   assign variesby = ''
   for option in product.options_with_values
     assign folded = option.name | downcase
     if folded == 'color' or folded == 'colour'
-      assign variesby = variesby | append: '"https://schema.org/color",'
+      assign variesby = variesby | append: 'https://schema.org/color|'
     elsif folded == 'talla' or folded == 'size'
-      assign variesby = variesby | append: '"https://schema.org/size",'
+      assign variesby = variesby | append: 'https://schema.org/size|'
     elsif folded == 'material'
-      assign variesby = variesby | append: '"https://schema.org/material",'
+      assign variesby = variesby | append: 'https://schema.org/material|'
     endif
   endfor
-  assign variesby = variesby | split: ',' | uniq | join: ','
+  assign variesby_list = variesby | split: '|' | uniq
 -%}
 
 <script type="application/ld+json">
@@ -48,8 +56,8 @@
   {%- if product.featured_media -%}
     ,"image": [{{ product.featured_media.preview_image | image_url: width: 1600 | prepend: 'https:' | json }}]
   {%- endif -%}
-  {%- if variesby != blank -%}
-    ,"variesBy": [{{ variesby }}]
+  {%- if variesby_list.size > 0 -%}
+    ,"variesBy": {{ variesby_list | json }}
   {%- endif -%}
   {%- if product.variants.size > 0 -%}
     ,"hasVariant": [
@@ -75,7 +83,13 @@
           {%- if variant.barcode != blank -%}
             ,"gtin": {{ variant.barcode | json }}
           {%- endif -%}
-          {%- if variant.price != blank -%}
+          {%- comment -%}
+            `> 0`, no `!= blank`. En Liquid el cero NO es blank, así que un
+            producto todavía sin precio real —un PLACEHOLDER— habría emitido
+            `"price": 0.0` ante un buscador: una declaración de que el zapato es
+            gratis. Sin precio real no hay oferta, y punto.
+          {%- endcomment -%}
+          {%- if variant.price > 0 -%}
             ,"offers": {
               "@type": "Offer",
               "price": {{ variant.price | divided_by: 100.0 | json }},
