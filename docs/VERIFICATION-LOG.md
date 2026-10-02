@@ -1114,3 +1114,128 @@ aunque estuviera muy lejos de la vista. Ahora observa **el visor**.
 
 Un contexto WebGL encendido consume GPU y batería. Ese es exactamente el fallo que la directiva de
 rendimiento quería evitar, y estaba ahí.
+
+---
+
+## 19. Los seis módulos de la ficha: medidos, y la respuesta fue NO concatenar
+
+La pregunta era si concatenar los módulos pequeños mejora algo. Se midió antes de tocar nada, y el
+diagnóstico salió distinto de la hipótesis.
+
+### 19.1 Dos fallos del MÉTODO, corregidos antes de concluir nada
+
+**El servidor de pruebas no comprimía.** Se detectó comparando `transferSize` con
+`decodedBodySize` en el propio navegador: eran iguales. Entregaba `ne-core.css` en **15 863 B**
+donde Shopify lo entrega en **3 849**, así que todos los tiempos de descarga salían del orden de
+cuatro veces más largos de lo real y cualquier conclusión sobre bytes estaba sesgada. Ahora los dos
+servidores de medición entregan gzip.
+
+**El protocolo no coincidía.** Shopify sirve por HTTP/2, donde las peticiones se multiplexan y
+cuestan poco. Un servidor HTTP/1.1 limita a seis conexiones y hace que cada petición parezca cara:
+medir ahí **exagera el beneficio de concatenar**, es decir, sesga la conclusión justo hacia el
+cambio más arriesgado. Se montó un servidor HTTP/2 con TLS para comparar.
+
+**Resultado de esa comparación: el protocolo no cambia nada.** FCP de 616 ms por HTTP/1.1 frente a
+624 ms por HTTP/2. **El número de peticiones no es el problema.**
+
+### 19.2 El cuello real era una cascada de descubrimiento
+
+Con compresión y HTTP/2, CPU 4× y 4G lento:
+
+```
+  recurso                     pedido    llega   bloquea
+  ne-core.css                  223ms    427ms   blocking
+  ne-product.css               227ms    392ms   blocking
+  ne-components.js             227ms    449ms   non-blocking
+  ne-variant-matrix.js         521ms    713ms   non-blocking
+  ne-size-advisor.js           522ms    720ms   non-blocking
+  ne-cart-line.js              523ms    693ms   non-blocking
+  ne-size-selected-event.js    523ms    700ms   non-blocking
+  ne-shopify-semantics.js      525ms    707ms   non-blocking
+
+  primer paint          492 ms
+  selector interactivo  749 ms
+```
+
+**Los cinco módulos no se pedían hasta 521 ms**, 72 ms después de que llegara el archivo de
+entrada, porque el navegador tiene que descargarlo y parsearlo para descubrir qué importa. Dos
+viajes en serie sobre un enlace de 150 ms de ida y vuelta, que dejaban **257 ms entre que la página
+se ve y que se puede tocar**.
+
+Ninguno de los seis JavaScript bloquea el renderizado: lo dice el propio navegador
+(`renderBlockingStatus: non-blocking`). Solo bloquean las dos hojas de estilo.
+
+### 19.3 La respuesta: `modulepreload`, no concatenar
+
+| | Sin precarga | Con precarga | Δ |
+| --- | --- | --- | --- |
+| FCP / LCP | 492 ms | 512 ms | **+20 ms** |
+| **TBT** | 38 ms | **13 ms** | **−66 %** |
+| **load** | 773 ms | **628 ms** | **−145 ms** |
+| **Selector interactivo** | 749 ms | **552 ms** | **−197 ms** |
+| CLS | 0 | 0 | = |
+| Transferido | 23,7 KB | 23,8 KB | +0,1 KB |
+
+A/B con la herramienta oficial, mismo método, cinco ejecuciones cada uno.
+
+**Se conserva.** El intercambio es +20 ms de LCP —el 0,8 % del umbral de 2 500— a cambio de un
+cuarto de segundo menos hasta poder tocar la página, y dos tercios menos de tiempo de bloqueo.
+
+Primero se probó sin `fetchpriority`, y el LCP empeoraba 60 ms porque los cinco preloads competían
+por la banda con el CSS bloqueante. Con `fetchpriority="low"` la regresión baja a 20 ms y la
+interactividad mejora todavía más. Ese ajuste salió de la medición, no del manual.
+
+### 19.4 Por qué NO se concatenó, punto por punto
+
+| Pregunta | Respuesta medida |
+| --- | --- |
+| ¿Reduce peticiones? | Sí, 6 → 2. Pero se midió que **las peticiones no cuestan**: HTTP/1.1 y HTTP/2 dan el mismo FCP. |
+| ¿Reduce el tiempo total? | No. El coste era la latencia de descubrimiento, y `modulepreload` ya la eliminó sin concatenar. |
+| ¿Bloquean el renderizado? | No. Los seis son `non-blocking` según el navegador. |
+| ¿Afecta a LCP, FCP, TBT, INP? | Solo indirectamente, compitiendo por banda. Medido: 20 ms. |
+| ¿Añade JavaScript que el usuario no necesita? | **Sí.** Concatenarlos dentro del archivo de entrada metería la aritmética de tallas en la página de **carrito**, que no la usa. |
+| ¿Afecta a la caché? | **Sí, a peor.** Hoy un cambio en `size-advisor` invalida ese archivo. Concatenado invalidaría el paquete entero, y Shopify versiona las URLs por archivo. |
+| ¿Puede generar regresión? | Sí, por las dos filas anteriores. |
+| ¿Shopify procesa esos archivos? | **No.** Verificado: los checksums de los 50 archivos no-plantilla coinciden byte a byte con los locales tras subirlos. Solo reformatea las plantillas JSON. El JavaScript se sirve tal cual, comprimido en tránsito. |
+
+### 19.5 Dos desperdicios encontrados y DESCARTADOS con número
+
+El proyecto tiene una regla nueva: no cambiar algo porque parezca optimizable. Estos dos lo parecían.
+
+**El carrito descarga aritmética de tallas que no usa.** `ne-components.js` importa los cinco
+módulos de forma estática, así que la página de carrito baja `size-advisor` y
+`size-selected-event`: **3,4 KB transferidos** que no ejecuta. Arreglarlo exige partir el archivo de
+entrada por tipo de página, con su duplicación y su riesgo de deriva. El carrito ya carga en
+**488 ms con 15 ms de bloqueo**. 3,4 KB sobre 21,9 no es un problema medible. **No se toca.**
+
+**El 63 % de `ne-core.css` no se usa en la ficha.** Medido con el seguimiento de uso de reglas de
+Chromium: de 15 861 B de hoja, la ficha solo hace coincidir 5 840. Son los estilos de portada, blog,
+artículo, 404, contraseña y búsqueda. Pero son unos **1,2 KB transferidos**, y partirlo añadiría otra
+hoja **bloqueante** —que es el único tipo de recurso que sí retrasa el primer paint— por un ahorro
+que no se mide. **No se toca.**
+
+### 19.6 Y un hueco de validación, cerrado
+
+Las pruebas de comportamiento corrían en un contexto de **escritorio**, que no es el navegador que
+este theme sirve primero: sin `pointer: coarse`, sin táctil, con un viewport donde los puntos de
+ruptura de móvil no se aplican y donde la contención del 3D se comporta al contrario.
+
+Las 16 pasan ahora en un contexto de **iPhone 390×844@3×**, los dos contextos sin JavaScript
+incluidos. Y cerrar una página cierra su contexto, que antes quedaba vivo uno por prueba.
+
+### 19.7 Estado medido de las tres páginas
+
+Mediana de cinco ejecuciones, CPU 4× y 4G lento, iPhone, **servido comprimido como Shopify**:
+
+| | Portada | Ficha | Carrito | Google «bueno» |
+| --- | --- | --- | --- | --- |
+| **LCP** | **472 ms** | **500 ms** | **488 ms** | ≤ 2500 |
+| **CLS** | **0.0000** | **0.0000** | **0.0000** | ≤ 0,1 |
+| **INP** | — | 48 ms | — | ≤ 200 |
+| **TBT** | 12 ms | 18 ms | 15 ms | — |
+| load | 443 ms | 625 ms | 571 ms | — |
+| Peticiones | **3** | 10 | 11 | — |
+| **Transferido** | **6,0 KB** | **23,8 KB** | **21,9 KB** | — |
+| Parseado | 23,8 KB | 88,4 KB | 79,1 KB | — |
+
+La portada transfiere **6 KB** y no descarga una sola línea de JavaScript.

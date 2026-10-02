@@ -126,6 +126,16 @@
       </ne-cart>
     </div>
 
+    <!--
+      EL MISMO MODULEPRELOAD QUE theme.liquid. Sin esto el banco mediría la
+      cascada de descubrimiento que la tienda ya no tiene.
+    -->
+    <link rel="modulepreload" fetchpriority="low" href="/theme/assets/ne-shopify-semantics.js">
+    <link rel="modulepreload" fetchpriority="low" href="/theme/assets/ne-variant-matrix.js">
+    <link rel="modulepreload" fetchpriority="low" href="/theme/assets/ne-size-advisor.js">
+    <link rel="modulepreload" fetchpriority="low" href="/theme/assets/ne-cart-line.js">
+    <link rel="modulepreload" fetchpriority="low" href="/theme/assets/ne-size-selected-event.js">
+
     <script type="importmap">
       {
         "imports": {

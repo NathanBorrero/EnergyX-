@@ -210,6 +210,51 @@
     -%}
 
     {%- if needs_js -%}
+      {%- comment -%}
+        MODULEPRELOAD: rompe la cascada de descubrimiento.
+
+        MEDIDO, con compresión y CPU 4× + 4G lento, antes de añadir esto:
+
+          ne-components.js       se pide a 227ms, llega a 449ms
+          los 5 módulos          se piden a 521ms, llegan a ~713ms
+          selector interactivo   749ms
+          primer paint           492ms
+
+        Los módulos no se pedían hasta 521 ms porque el navegador tiene que
+        DESCARGAR Y PARSEAR el archivo de entrada para descubrir qué importa.
+        Son dos viajes en serie, y dejaban 257 ms entre que la página se ve y
+        que se puede tocar.
+
+        `modulepreload` le dice al navegador qué va a necesitar antes de
+        descubrirlo, así que los pide en paralelo con el de entrada.
+
+        POR QUÉ ESTO Y NO CONCATENARLOS, que era la otra opción sobre la mesa:
+
+          · No añade un byte. Concatenar no lo haría tampoco, pero sí metería en
+            la página de carrito módulos de tallas que el carrito no usa.
+          · Conserva la caché por archivo. Un cambio en `size-advisor` invalida
+            `size-advisor`, no un paquete entero.
+          · Se midió que el número de peticiones NO cuesta: la misma página por
+            HTTP/1.1 y por HTTP/2 da 616 y 624 ms de FCP. El problema era la
+            latencia de descubrimiento, no las peticiones.
+
+        Solo los imports ESTÁTICOS. `cod-guard` llega con `import()` dinámico y
+        únicamente en el carrito: precargarlo aquí sería pedir bytes que la
+        ficha de producto no usa.
+      {%- endcomment -%}
+      {%- comment -%}
+        La URL se resuelve ANTES de construir la etiqueta. Encadenar
+        `| append: module | asset_url` aplicaría `asset_url` a la cadena HTML
+        entera, no al nombre del módulo, y saldría una URL sin sentido.
+      {%- endcomment -%}
+      {%- liquid
+        assign preload_modules = 'ne-shopify-semantics.js,ne-variant-matrix.js,ne-size-advisor.js,ne-cart-line.js,ne-size-selected-event.js' | split: ','
+        for module in preload_modules
+          assign module_url = module | asset_url
+          echo '<link rel="modulepreload" fetchpriority="low" href="' | append: module_url | append: '">'
+        endfor
+      -%}
+
       <script type="importmap">
         {
           "imports": {

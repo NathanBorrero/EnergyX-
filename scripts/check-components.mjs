@@ -189,8 +189,35 @@ async function pickChip(page, id) {
   await page.waitForTimeout(60);
 }
 
+/**
+ * Contexto de iPhone, no de escritorio.
+ *
+ * POR QUÉ, Y POR QUÉ SE CAMBIÓ
+ *
+ * Este theme sirve primero a un teléfono. Las pruebas corrían en un contexto de
+ * escritorio por defecto, así que verificaban un navegador que no es el que más
+ * importa: sin `pointer: coarse`, sin `hasTouch`, con un viewport ancho donde
+ * los puntos de ruptura de móvil no se aplican y donde las reglas que dependen
+ * del puntero —como la contención del 3D— se comportan al contrario.
+ *
+ * Quien necesite escritorio lo pide explícitamente con `{ desktop: true }`.
+ *
+ * @param {{desktop?: boolean, url?: string}} [opts]
+ */
+function contextOptions(opts = {}) {
+  if (opts.desktop) return {};
+  return {
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  };
+}
+
 async function openHarness(opts = {}) {
-  const page = await browser.newPage();
+  const context = await browser.newContext(contextOptions(opts));
+  const page = await context.newPage();
+  page.__context = context;
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
@@ -223,6 +250,15 @@ async function openHarness(opts = {}) {
     timeout: 5000,
   }).catch(() => {});
   page.__errors = errors;
+
+  // Cerrar la página cierra su contexto. Sin esto quedaba un contexto abierto
+  // por prueba, y veinte contextos vivos consumen memoria sin motivo.
+  const closePage = page.close.bind(page);
+  page.close = async () => {
+    await closePage();
+    await context.close();
+  };
+
   return page;
 }
 
@@ -551,7 +587,8 @@ await check('añadir al carrito usa la ruta de Shopify sin recargar', async () =
 // 7 · El 3D es opcional de verdad, y el ajuste del theme se respeta.
 // ---------------------------------------------------------------------------
 await check('el 3D respeta el ajuste del theme y degrada a la fotografía', async () => {
-  const page = await browser.newPage();
+  const context = await browser.newContext(contextOptions());
+  const page = await context.newPage();
   const problems = [];
 
   // 7a · modo `off`: no se ofrece 3D en absoluto.
@@ -610,7 +647,7 @@ await check('el 3D respeta el ajuste del theme y degrada a la fotografía', asyn
 // ---------------------------------------------------------------------------
 await check('la ficha se compra con JavaScript desactivado', async () => {
   const problems = [];
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({ ...contextOptions(), javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(HARNESS, { waitUntil: 'load' });
 
@@ -1108,7 +1145,7 @@ await check('la cobertura contra entrega responde sin inventar', async () => {
 // ---------------------------------------------------------------------------
 await check('el carrito funciona con JavaScript desactivado', async () => {
   const problems = [];
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({ ...contextOptions(), javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(CART_HARNESS, { waitUntil: 'load' });
 

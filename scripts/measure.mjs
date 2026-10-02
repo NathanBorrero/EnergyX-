@@ -14,16 +14,25 @@
  *   · Tres ejecuciones, y se toma la MEDIANA. Una sola medición no dice nada.
  *
  * LO QUE ESTO NO ES: una puntuación de Lighthouse sobre la tienda real. Mide el
- * banco de pruebas, que sirve el CSS y el JavaScript REALES del theme pero con
- * marcado de prueba y sin el CDN de Shopify. Los números de peso y de JavaScript
- * son por tanto reales; los de tiempo son comparables entre ejecuciones —sirven
- * para ver si una optimización mejora algo— pero no son la cifra de campo.
+ * banco de pruebas, que sirve el CSS y el JavaScript REALES del theme con
+ * marcado de prueba.
+ *
+ * LO QUE SÍ REPRODUCE DE PRODUCCIÓN: la compresión. El servidor entrega gzip,
+ * igual que el CDN de Shopify, porque sin eso entregaba `ne-core.css` en
+ * 15 863 B donde Shopify entrega 3 849 y los tiempos de descarga salían cuatro
+ * veces más largos de lo real. Se detectó comparando `transferSize` con
+ * `decodedBodySize` en el navegador.
+ *
+ * LO QUE NO REPRODUCE: el CDN y su latencia real. Los tiempos son comparables
+ * entre ejecuciones —sirven para decidir si una optimización mejora algo— pero
+ * no son la cifra de campo.
  *
  *   node scripts/measure.mjs
  */
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -63,9 +72,28 @@ const server = createServer(async (req, res) => {
       res.writeHead(403).end();
       return;
     }
-    const body = await readFile(target);
-    served.push({ path: url.pathname, bytes: body.length });
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(target)] ?? 'application/octet-stream' });
+    const raw = await readFile(target);
+    const type = MIME[path.extname(target)] ?? 'application/octet-stream';
+
+    // SE SIRVE COMPRIMIDO, como lo hace el CDN de Shopify.
+    //
+    // Sin esto la medición mentía donde más importa: entregaba `ne-core.css` en
+    // 15 863 B cuando Shopify lo entrega en 3 849, así que los tiempos de
+    // descarga salían del orden de cuatro veces más largos de lo real. Se
+    // detectó comparando `transferSize` con `decodedBodySize` en el propio
+    // navegador: eran iguales, señal de que no hubo compresión.
+    //
+    // Las imágenes no: un PNG ya viene comprimido.
+    const compress = /^(text|application\/(javascript|json))/.test(type);
+    const body = compress ? gzipSync(raw, { level: 9 }) : raw;
+
+    // Se cuentan los bytes QUE VIAJAN, que es lo que paga el comprador, y
+    // aparte los descomprimidos, que es lo que el navegador parsea.
+    served.push({ path: url.pathname, bytes: body.length, decoded: raw.length });
+
+    const headers = { 'Content-Type': type };
+    if (compress) headers['Content-Encoding'] = 'gzip';
+    res.writeHead(200, headers);
     res.end(body);
   } catch {
     res.writeHead(404).end('no');
@@ -161,6 +189,7 @@ async function measure(file, interact) {
   const bytes = served.reduce((a, r) => a + r.bytes, 0);
   const js = served.filter((r) => r.path.endsWith('.js')).reduce((a, r) => a + r.bytes, 0);
   const css = served.filter((r) => r.path.endsWith('.css')).reduce((a, r) => a + r.bytes, 0);
+  const decoded = served.reduce((a, r) => a + (r.decoded ?? r.bytes), 0);
 
   return {
     fcp: m.fcp,
@@ -172,6 +201,7 @@ async function measure(file, interact) {
     bytes,
     js,
     css,
+    decoded,
     load: nav.load,
     wall: Date.now() - start,
   };
@@ -188,6 +218,10 @@ function median(xs) {
 const PAGES = [
   ['portada', 'home-harness.html', false],
   ['ficha de producto', 'product-harness.html', true],
+  // El carrito entra porque el diagnóstico de módulos apuntó a un desperdicio
+  // ahí: carga el grafo completo de `ne-components.js`, que incluye la
+  // aritmética de tallas, y el carrito no la usa.
+  ['carrito', 'cart-harness.html', false],
 ];
 
 console.log('');
@@ -214,6 +248,7 @@ for (const [label, file, interact] of PAGES) {
     bytes: median(runs.map((x) => x.bytes)),
     js: median(runs.map((x) => x.js)),
     css: median(runs.map((x) => x.css)),
+    decoded: median(runs.map((x) => x.decoded)),
   };
   summary[label] = r;
 
@@ -225,7 +260,8 @@ for (const [label, file, interact] of PAGES) {
   console.log(`   TBT        ${ms(r.tbt)}`);
   console.log(`   load       ${ms(r.load)}`);
   console.log(`   peticiones ${r.requests}`);
-  console.log(`   peso       ${kb(r.bytes)}  (JS ${kb(r.js)} · CSS ${kb(r.css)}, sin comprimir)`);
+  console.log(`   transferido ${kb(r.bytes)}  (JS ${kb(r.js)} · CSS ${kb(r.css)}) — comprimido, como Shopify`);
+  console.log(`   parseado   ${kb(r.decoded)}  (lo que el navegador descomprime y lee)`);
   console.log('');
 }
 

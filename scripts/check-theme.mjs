@@ -482,6 +482,31 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
     }
   }
 
+  // EL MODULEPRELOAD TAMBIÉN, y por el mismo motivo. Se midió que rompe una
+  // cascada de descubrimiento que costaba 197 ms hasta poder tocar la página.
+  // Un banco con componentes que se quede sin él mide esa cascada y hace creer
+  // que la tienda es más lenta de lo que es.
+  const layoutPreloads = [...layout.matchAll(/rel="modulepreload"/g)].length;
+  const declared = layout.match(/assign preload_modules = '([^']*)'/);
+  if (layoutPreloads === 0 || !declared) {
+    problems.push('theme.liquid ya no precarga los módulos: volvería la cascada de descubrimiento de 197 ms');
+  } else {
+    const expected = declared[1].split(',').map((m) => m.trim()).filter(Boolean);
+    // Los bancos CON componentes. La portada no emite el módulo, así que
+    // tampoco precarga nada.
+    for (const name of ['product-harness.html', 'cart-harness.html', 'cart-empty-harness.html']) {
+      const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+      for (const module of expected) {
+        if (!text.includes(`rel="modulepreload"`) || !text.includes(module)) {
+          problems.push(`${name} no precarga ${module} como hace theme.liquid: mediría la cascada que la tienda no tiene`);
+        }
+      }
+      if (!/fetchpriority="low"/.test(text)) {
+        problems.push(`${name} precarga sin fetchpriority="low": competiría con el CSS bloqueante y mediría un FCP peor`);
+      }
+    }
+  }
+
   return problems;
 });
 
