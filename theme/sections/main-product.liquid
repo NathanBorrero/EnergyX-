@@ -1,0 +1,232 @@
+{%- comment -%}
+  Página de producto.
+
+  Principios que la gobiernan:
+
+  · El producto manda. La galería ocupa la mitad ancha y el panel de compra la
+    estrecha, no al contrario.
+  · Se compra sin JavaScript. El formulario es un `<form>` real que postea a
+    `/cart/add` con un `<select name="id">` funcional. El selector de chips es una
+    mejora encima, no el mecanismo.
+  · Tres estados de combinación, no dos: disponible, agotada e inexistente.
+    «Agotado en tu talla» y «no se fabrica esta talla en este color» son mensajes
+    distintos, y confundirlos es lo que hace que una ficha de calzado se sienta
+    rota.
+  · El 3D es progresivo. Si no hay modelo, si WebGL falla o si el comprador pidió
+    menos movimiento, la fotografía sigue siendo la experiencia completa.
+  · Ningún dato comercial inventado. Lo que no existe se marca como pendiente.
+{%- endcomment -%}
+
+{%- liquid
+  assign current = product.selected_or_first_available_variant
+  assign has_model = false
+  assign models = product.media | where: 'media_type', 'model'
+  if models.size > 0
+    assign has_model = true
+  endif
+  assign size_option_name = 'Talla'
+  for option in product.options_with_values
+    assign folded = option.name | downcase
+    if folded == 'talla' or folded == 'size'
+      assign size_option_name = option.name
+    endif
+  endfor
+-%}
+
+<section class="ne-pdp ne-section--tight" data-ne-product
+  data-ne-product-id="{{ product.id }}"
+  data-ne-product-handle="{{ product.handle }}"
+>
+  <div class="ne-shell">
+    <div class="ne-grid ne-pdp__grid">
+
+      {%- comment -%} ---------------------------------------- galería ------- {%- endcomment -%}
+      <div class="ne-pdp__media">
+        <ne-product-gallery
+          class="ne-gallery"
+          data-ne-model-mode="{{ settings.product_3d_mode }}"
+        >
+          {%- if product.media.size > 0 -%}
+            <ul class="ne-gallery__list" role="list" aria-label="{{ 'products.product.media_gallery' | t }}">
+              {%- for media in product.media -%}
+                <li class="ne-gallery__item" data-ne-media-type="{{ media.media_type }}">
+                  {%- liquid
+                    if forloop.first
+                      assign media_role = 'lcp'
+                    else
+                      assign media_role = 'below_fold'
+                    endif
+                  -%}
+                  {%- case media.media_type -%}
+                    {%- when 'image' -%}
+                      {% render 'ne-image',
+                        image: media.preview_image,
+                        role: media_role,
+                        sizes: '(max-width: 47.99em) 100vw, 58vw',
+                        widths: '480, 640, 768, 960, 1280, 1536, 1920, 2048',
+                        max: 2048,
+                        ratio: '4 / 5',
+                        class: 'ne-gallery__image',
+                        alt: media.alt
+                      %}
+
+                    {%- when 'model' -%}
+                      {%- comment -%}
+                        El visor 3D nativo de Shopify. `model_viewer_tag` emite un
+                        elemento `<model-viewer>` y la librería se descarga de
+                        forma diferida, así que no compite con el primer paint.
+
+                        Envuelto en un contenedor que conserva la imagen de
+                        previsualización debajo: si el modelo no carga, lo que
+                        queda es la foto, no un hueco.
+                      {%- endcomment -%}
+                      <div class="ne-gallery__model" data-ne-model-slot hidden>
+                        {{ media | model_viewer_tag: reveal: 'interaction', toggleable: true, class: 'ne-gallery__viewer' }}
+                      </div>
+                      <div class="ne-gallery__model-fallback" data-ne-model-fallback>
+                        {% render 'ne-image',
+                          image: media.preview_image,
+                          role: 'below_fold',
+                          sizes: '(max-width: 47.99em) 100vw, 58vw',
+                          widths: '480, 768, 1280, 1920',
+                          max: 1920,
+                          ratio: '4 / 5',
+                          class: 'ne-gallery__image',
+                          alt: media.alt
+                        %}
+                      </div>
+
+                    {%- when 'video' -%}
+                      {{ media | video_tag: controls: true, preload: 'none', class: 'ne-gallery__video', image_size: '1280x' }}
+
+                    {%- when 'external_video' -%}
+                      {{ media | external_video_tag: class: 'ne-gallery__video' }}
+
+                    {%- else -%}
+                      {{ media | media_tag: class: 'ne-gallery__image' }}
+                  {%- endcase -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+
+            {%- if has_model -%}
+              <div class="ne-gallery__controls">
+                <button
+                  class="ne-button ne-button--quiet"
+                  type="button"
+                  data-ne-model-trigger
+                  aria-expanded="false"
+                >{{ 'products.product.view_3d' | t }}</button>
+
+                {%- comment -%}
+                  El botón de realidad aumentada solo se muestra en dispositivos
+                  compatibles —iOS 13+ o Android 9+—, que es lo que piden las
+                  guías de UX de media de Shopify. Lo decide el script, no Liquid.
+                {%- endcomment -%}
+                <button
+                  class="ne-button ne-button--quiet"
+                  type="button"
+                  data-ne-ar-trigger
+                  hidden
+                >{{ 'products.product.view_in_space' | t }}</button>
+
+                <p class="ne-notice ne-notice--alert" data-ne-model-error hidden>
+                  {{ 'products.product.view_3d_failed' | t }}
+                </p>
+              </div>
+            {%- endif -%}
+          {%- else -%}
+            {% render 'ne-image', image: blank, role: 'below_fold', ratio: '4 / 5' %}
+          {%- endif -%}
+        </ne-product-gallery>
+      </div>
+
+      {%- comment -%} ----------------------------------------- panel -------- {%- endcomment -%}
+      <div class="ne-pdp__panel">
+        {%- for block in section.blocks -%}
+          {%- case block.type -%}
+
+            {%- when 'vendor' -%}
+              {%- if product.vendor != blank -%}
+                <p class="ne-caption ne-pdp__vendor" {{ block.shopify_attributes }}>{{ product.vendor }}</p>
+              {%- endif -%}
+
+            {%- when 'title' -%}
+              <h1 class="ne-title ne-pdp__title" {{ block.shopify_attributes }}>{{ product.title }}</h1>
+
+            {%- when 'price' -%}
+              <div class="ne-pdp__price" {{ block.shopify_attributes }}>
+                {% render 'ne-price', product: product, variant: current %}
+                <p class="ne-caption ne-soft">{{ 'cart.general.taxes_note' | t }}</p>
+              </div>
+
+            {%- when 'variant-picker' -%}
+              {% render 'ne-variant-picker', product: product, current: current, block: block %}
+
+            {%- when 'size-guide' -%}
+              {%- if settings.product_show_size_guide -%}
+                {% render 'ne-size-guide', product: product, size_option_name: size_option_name, block: block %}
+              {%- endif -%}
+
+            {%- when 'buy-buttons' -%}
+              {% render 'ne-buy-buttons', product: product, current: current, block: block %}
+
+            {%- when 'description' -%}
+              <div class="ne-pdp__description ne-body" {{ block.shopify_attributes }}>
+                {%- if product.description != blank -%}
+                  {{ product.description }}
+                {%- else -%}
+                  <p class="ne-soft">{{ 'products.product.no_description' | t }}</p>
+                {%- endif -%}
+              </div>
+
+            {%- when 'specs' -%}
+              {% render 'ne-product-specs', product: product, block: block %}
+
+            {%- when 'custom_liquid' -%}
+              <div {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>
+
+            {%- when '@app' -%}
+              {% render block %}
+
+          {%- endcase -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% render 'ne-product-jsonld', product: product %}
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  No es una preferencia de organización: el banco de pruebas en navegador
+  carga ese mismo archivo, así que lo que la prueba verifica es el CSS real.
+  Un `{% stylesheet %}` aquí obligaría al banco a copiarlo, y la copia se
+  desincronizaría sin que nada lo dijera.
+{%- endcomment -%}
+
+
+{% schema %}
+{
+  "name": "t:sections.main_product.name",
+  "tag": "section",
+  "blocks": [
+    { "type": "vendor", "name": "t:blocks.vendor.name", "limit": 1 },
+    { "type": "title", "name": "t:blocks.title.name", "limit": 1 },
+    { "type": "price", "name": "t:blocks.price.name", "limit": 1 },
+    { "type": "variant-picker", "name": "t:blocks.variant_picker.name", "limit": 1 },
+    { "type": "size-guide", "name": "t:blocks.size_guide.name", "limit": 1 },
+    { "type": "buy-buttons", "name": "t:blocks.buy_buttons.name", "limit": 1 },
+    { "type": "description", "name": "t:blocks.description.name", "limit": 1 },
+    { "type": "specs", "name": "t:blocks.specs.name", "limit": 1 },
+    {
+      "type": "custom_liquid",
+      "name": "t:blocks.custom_liquid.name",
+      "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "t:blocks.custom_liquid.name" }]
+    },
+    { "type": "@app" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,45 @@
+<section class="ne-section" aria-labelledby="ne-collection-title">
+  <div class="ne-shell">
+    <header class="ne-collection__head">
+      <h1 class="ne-display" id="ne-collection-title">{{ collection.title }}</h1>
+      {%- if collection.description != blank -%}
+        <div class="ne-lead ne-collection__intro">{{ collection.description }}</div>
+      {%- endif -%}
+    </header>
+
+    {%- if collection.products.size > 0 -%}
+      {%- paginate collection.products by 24 -%}
+        <ul class="ne-grid ne-product-grid" style="--ne-grid-cols: 3">
+          {%- for product in collection.products -%}
+            <li class="ne-product-grid__cell">
+              {% render 'ne-product-card', product: product, card_index: forloop.index0 %}
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        {%- if paginate.pages > 1 -%}
+          <nav class="ne-pagination" aria-label="{{ 'general.pagination.previous' | t }}">
+            {%- if paginate.previous -%}
+              <a class="ne-button--text" href="{{ paginate.previous.url }}" rel="prev">{{ 'general.pagination.previous' | t }}</a>
+            {%- endif -%}
+            {%- if paginate.next -%}
+              <a class="ne-button--text" href="{{ paginate.next.url }}" rel="next">{{ 'general.pagination.next' | t }}</a>
+            {%- endif -%}
+          </nav>
+        {%- endif -%}
+      {%- endpaginate -%}
+    {%- else -%}
+      <p class="ne-notice">{{ 'collections.general.no_products' | t }}</p>
+    {%- endif -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
+  .ne-collection__intro { max-width: var(--ne-measure); }
+  .ne-pagination { display: flex; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "t:sections.main_collection.name", "tag": "section" }
+{% endschema %}

@@ -1,0 +1,141 @@
+/*
+ * NATHAN & ESTEBAN — tokens de diseño
+ *
+ * Dirección de arte: editorial, arquitectónica, minimalista con identidad propia.
+ * Referencia conceptual: pigmento, yeso, tinta de imprenta. Deliberadamente NO
+ * es blanco puro de producto tecnológico ni gris neutro de SaaS.
+ *
+ * TODO PAR DE COLOR DE ESTE ARCHIVO ESTÁ VALIDADO contra los umbrales de WCAG
+ * que el proyecto se fijó, con `src/lib/a11y-contrast.js`, y hay una prueba
+ * permanente que falla si alguien los cambia a algo que suspenda.
+ *
+ * El candidato inicial tenía un filete a 2.37:1 cuando el mínimo no textual es
+ * 3:1. Se detectó antes de escribir una línea de CSS, que era el objetivo de
+ * construir el validador antes del sistema visual.
+ */
+
+:root {
+  /* ---- Superficies ---------------------------------------------------- */
+  --ne-paper: #f2efe9;        /* yeso cálido. Fondo por defecto */
+  --ne-paper-deep: #e7e2d9;   /* superficie elevada: cards, celdas */
+  --ne-ink: #14120e;          /* tinta casi negra, cálida. Secciones inversas */
+
+  /* ---- Texto ---------------------------------------------------------- */
+  --ne-text: var(--ne-ink);       /* 16.30:1 sobre paper */
+  --ne-text-soft: #4a4640;        /*  8.16:1 sobre paper ·  7.26:1 sobre paper-deep */
+  --ne-text-inverse: var(--ne-paper); /* 16.30:1 sobre ink */
+
+  /* ---- Líneas --------------------------------------------------------- */
+  /* Borde SIGNIFICATIVO: inputs, chips seleccionables, indicador de foco.
+     3.88:1 sobre paper · 3.45:1 sobre paper-deep · 4.20:1 sobre ink.
+     Cumple el mínimo de 3:1 en las tres superficies. */
+  --ne-border: #7c776d;
+  /* Filete DECORATIVO: separadores que no transmiten información y por tanto no
+     están sujetos al mínimo de 3:1. No usarlo para bordes de control. */
+  --ne-rule: #d6d0c5;
+
+  /* ---- Acento --------------------------------------------------------- */
+  /* Un solo acento, de pigmento óxido. 6.77:1 sobre paper, así que vale para
+     texto de cuerpo, no solo para decoración. */
+  --ne-accent: #8a3a1e;
+  --ne-accent-deep: #6e2d16; /* 8.93:1 sobre paper. Estado activo */
+
+  /* ---- Tipografía ----------------------------------------------------- */
+  /* Las familias las inyecta Liquid desde los ajustes del theme, para no
+     depender de ningún hosting externo de fuentes. */
+  --ne-font-body: var(--ne-font-body-shopify, ui-sans-serif, system-ui, sans-serif);
+  --ne-font-display: var(--ne-font-display-shopify, var(--ne-font-body));
+
+  /* Escala tipográfica. Razón 1.26 en móvil, 1.33 en escritorio vía clamp.
+     Editorial significa contraste real de tamaño, no diez tamaños intermedios:
+     hay seis, y cada uno tiene un trabajo. */
+  --ne-size-caption: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem);
+  --ne-size-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
+  --ne-size-lead: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  --ne-size-title: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+  --ne-size-display: clamp(2.25rem, 1.4rem + 4.2vw, 5.5rem);
+  --ne-size-colossal: clamp(3rem, 1rem + 9vw, 10rem);
+
+  --ne-leading-tight: 1.02;   /* display: casi sólido, como un titular impreso */
+  --ne-leading-snug: 1.18;
+  --ne-leading-body: 1.55;
+
+  /* El tracking negativo en display es lo que separa un titular compuesto de
+     uno por defecto. En cuerpo se deja a cero: apretar texto pequeño lo hace
+     menos legible, no más sofisticado. */
+  --ne-tracking-display: -0.025em;
+  --ne-tracking-title: -0.015em;
+  --ne-tracking-body: 0;
+  --ne-tracking-caption: 0.08em;
+
+  /* Medida de lectura. Más de 75 caracteres cansa; menos de 45 fragmenta. */
+  --ne-measure: 68ch;
+  --ne-measure-narrow: 46ch;
+
+  /* ---- Espacio -------------------------------------------------------- */
+  /* Escala de 4px con saltos no lineales: el espacio arquitectónico necesita
+     intervalos grandes disponibles, no una progresión suave. */
+  --ne-space-3xs: 0.25rem;
+  --ne-space-2xs: 0.5rem;
+  --ne-space-xs: 0.75rem;
+  --ne-space-s: 1rem;
+  --ne-space-m: 1.5rem;
+  --ne-space-l: 2.5rem;
+  --ne-space-xl: 4rem;
+  --ne-space-2xl: 6rem;
+  --ne-space-3xl: 9rem;
+  --ne-space-4xl: 14rem;
+
+  /* ---- Retícula ------------------------------------------------------- */
+  --ne-grid-columns: 12;
+  --ne-grid-gap: clamp(1rem, 0.5rem + 1.5vw, 2rem);
+  /* 16px de margen lateral en móvil es el mínimo para que el texto no toque el
+     borde de la pantalla. Crece con el viewport, sin pasar de una medida que
+     deje el contenido centrado y legible. */
+  --ne-gutter: clamp(1rem, 0.5rem + 3vw, 5rem);
+  --ne-max-width: 100rem;
+
+  /* ---- Objetivos táctiles --------------------------------------------- */
+  /* 24px es el mínimo exigido. 44px es el tamaño cómodo real en móvil, y es el
+     que se usa por defecto en todo lo pulsable. */
+  --ne-touch-min: 24px;
+  --ne-touch: 44px;
+
+  /* ---- Movimiento ----------------------------------------------------- */
+  /* Una sola física para todo el sitio: misma curva, tres duraciones. Eso es lo
+     que hace que las transiciones se sientan del mismo sistema. */
+  --ne-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ne-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ne-dur-fast: 140ms;
+  --ne-dur: 260ms;
+  --ne-dur-slow: 520ms;
+
+  /* ---- Bordes --------------------------------------------------------- */
+  /* Sin radios. Decisión de dirección de arte: lo arquitectónico es ortogonal.
+     Se declara como token para que sea una decisión del sistema y no un olvido. */
+  --ne-radius: 0px;
+  --ne-radius-pill: 0px;
+  --ne-hairline: 1px;
+}
+
+/* El tema inverso no es un modo oscuro del navegador: es una sección con fondo
+   de tinta dentro de una página clara. Se activa por clase, no por media query,
+   porque es una decisión de composición. */
+.ne-inverse {
+  --ne-paper: #14120e;
+  --ne-paper-deep: #1e1b16;
+  --ne-text: #f2efe9;
+  --ne-text-soft: #b8b2a6;
+  --ne-border: #7c776d;
+  --ne-rule: #332e26;
+  --ne-accent: #d4714c;      /* el óxido se aclara para mantener contraste sobre tinta */
+  --ne-accent-deep: #e08c6a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ne-dur-fast: 0ms;
+    --ne-dur: 0ms;
+    --ne-dur-slow: 0ms;
+  }
+}

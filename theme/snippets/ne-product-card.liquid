@@ -1,0 +1,89 @@
+{%- comment -%}
+  Tarjeta de producto.
+
+  `card_index` permite que las primeras tarjetas de una cuadrícula arriba del
+  pliegue no se carguen en diferido, y las demás sí. Sin eso, o se difieren todas
+  y el LCP sufre, o ninguna y se descargan imágenes que nadie ve.
+{%- endcomment -%}
+
+{%- liquid
+  assign index = card_index | default: 99
+  if index < 3
+    assign media_role = 'above_fold'
+  else
+    assign media_role = 'below_fold'
+  endif
+-%}
+
+<article class="ne-card">
+  <a class="ne-card__link" href="{{ product.url }}">
+    <div class="ne-card__media">
+      {% render 'ne-image',
+        image: product.featured_media.preview_image,
+        role: media_role,
+        sizes: '(max-width: 47.99em) calc(50vw - 1.5rem), (max-width: 74.99em) 33vw, 25vw',
+        widths: '240, 320, 480, 640, 768, 960',
+        max: 960,
+        ratio: '4 / 5',
+        class: 'ne-card__image',
+        alt: product.title
+      %}
+
+      {%- unless product.available -%}
+        <p class="ne-card__flag">{{ 'products.product.sold_out' | t }}</p>
+      {%- endunless -%}
+    </div>
+
+    <div class="ne-card__meta">
+      <h3 class="ne-card__title">{{ product.title }}</h3>
+      {% render 'ne-price', product: product, class: 'ne-card__price' %}
+    </div>
+  </a>
+</article>
+
+{% stylesheet %}
+  .ne-card { position: relative; }
+
+  .ne-card__link {
+    display: grid;
+    gap: var(--ne-space-xs);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ne-card__media { position: relative; background: var(--ne-paper-deep); }
+
+  .ne-card__image {
+    width: 100%;
+    object-fit: cover;
+    transition: opacity var(--ne-dur) var(--ne-ease);
+  }
+  .ne-card__link:hover .ne-card__image { opacity: 0.88; }
+
+  .ne-card__flag {
+    position: absolute;
+    inset: auto auto var(--ne-space-2xs) var(--ne-space-2xs);
+    padding: 0.2em 0.5em;
+    background: var(--ne-paper);
+    color: var(--ne-text);
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+  }
+
+  .ne-card__meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-s);
+  }
+
+  .ne-card__title {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-body);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  .ne-card__price { font-variant-numeric: tabular-nums; }
+{% endstylesheet %}

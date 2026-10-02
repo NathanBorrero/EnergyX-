@@ -1,0 +1,340 @@
+/*
+ * NATHAN & ESTEBAN — base del sistema
+ *
+ * Sin reset de terceros: lo que hace falta, nada más (§205, §218).
+ * Sin utilidades genéricas: cada clase corresponde a una pieza del sistema.
+ */
+
+/* ---------------------------------------------------------------- reset -- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* El scroll suave se deja al navegador salvo reduced-motion, abajo. */
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--ne-paper);
+  color: var(--ne-text);
+  font-family: var(--ne-font-body);
+  font-size: var(--ne-size-body);
+  line-height: var(--ne-leading-body);
+  letter-spacing: var(--ne-tracking-body);
+  /* Se deja activo el kerning y las ligaduras: es composición, no decoración. */
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p, figure, blockquote, dl, dd { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+img, picture, video, canvas, model-viewer, svg {
+  display: block;
+  max-width: 100%;
+}
+/* Las imágenes declaran width/height en el marcado, así que esto solo evita
+   deformarlas cuando el contenedor manda. Reservar el espacio es lo que impide
+   el salto de layout. */
+img { height: auto; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------ foco ------- */
+
+/* Un solo indicador de foco para todo el sitio, visible sobre las tres
+   superficies. `:focus-visible` evita el anillo al hacer clic con ratón sin
+   quitárselo a quien navega con teclado. */
+:focus-visible {
+  outline: 2px solid var(--ne-accent);
+  outline-offset: 3px;
+}
+/* Nunca se elimina el foco sin sustituirlo: eso rompe la navegación por teclado,
+   que es un requisito explícito. */
+
+.ne-skip-link {
+  position: absolute;
+  top: var(--ne-space-2xs);
+  left: var(--ne-space-2xs);
+  z-index: 100;
+  padding: var(--ne-space-2xs) var(--ne-space-s);
+  background: var(--ne-ink);
+  color: var(--ne-paper);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--ne-dur-fast) var(--ne-ease);
+}
+.ne-skip-link:focus { transform: translateY(0); }
+
+.ne-visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------- retícula ------ */
+
+.ne-shell {
+  width: 100%;
+  max-width: var(--ne-max-width);
+  margin-inline: auto;
+  padding-inline: var(--ne-gutter);
+}
+
+.ne-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--ne-grid-columns), minmax(0, 1fr));
+  gap: var(--ne-grid-gap);
+}
+
+/* Composición editorial: el contenido no siempre empieza en la columna 1.
+   Estas clases existen para poder desplazar deliberadamente, que es la
+   diferencia entre una retícula y una pila centrada. */
+.ne-col-full { grid-column: 1 / -1; }
+.ne-col-main { grid-column: 1 / -1; }
+.ne-col-text { grid-column: 1 / -1; }
+.ne-col-aside { grid-column: 1 / -1; }
+
+@media (min-width: 48em) {
+  .ne-col-main { grid-column: 1 / span 8; }
+  .ne-col-text { grid-column: 2 / span 7; }
+  .ne-col-aside { grid-column: 10 / span 3; }
+}
+
+/* ------------------------------------------------------- tipografía ------ */
+
+.ne-display {
+  font-family: var(--ne-font-display);
+  font-size: var(--ne-size-display);
+  line-height: var(--ne-leading-tight);
+  letter-spacing: var(--ne-tracking-display);
+  /* `balance` evita la línea huérfana de una palabra en un titular, que es el
+     defecto más visible de un display sin componer. */
+  text-wrap: balance;
+}
+
+.ne-colossal {
+  font-family: var(--ne-font-display);
+  font-size: var(--ne-size-colossal);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.ne-title {
+  font-family: var(--ne-font-display);
+  font-size: var(--ne-size-title);
+  line-height: var(--ne-leading-snug);
+  letter-spacing: var(--ne-tracking-title);
+  text-wrap: balance;
+}
+
+.ne-lead {
+  font-size: var(--ne-size-lead);
+  line-height: 1.38;
+  max-width: var(--ne-measure-narrow);
+  text-wrap: pretty;
+}
+
+.ne-body { max-width: var(--ne-measure); text-wrap: pretty; }
+
+.ne-caption {
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  color: var(--ne-text-soft);
+}
+
+.ne-soft { color: var(--ne-text-soft); }
+
+/* ------------------------------------------------------------ ritmo ------ */
+
+.ne-section { padding-block: var(--ne-space-2xl); }
+.ne-section--tight { padding-block: var(--ne-space-xl); }
+.ne-section--vast { padding-block: var(--ne-space-3xl); }
+
+.ne-inverse {
+  background: var(--ne-paper);
+  color: var(--ne-text);
+}
+
+.ne-rule {
+  border: 0;
+  border-top: var(--ne-hairline) solid var(--ne-rule);
+  margin: 0;
+}
+
+/* ----------------------------------------------------------- botones ----- */
+
+.ne-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ne-space-2xs);
+  min-height: var(--ne-touch);
+  padding: var(--ne-space-xs) var(--ne-space-m);
+  border: var(--ne-hairline) solid transparent;
+  border-radius: var(--ne-radius);
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--ne-ink);
+  color: var(--ne-paper);
+  transition:
+    background-color var(--ne-dur-fast) var(--ne-ease),
+    color var(--ne-dur-fast) var(--ne-ease),
+    opacity var(--ne-dur-fast) var(--ne-ease);
+}
+
+.ne-button:hover { background: var(--ne-accent-deep); }
+.ne-button:active { transform: translateY(1px); }
+
+.ne-button[disabled],
+.ne-button[aria-disabled='true'] {
+  /* No se baja la opacidad hasta incumplir contraste: se cambia el color a uno
+     que sigue siendo legible. Un botón desactivado tiene que poder leerse para
+     que el comprador entienda qué no puede hacer. */
+  background: var(--ne-paper-deep);
+  color: var(--ne-text-soft);
+  border-color: var(--ne-border);
+  cursor: not-allowed;
+}
+
+.ne-button--accent { background: var(--ne-accent); }
+.ne-button--accent:hover { background: var(--ne-accent-deep); }
+
+.ne-button--quiet {
+  background: transparent;
+  color: var(--ne-text);
+  border-color: var(--ne-border);
+}
+.ne-button--quiet:hover { background: var(--ne-paper-deep); }
+
+.ne-button--text {
+  background: transparent;
+  color: var(--ne-text);
+  padding-inline: 0;
+  min-height: var(--ne-touch-min);
+  border-bottom: var(--ne-hairline) solid var(--ne-border);
+}
+.ne-button--text:hover { border-bottom-color: var(--ne-accent); background: transparent; }
+
+.ne-button--block { width: 100%; }
+
+/* Estado de carga: el botón conserva su ancho para que la página no salte. */
+.ne-button[data-ne-loading='true'] {
+  pointer-events: none;
+  position: relative;
+  color: transparent;
+}
+.ne-button[data-ne-loading='true']::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 0.875em;
+  height: 0.875em;
+  margin: -0.4375em 0 0 -0.4375em;
+  border: 2px solid currentcolor;
+  border-top-color: var(--ne-paper);
+  border-radius: 50%;
+  animation: ne-spin 700ms linear infinite;
+}
+@keyframes ne-spin { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------- enlaces ------ */
+
+.ne-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  transition: border-color var(--ne-dur-fast) var(--ne-ease);
+}
+.ne-link:hover { border-bottom-color: var(--ne-accent); }
+
+/* ------------------------------------------------------- superficies ---- */
+
+.ne-surface {
+  background: var(--ne-paper-deep);
+  border: var(--ne-hairline) solid transparent;
+}
+
+/* --------------------------------------------------------- mensajes ----- */
+
+.ne-notice {
+  padding: var(--ne-space-xs) var(--ne-space-s);
+  border-left: 3px solid var(--ne-border);
+  background: var(--ne-paper-deep);
+  font-size: var(--ne-size-caption);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.ne-notice--alert { border-left-color: var(--ne-accent); }
+
+/* Marcador visible de dato pendiente. Existe para que un placeholder nunca
+   pueda confundirse con un dato real (§191), ni en desarrollo ni en una captura. */
+.ne-placeholder {
+  display: inline-block;
+  padding: 0.1em 0.45em;
+  border: var(--ne-hairline) dashed var(--ne-border);
+  color: var(--ne-text-soft);
+  font-size: 0.875em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ne-media-placeholder {
+  display: grid;
+  place-items: center;
+  aspect-ratio: var(--ne-media-ratio, 4 / 5);
+  background: var(--ne-paper-deep);
+  border: var(--ne-hairline) dashed var(--ne-border);
+  color: var(--ne-text-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Rejilla de producto
+
+   Compartida por la colección, la búsqueda y la sección de rejilla de la
+   portada. Vive aquí y no en el `{% stylesheet %}` de una sección porque esos
+   estilos solo se sirven si su sección está en la página: una colección sin la
+   sección de portada se quedaría sin columnas.
+   --------------------------------------------------------------------------- */
+.ne-product-grid {
+  /* Dos columnas en móvil: una sola obliga a scrollear demasiado para comparar
+     modelos, que es exactamente lo que se hace en una colección de calzado. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: var(--ne-space-l);
+}
+
+.ne-product-grid__cell {
+  grid-column: span 1;
+}
+
+@media (min-width: 48em) {
+  .ne-product-grid {
+    grid-template-columns: repeat(var(--ne-grid-cols, 3), minmax(0, 1fr));
+  }
+}

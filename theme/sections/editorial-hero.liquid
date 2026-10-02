@@ -1,0 +1,149 @@
+{%- comment -%}
+  Hero editorial.
+
+  No es «texto gigante + botón + imagen centrada», que es el patrón que §179
+  prohíbe. La composición es asimétrica y desplazada en la retícula: el titular
+  ocupa columnas 1–7, la imagen 8–12 y se sale del margen inferior, de modo que
+  el bloque de texto y el producto se solapan en lectura sin solaparse en capas.
+
+  Todo el contenido es editable y vacío por defecto. Sin copy inventado (§191).
+{%- endcomment -%}
+
+{%- liquid
+  assign featured = section.settings.product
+  assign hero_image = section.settings.image
+  if hero_image == blank and featured != blank
+    assign hero_image = featured.featured_media.preview_image
+  endif
+-%}
+
+<section
+  class="ne-hero ne-section--vast{% if section.settings.inverse %} ne-inverse{% endif %} ne-hero--{{ section.settings.alignment }}"
+  aria-labelledby="ne-hero-heading-{{ section.id }}"
+>
+  <div class="ne-shell">
+    <div class="ne-grid ne-hero__grid">
+      <div class="ne-hero__copy">
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="ne-caption ne-hero__eyebrow">{{ section.settings.eyebrow }}</p>
+        {%- endif -%}
+
+        <h1 class="ne-colossal ne-hero__heading" id="ne-hero-heading-{{ section.id }}">
+          {%- if section.settings.heading != blank -%}
+            {{ section.settings.heading }}
+          {%- else -%}
+            <span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span>
+          {%- endif -%}
+        </h1>
+
+        {%- if section.settings.body != blank -%}
+          <p class="ne-lead ne-hero__body">{{ section.settings.body }}</p>
+        {%- endif -%}
+
+        {%- if featured != blank -%}
+          <p class="ne-hero__action">
+            <a class="ne-button ne-button--accent" href="{{ featured.url }}">
+              {{ section.settings.cta_label | default: featured.title }}
+            </a>
+          </p>
+        {%- endif -%}
+      </div>
+
+      <figure class="ne-hero__figure">
+        {%- comment -%}
+          Esta es la imagen LCP de la portada: carga anticipada y prioridad alta,
+          nunca en diferido. `sizes` es mobile-first para que el móvil no
+          descargue la versión de escritorio.
+        {%- endcomment -%}
+        {% render 'ne-image',
+          image: hero_image,
+          role: 'lcp',
+          sizes: '(max-width: 47.99em) calc(100vw - 2rem), 42vw',
+          widths: '480, 640, 768, 960, 1280, 1536, 1920',
+          max: 1920,
+          ratio: '3 / 4',
+          class: 'ne-hero__image',
+          alt: featured.title
+        %}
+        {%- if featured != blank and featured.vendor != blank -%}
+          <figcaption class="ne-caption ne-hero__caption">{{ featured.vendor }}</figcaption>
+        {%- endif -%}
+      </figure>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .ne-hero {
+    background: var(--ne-paper);
+    color: var(--ne-text);
+    overflow: clip;
+  }
+
+  .ne-hero__grid {
+    align-items: end;
+    row-gap: var(--ne-space-l);
+  }
+
+  .ne-hero__copy { grid-column: 1 / -1; }
+  .ne-hero__figure { grid-column: 1 / -1; margin: 0; }
+
+  @media (min-width: 48em) {
+    .ne-hero__copy {
+      grid-column: 1 / span 7;
+      /* El texto baja respecto a la imagen para que la lectura empiece abajo a la
+         izquierda, no en el centro óptico. Es composición, no decoración. */
+      padding-bottom: var(--ne-space-l);
+    }
+    .ne-hero__figure { grid-column: 8 / span 5; }
+
+    /* Variante desplazada: el titular rompe hacia el margen izquierdo y la
+       imagen se adentra una columna. Da la tensión editorial sin ningún efecto. */
+    .ne-hero--offset .ne-hero__copy { grid-column: 1 / span 6; }
+    .ne-hero--offset .ne-hero__figure {
+      grid-column: 7 / span 6;
+      margin-bottom: calc(var(--ne-space-2xl) * -1);
+    }
+  }
+
+  .ne-hero__eyebrow { margin-bottom: var(--ne-space-m); }
+
+  .ne-hero__heading {
+    /* El titular puede exceder la columna a propósito en pantallas grandes: es
+       lo que separa una portada compuesta de una centrada. */
+    margin-bottom: var(--ne-space-m);
+  }
+
+  .ne-hero__body { margin-bottom: var(--ne-space-l); }
+
+  .ne-hero__image { width: 100%; object-fit: cover; }
+
+  .ne-hero__caption { margin-top: var(--ne-space-2xs); }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:sections.editorial_hero.name",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "t:sections.editorial_hero.eyebrow" },
+    { "type": "text", "id": "heading", "label": "t:sections.editorial_hero.heading" },
+    { "type": "textarea", "id": "body", "label": "t:sections.editorial_hero.body" },
+    { "type": "image_picker", "id": "image", "label": "t:sections.editorial_hero.image" },
+    { "type": "product", "id": "product", "label": "t:sections.editorial_hero.product" },
+    { "type": "text", "id": "cta_label", "label": "t:sections.editorial_hero.cta_label" },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "t:sections.editorial_hero.alignment",
+      "options": [
+        { "value": "left", "label": "t:sections.editorial_hero.align_left" },
+        { "value": "offset", "label": "t:sections.editorial_hero.align_offset" }
+      ],
+      "default": "offset"
+    },
+    { "type": "checkbox", "id": "inverse", "label": "t:sections.editorial_hero.inverse", "default": false }
+  ],
+  "presets": [{ "name": "t:sections.editorial_hero.name" }]
+}
+{% endschema %}

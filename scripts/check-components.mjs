@@ -1,0 +1,694 @@
+/**
+ * Verificación de los componentes EN UN NAVEGADOR REAL.
+ *
+ * POR QUÉ NO SON PRUEBAS NORMALES
+ *
+ * Los módulos de `src/lib` son funciones puras y se prueban con `node:test`, sin
+ * DOM. Los componentes de `theme/assets/ne-components.js` son lo contrario: son
+ * elementos personalizados, y su comportamiento depende de cosas que solo
+ * existen en un navegador —`customElements`, `dataset`, eventos, radios,
+ * `FormData`—. Simular eso con objetos falsos daría una prueba que pasa mientras
+ * el navegador real falla, que es peor que no tener prueba.
+ *
+ * Así que esto carga el banco de pruebas en Chromium y comprueba el
+ * comportamiento observable.
+ *
+ * QUÉ ENCONTRÓ YA: que `data-ne-3d-mode` se lee como `dataset['ne-3dMode']` y no
+ * como `dataset.ne3dMode`, con lo que el ajuste de 3D del theme se ignoraba por
+ * completo. Ninguna lectura del código lo habría dicho con certeza.
+ *
+ * DEPENDENCIA OPCIONAL, DECLARADA
+ *
+ * Necesita Playwright, que es la única dependencia externa del proyecto y NO se
+ * versiona. Si no está, esta comprobación se declara NO EJECUTADA. No se declara
+ * superada: afirmar que pasó algo que no corrió es el éxito falso que §183
+ * prohíbe.
+ *
+ *   node scripts/check-components.mjs
+ */
+
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** @type {{name: string, problems: string[]}[]} */
+const results = [];
+
+/**
+ * @param {string} name
+ * @param {() => Promise<string[]>} fn
+ */
+async function check(name, fn) {
+  try {
+    results.push({ name, problems: (await fn()) ?? [] });
+  } catch (error) {
+    results.push({ name, problems: [`lanzó: ${error instanceof Error ? error.message : String(error)}`] });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Playwright y Chromium: opcionales y comprobados, no supuestos.
+// ---------------------------------------------------------------------------
+let chromium = null;
+for (const spec of [process.env.NE_PLAYWRIGHT, 'playwright'].filter(Boolean)) {
+  try {
+    const mod = await import(spec);
+    // Playwright se publica como CommonJS y como ESM: en el primer caso las
+    // familias de navegador cuelgan de `default`, en el segundo son exports
+    // nombrados. Se aceptan las dos formas en lugar de suponer una.
+    chromium = mod.chromium ?? mod.default?.chromium ?? null;
+    if (chromium) break;
+  } catch {
+    /* siguiente candidato */
+  }
+}
+
+if (!chromium) {
+  console.log('');
+  console.log('N/E  componentes en navegador: Playwright no disponible');
+  console.log('     (instálalo fuera del repositorio y apunta NE_PLAYWRIGHT a su módulo)');
+  console.log('');
+  console.log('NO EJECUTADA. Esto no cuenta como superada.');
+  process.exitCode = 0;
+  process.exit(0);
+}
+
+/**
+ * Resuelve el puente de textos desde los archivos de idioma REALES.
+ *
+ * Lee la lista de claves que declara `theme.liquid` —`"clave": {{ 'ruta' | t:
+ * var: '[[var]]' }}`— y la resuelve contra `locales/es.default.json`,
+ * convirtiendo los huecos `{{ var }}` de Liquid en los `[[var]]` que el script
+ * del theme rellena. Es un `t` mínimo, suficiente para este puente.
+ *
+ * Así el banco prueba los textos de la tienda, no una copia.
+ *
+ * @returns {Promise<Record<string, string>>}
+ */
+async function resolveStrings() {
+  const layout = await readFile(path.join(ROOT, 'theme', 'layout', 'theme.liquid'), 'utf8');
+  const locale = JSON.parse(
+    await readFile(path.join(ROOT, 'theme', 'locales', 'es.default.json'), 'utf8'),
+  );
+  const block = layout.match(/<script type="application\/json" id="ne-strings">([\s\S]*?)<\/script>/);
+  if (!block) throw new Error('theme.liquid no declara el bloque #ne-strings');
+
+  /** @type {Record<string, string>} */
+  const out = {};
+  const line = /"([a-z0-9_]+)"\s*:\s*\{\{\s*'([^']+)'\s*\|\s*t([^}]*)\}\}/g;
+  for (const m of block[1].matchAll(line)) {
+    const [, key, lookup, rest] = m;
+    let value = lookup.split('.').reduce((node, part) => node?.[part], locale);
+    if (typeof value !== 'string') throw new Error(`la clave de idioma '${lookup}' no existe`);
+    // Los argumentos del filtro `t`: `: size: '[[size]]', original: '[[original]]'`
+    for (const arg of rest.matchAll(/([a-z_]+)\s*:\s*'([^']*)'/g)) {
+      value = value.split(`{{ ${arg[1]} }}`).join(arg[2]);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+const STRINGS = await resolveStrings();
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.json': 'application/json; charset=utf-8',
+};
+
+/**
+ * Servidor estático mínimo.
+ *
+ * Hace falta porque un `<script type="module">` no se carga desde `file://`: el
+ * navegador lo bloquea por origen. Es `node:http`, sin dependencias.
+ */
+const server = createServer(async (req, res) => {
+  try {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    const target = path.join(ROOT, path.normalize(url.pathname).replace(/^(\.\.[/\\])+/, ''));
+    if (!target.startsWith(ROOT)) {
+      res.writeHead(403).end();
+      return;
+    }
+    let body = await readFile(target);
+    if (target.endsWith('product-harness.html')) {
+      // Se sustituye el bloque de textos del banco por el resuelto de los
+      // archivos de idioma reales.
+      body = Buffer.from(
+        body
+          .toString('utf8')
+          .replace(
+            /(<script type="application\/json" id="ne-strings">)[\s\S]*?(<\/script>)/,
+            `$1\n      ${JSON.stringify(STRINGS, null, 2).split('\n').join('\n      ')}\n    $2`,
+          ),
+      );
+    }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(target)] ?? 'application/octet-stream' });
+    res.end(body);
+  } catch {
+    res.writeHead(404).end('no encontrado');
+  }
+});
+
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const port = server.address().port;
+const HARNESS = `http://127.0.0.1:${port}/scripts/fixtures/product-harness.html`;
+
+const browser = await chromium.launch({ executablePath: process.env.NE_CHROMIUM ?? '/opt/pw-browsers/chromium' });
+
+/**
+ * Abre el banco con la analítica y la red instrumentadas.
+ *
+ * `Shopify.analytics.publish` se sustituye por un espía: es la única forma de
+ * comprobar que el evento de talla se publica de verdad, y además evita enviar
+ * nada a ningún sitio.
+ *
+ * @param {object} [opts]
+ * @param {Record<string,string>} [opts.attrs] Atributos a forzar antes de montar.
+ * @returns {Promise<import('playwright').Page>}
+ */
+/**
+ * Pulsa un chip por su etiqueta.
+ *
+ * Los radios están visualmente ocultos y envueltos por su `<label>`, que es lo
+ * que una persona pulsa de verdad. Hacer click en el input directamente falla
+ * —la etiqueta intercepta el puntero— y además probaría algo que nadie hace.
+ *
+ * @param {import('playwright').Page} page
+ * @param {string} id
+ */
+async function pickChip(page, id) {
+  await page.locator(`label[for="${id}"]`).click();
+  await page.waitForTimeout(60);
+}
+
+async function openHarness(opts = {}) {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => {
+    // Solo errores del propio script. Un 404 de un recurso del banco no dice
+    // nada sobre los componentes y solo haría ruido.
+    if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text());
+  });
+
+  await page.addInitScript(() => {
+    globalThis.__nePublished = [];
+    globalThis.Shopify = {
+      analytics: {
+        publish(name, data) {
+          globalThis.__nePublished.push({ name, data });
+        },
+      },
+    };
+    globalThis.__neRequests = [];
+  });
+
+  if (opts.attrs) {
+    await page.addInitScript((attrs) => {
+      document.addEventListener('DOMContentLoaded', () => {}, { once: true });
+      globalThis.__neForcedAttrs = attrs;
+    }, opts.attrs);
+  }
+
+  await page.goto(opts.url ?? HARNESS, { waitUntil: 'load' });
+  await page.waitForFunction(() => document.querySelector('[data-ne-picker]')?.dataset.neEnhanced === 'true', {
+    timeout: 5000,
+  }).catch(() => {});
+  page.__errors = errors;
+  return page;
+}
+
+/**
+ * Estado de un chip, tal como lo vería el comprador.
+ * @param {import('playwright').Page} page
+ * @param {string} option
+ */
+function chipStates(page, option) {
+  return page.evaluate((opt) => {
+    const group = document.querySelector(`[data-ne-option="${opt}"]`);
+    return Array.from(group.querySelectorAll('.ne-picker__chip')).map((chip) => {
+      const input = chip.querySelector('input');
+      const face = chip.querySelector('[data-ne-chip-face]');
+      return {
+        value: input.value,
+        state: chip.dataset.neState,
+        checked: input.checked,
+        disabled: input.disabled,
+        srText: chip.querySelector('[data-ne-chip-state]').textContent,
+        lineThrough: getComputedStyle(face).textDecorationLine.includes('line-through'),
+        borderStyle: getComputedStyle(face).borderTopStyle,
+      };
+    });
+  }, option);
+}
+
+// ---------------------------------------------------------------------------
+// 1 · El selector toma el mando, y solo entonces se oculta el control de reserva.
+// ---------------------------------------------------------------------------
+await check('el selector mejora y oculta el control de reserva', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  const enhanced = await page.locator('[data-ne-picker]').getAttribute('data-ne-enhanced');
+  if (enhanced !== 'true') problems.push('el selector no se marcó como mejorado');
+
+  const fallbackVisible = await page.locator('[data-ne-picker-fallback]').isVisible();
+  if (fallbackVisible) problems.push('el `<select>` de reserva sigue visible con el selector activo');
+
+  // Oculto NO es ausente: sigue siendo el control que postea el `id`.
+  // Se comprueba por FormData, que es lo que de verdad se envía.
+  //
+  // Nota verificada en Chromium: `form.id` NO devuelve el atributo id cuando el
+  // formulario tiene un control llamado `id` —y este lo tiene, es el select de
+  // variante—: el acceso con nombre gana y devuelve el elemento. Comprobarlo
+  // así daba un falso negativo.
+  const inForm = await page.evaluate(() => {
+    const select = document.querySelector('[data-ne-variant-select]');
+    if (!select || select.name !== 'id' || !(select.form instanceof HTMLFormElement)) return false;
+    if (select.form.getAttribute('id') !== 'ne-product-form-banco') return false;
+    return [...new FormData(select.form).keys()].includes('id');
+  });
+  if (!inForm) problems.push('el `<select name="id">` dejó de estar asociado al formulario que postea');
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 2 · AGOTADA e INEXISTENTE se distinguen. Es la razón de ser del componente.
+// ---------------------------------------------------------------------------
+await check('agotada e inexistente se pintan distinto', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  // Partida: Color = Negro. La 41 en Negro existe y está agotada.
+  const negro = await chipStates(page, 'Talla');
+  const t41 = negro.find((c) => c.value === '41');
+  if (t41.state !== 'unavailable') problems.push(`Negro/41 debería ser 'unavailable', es '${t41.state}'`);
+  if (t41.disabled) problems.push('Negro/41 está agotada pero existe: no debe deshabilitarse');
+  if (!t41.lineThrough) problems.push('Negro/41 no se pinta tachada');
+  if (!t41.srText.includes('agotado')) problems.push(`Negro/41 no lo dice a un lector de pantalla: "${t41.srText}"`);
+
+  // Cambio a Cuero: la 40 no se fabrica en Cuero.
+  await pickChip(page, 'c-cuero');
+  const cuero = await chipStates(page, 'Talla');
+  const c40 = cuero.find((c) => c.value === '40');
+  if (c40.state !== 'nonexistent') problems.push(`Cuero/40 debería ser 'nonexistent', es '${c40.state}'`);
+  if (c40.borderStyle !== 'dashed') problems.push(`Cuero/40 no se pinta con borde discontinuo (es ${c40.borderStyle})`);
+  if (!c40.srText.includes('no se fabrica')) problems.push(`Cuero/40 no lo dice a un lector de pantalla: "${c40.srText}"`);
+
+  // SIGUE SIENDO ELEGIBLE, y esto es la corrección de un fallo real: cuando los
+  // `nonexistent` se deshabilitaban, un color entero quedaba inalcanzable —para
+  // llegar a Cuero había que cambiar de talla, pero la talla puesta solo existía
+  // en Negro—. Elegirlo es lo que dispara la reconciliación.
+  if (c40.disabled) {
+    problems.push('Cuero/40 quedó deshabilitada: todo valor que la matriz lista es alcanzable');
+  }
+
+  // Y la 41 en Cuero sí se puede comprar: el mismo valor, otro estado.
+  const c41 = cuero.find((c) => c.value === '41');
+  if (c41.state !== 'available') problems.push(`Cuero/41 debería ser 'available', es '${c41.state}'`);
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 3 · Reconciliación: cambiar de color no deja la página en un estado imposible.
+// ---------------------------------------------------------------------------
+await check('cambiar de color suelta la talla imposible', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  // Negro/40 de partida. Cuero no se fabrica en 40.
+  await pickChip(page, 'c-cuero');
+
+  const state = await page.evaluate(() => ({
+    talla: document.querySelector('[data-ne-option="Talla"] [data-ne-chosen]').textContent,
+    color: document.querySelector('[data-ne-option="Color"] [data-ne-chosen]').textContent,
+    mensaje: document.querySelector('[data-ne-picker-message]').hidden
+      ? null
+      : document.querySelector('[data-ne-picker-message]').textContent.trim(),
+    botonDesactivado: document.querySelector('[data-ne-add-to-cart]').disabled,
+  }));
+
+  if (state.color !== 'Cuero') problems.push(`el color que acaba de tocar debe conservarse, quedó "${state.color}"`);
+  if (state.talla !== '') problems.push(`la talla imposible debe soltarse, quedó "${state.talla}"`);
+  if (!state.mensaje || !state.mensaje.includes('Talla')) {
+    problems.push(`debe pedirse la talla que falta, el mensaje fue "${state.mensaje}"`);
+  }
+  if (!state.botonDesactivado) problems.push('sin talla elegida el botón de añadir no puede estar activo');
+
+  // Y al elegir una talla que sí existe en Cuero, la ficha vuelve a ser comprable.
+  await pickChip(page, 't-42');
+  const after = await page.evaluate(() => ({
+    select: document.querySelector('[data-ne-variant-select]').value,
+    precio: document.querySelector('[data-ne-price-current]').textContent.trim(),
+    comparado: document.querySelector('.ne-price__compare').hidden
+      ? null
+      : document.querySelector('.ne-price__compare').textContent.trim(),
+    sku: document.querySelector('[data-ne-sku]').textContent.trim(),
+    url: location.search,
+    botonDesactivado: document.querySelector('[data-ne-add-to-cart]').disabled,
+  }));
+
+  if (after.select !== '4005') problems.push(`el select debe apuntar a Cuero/42 (4005), apunta a ${after.select}`);
+  if (after.precio !== '$130.000') problems.push(`el precio debe ser el de la variante, es "${after.precio}"`);
+  if (after.comparado !== '$160.000') problems.push(`el precio comparado debe aparecer, es "${after.comparado}"`);
+  if (after.sku !== 'BP-CUE-42') problems.push(`la referencia debe seguir a la variante, es "${after.sku}"`);
+  if (!after.url.includes('variant=4005')) problems.push(`la URL debe llevar ?variant=4005, lleva "${after.url}"`);
+  if (after.botonDesactivado) problems.push('con variante comprable el botón debe estar activo');
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 4 · El recomendador de talla, de punta a punta.
+// ---------------------------------------------------------------------------
+await check('el recomendador recomienda y deja rastro en la línea', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  await page.locator('.ne-sizeguide__summary').click();
+  // Coma decimal: en español es lo que se escribe, y un parseFloat directo
+  // devolvería una talla menos.
+  await page.locator('[data-ne-foot-input]').fill('25,9');
+  await page.locator('[data-ne-recommend]').click();
+  await page.waitForTimeout(50);
+
+  const out = await page.evaluate(() => ({
+    mensaje: document.querySelector('[data-ne-recommendation]').textContent.trim(),
+    oculto: document.querySelector('[data-ne-recommendation]').hidden,
+    aplicar: document.querySelector('[data-ne-apply-size]')?.textContent?.trim() ?? null,
+  }));
+
+  if (out.oculto) problems.push('la recomendación no se mostró');
+  // 25,9 cae exactamente en la 41, que en Negro está AGOTADA: tiene que
+  // sustituirla, no recomendar algo que no se puede comprar.
+  if (!out.mensaje.includes('42')) {
+    problems.push(`con la 41 agotada debe sustituir por la 42; dijo: "${out.mensaje}"`);
+  }
+  if (!/agotada/i.test(out.mensaje)) {
+    problems.push(`debe decir que la suya está agotada; dijo: "${out.mensaje}"`);
+  }
+
+  if (!out.aplicar || !out.aplicar.includes('42')) {
+    problems.push(`debe ofrecer elegir la talla recomendada; el botón dice "${out.aplicar}"`);
+  }
+
+  // El botón de aplicar la selecciona de verdad en el selector.
+  await page.locator('[data-ne-apply-size]').click();
+  await page.waitForTimeout(50);
+  const applied = await page.evaluate(() => ({
+    talla: document.querySelector('[data-ne-option="Talla"] [data-ne-chosen]').textContent,
+    select: document.querySelector('[data-ne-variant-select]').value,
+  }));
+  if (applied.talla !== '42') problems.push(`aplicar la talla no la seleccionó, quedó "${applied.talla}"`);
+  if (applied.select !== '4003') problems.push(`el select debe apuntar a Negro/42 (4003), apunta a ${applied.select}`);
+
+  // Rastro en la línea de carrito: PERSISTE AL PEDIDO, y es el único canal que
+  // permite cruzar después recomendación con devolución.
+  const attrs = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-ne-attr]')).map((i) => ({
+      key: i.getAttribute('data-ne-attr'),
+      value: i.value,
+      disabled: i.disabled,
+    })),
+  );
+  const get = (k) => attrs.find((a) => a.key === k);
+
+  if (get('_ne_foot_length_cm').disabled || get('_ne_foot_length_cm').value !== '25.9') {
+    problems.push(`la medida debe viajar al pedido; va "${get('_ne_foot_length_cm').value}" (deshabilitado: ${get('_ne_foot_length_cm').disabled})`);
+  }
+  if (get('_ne_size_recommended').disabled || get('_ne_size_recommended').value !== '42') {
+    problems.push(`la talla recomendada debe viajar; va "${get('_ne_size_recommended').value}"`);
+  }
+  if (get('_ne_size_chosen').disabled || get('_ne_size_chosen').value !== '42') {
+    problems.push(`la talla elegida debe viajar; va "${get('_ne_size_chosen').value}"`);
+  }
+  if (get('_ne_size_followed').value !== 'true') {
+    problems.push(`debe registrar que siguió la recomendación; va "${get('_ne_size_followed').value}"`);
+  }
+  if (get('_ne_size_guide_used').value !== 'true') {
+    problems.push(`debe registrar que abrió la guía; va "${get('_ne_size_guide_used').value}"`);
+  }
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 5 · El evento de talla se publica, una vez, y sin precio.
+// ---------------------------------------------------------------------------
+await check('el evento de talla se publica sin duplicar y sin precio', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  await pickChip(page, 't-42');
+  await pickChip(page, 't-42'); // misma talla otra vez: no debe duplicar
+
+  const published = await page.evaluate(() => globalThis.__nePublished);
+  const sizeEvents = published.filter((e) => e.name === 'ne:size_selected');
+
+  if (sizeEvents.length !== 1) {
+    problems.push(`debe publicarse una vez por talla distinta; se publicó ${sizeEvents.length} vez/veces`);
+  }
+  if (sizeEvents.length > 0) {
+    const data = sizeEvents[0].data;
+    if (data.size !== '42') problems.push(`la talla publicada es "${data.size}"`);
+    if (data.status !== 'available') problems.push(`el estado publicado es "${data.status}"`);
+    if (data.product_id !== '9999999999') problems.push(`el producto publicado es "${data.product_id}"`);
+    // El precio se omite a propósito: incluirlo invitaría a sumar ingresos desde
+    // un evento de cliente, que es la métrica mentirosa que el proyecto evita.
+    const forbidden = Object.keys(data).filter((k) => /price|revenue|total|valor/i.test(k));
+    if (forbidden.length > 0) problems.push(`el evento no debe llevar dinero: ${forbidden.join(', ')}`);
+  }
+
+  // Cambiar de color no debe contarse como una nueva selección de talla.
+  await pickChip(page, 'c-cuero');
+  const after = await page.evaluate(() => globalThis.__nePublished.filter((e) => e.name === 'ne:size_selected').length);
+  if (after !== 1) problems.push(`cambiar de color publicó una selección de talla de más (${after} en total)`);
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6 · Añadir al carrito: intercepta, usa la ruta de Shopify, no recarga.
+// ---------------------------------------------------------------------------
+await check('añadir al carrito usa la ruta de Shopify sin recargar', async () => {
+  const page = await openHarness();
+  const problems = [];
+
+  await page.route('**/cart/add', async (route) => {
+    const request = route.request();
+    await page.evaluate(
+      (payload) => globalThis.__neRequests.push(payload),
+      { method: request.method(), body: request.postData() ?? '' },
+    );
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 4003, quantity: 1, sections: {} }),
+    });
+  });
+
+  // Una marca en `window` sobrevive a `history.replaceState` y NO sobrevive a una
+  // navegación real. `framenavigated` no sirve: Playwright también lo emite para
+  // las navegaciones del mismo documento, y el selector usa `replaceState` para
+  // mantener `?variant=`, así que daba un falso positivo.
+  await page.evaluate(() => {
+    globalThis.__neAlive = true;
+  });
+
+  await pickChip(page, 't-42');
+  await page.locator('[data-ne-add-to-cart]').click();
+  await page.waitForTimeout(400);
+
+  const alive = await page.evaluate(() => globalThis.__neAlive === true);
+  if (!alive) problems.push('el documento se recargó: la intercepción no funcionó');
+
+  const requests = await page.evaluate(() => globalThis.__neRequests);
+  if (requests.length !== 1) {
+    problems.push(`debe hacerse exactamente una petición; se hicieron ${requests.length}`);
+  } else {
+    const body = requests[0].body;
+    if (requests[0].method !== 'POST') problems.push(`el método debe ser POST, fue ${requests[0].method}`);
+    if (!body.includes('4003')) problems.push('la petición no lleva el id de la variante elegida');
+    if (!body.includes('sections')) problems.push('la petición no pide la sección de cabecera para repintar el contador');
+    if (!body.includes('sections--banco__header')) {
+      problems.push('la sección pedida no es la que declara el marcado: el contador no se actualizaría');
+    }
+    // Las atribuciones vacías no viajan.
+    if (body.includes('_ne_size_recommended')) {
+      problems.push('una atribución sin valor viajó al pedido');
+    }
+  }
+
+  const label = await page.locator('[data-ne-add-label]').textContent();
+  if (label.trim() !== 'Añadido') problems.push(`debe confirmarse en el botón; dice "${label.trim()}"`);
+
+  if (page.__errors.length > 0) problems.push(`errores en consola: ${page.__errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 7 · El 3D es opcional de verdad, y el ajuste del theme se respeta.
+// ---------------------------------------------------------------------------
+await check('el 3D respeta el ajuste del theme y degrada a la fotografía', async () => {
+  const page = await browser.newPage();
+  const problems = [];
+
+  // 7a · modo `off`: no se ofrece 3D en absoluto.
+  await page.addInitScript(() => {
+    globalThis.Shopify = { analytics: { publish() {} } };
+  });
+  // El modo llega por la URL del banco y se aplica al atributo antes de que el
+  // componente monte, igual que Liquid lo renderizaría.
+  await page.goto(`${HARNESS}?model_mode=off`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+
+  const offState = await page.evaluate(() => ({
+    triggerVisible: !document.querySelector('[data-ne-model-trigger]').hidden,
+    slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+    fotoVisible: !document.querySelector('[data-ne-model-fallback]').hidden,
+  }));
+  if (offState.triggerVisible) {
+    problems.push('con el ajuste en «off» no debe ofrecerse 3D: el ajuste del theme se está ignorando');
+  }
+  if (!offState.slotHidden) problems.push('con «off» el visor no debe estar visible');
+  if (!offState.fotoVisible) problems.push('la fotografía debe seguir siendo la experiencia');
+  await page.close();
+
+  // 7b · a demanda: el visor no se revela hasta que se pide, y si no carga, se
+  //      vuelve a la fotografía y se dice. El banco no trae ningún modelo, así
+  //      que el visor nunca emite `load`: es el camino de fallo real.
+  const page2 = await openHarness();
+  const before = await page2.evaluate(() => ({
+    slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+    triggerVisible: !document.querySelector('[data-ne-model-trigger]').hidden,
+  }));
+  if (!before.slotHidden) problems.push('a demanda el visor no debe cargarse de entrada');
+  if (!before.triggerVisible) problems.push('a demanda debe ofrecerse el botón de 3D');
+
+  await page2.locator('[data-ne-model-trigger]').click();
+  await page2.waitForTimeout(100);
+  const during = await page2.evaluate(() => ({
+    slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+    etiqueta: document.querySelector('[data-ne-model-trigger]').textContent.trim(),
+    cargando: document.querySelector('[data-ne-model-trigger]').dataset.neLoading,
+  }));
+  if (during.slotHidden) problems.push('al pedirlo, el visor debe revelarse');
+  if (during.cargando !== 'true') problems.push('debe indicarse que está cargando');
+  if (during.etiqueta !== 'Cargando el modelo') problems.push(`la etiqueta de carga dice "${during.etiqueta}"`);
+
+  const arHidden = await page2.evaluate(() => document.querySelector('[data-ne-ar-trigger]').hidden);
+  if (!arHidden) problems.push('sin visor que confirme AR, el botón de AR no debe aparecer');
+
+  if (page2.__errors.length > 0) problems.push(`errores en consola: ${page2.__errors.join(' | ')}`);
+  await page2.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 8 · SE COMPRA SIN JAVASCRIPT. Es el requisito que sostiene todo lo demás.
+// ---------------------------------------------------------------------------
+await check('la ficha se compra con JavaScript desactivado', async () => {
+  const problems = [];
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto(HARNESS, { waitUntil: 'load' });
+
+  // Que JavaScript está desactivado se comprueba POR EL EFECTO: nadie montó los
+  // componentes, así que nadie marcó `data-ne-enhanced`. No vale `evaluate`:
+  // Playwright lo inyecta por el protocolo de depuración y sigue funcionando
+  // aunque la página no pueda ejecutar sus propios scripts.
+  const enhanced = await page.locator('[data-ne-picker]').getAttribute('data-ne-enhanced');
+  if (enhanced !== null) {
+    problems.push('el contexto no tenía JavaScript desactivado: la comprobación no vale');
+  }
+
+  // Se inspecciona solo con selectores.
+  const selectVisible = await page.locator('[data-ne-variant-select]').isVisible();
+  if (!selectVisible) problems.push('sin JavaScript el `<select>` de variante tiene que estar visible');
+
+  const chipsVisible = await page.locator('[data-ne-option="Talla"] .ne-picker__values').isVisible();
+  if (chipsVisible) problems.push('sin JavaScript los chips quedan inertes: no deben mostrarse como si funcionaran');
+
+  const action = await page.locator('#ne-product-form-banco').getAttribute('action');
+  if (!action || !action.includes('/cart/add')) problems.push(`el formulario debe postear a /cart/add, postea a "${action}"`);
+
+  const submitEnabled = await page.locator('[data-ne-add-to-cart]').isEnabled();
+  if (!submitEnabled) problems.push('sin JavaScript el botón de añadir tiene que estar activo');
+
+  const guideOpens = await page.locator('.ne-sizeguide__details').isVisible();
+  if (!guideOpens) problems.push('la guía de tallas usa <details>: debe seguir abriéndose sin JavaScript');
+
+  await context.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 9 · Ningún campo de un componente pisa una propiedad del DOM.
+// ---------------------------------------------------------------------------
+await check('los campos de los componentes no pisan propiedades del DOM', async () => {
+  const problems = [];
+  const source = await readFile(path.join(ROOT, 'theme', 'assets', 'ne-components.js'), 'utf8');
+
+  // Campos que los componentes asignan: `this.x = ...`.
+  const fields = [...new Set([...source.matchAll(/this\.([A-Za-z_$][\w$]*)\s*=[^=]/g)].map((m) => m[1]))];
+
+  const page = await browser.newPage();
+  await page.goto(HARNESS, { waitUntil: 'load' });
+
+  // La lista la da el navegador, no una lista escrita a mano: recorre la cadena
+  // de prototipos de un elemento personalizado real.
+  const collisions = await page.evaluate((names) => {
+    const el = document.querySelector('ne-variant-picker');
+    const owned = new Set();
+    for (let proto = Object.getPrototypeOf(el); proto; proto = Object.getPrototypeOf(proto)) {
+      // Se para en la clase del componente: sus propios métodos no son colisión.
+      if (proto.constructor && /^Ne[A-Z]/.test(proto.constructor.name)) continue;
+      for (const key of Object.getOwnPropertyNames(proto)) owned.add(key);
+    }
+    return names.filter((n) => owned.has(n));
+  }, fields);
+  await page.close();
+
+  for (const name of collisions) {
+    problems.push(
+      `this.${name} pisa una propiedad del DOM: la asignación se convierte a texto o se ignora y el componente falla en silencio`,
+    );
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// Cierre
+// ---------------------------------------------------------------------------
+await browser.close();
+server.close();
+
+const failed = results.filter((r) => r.problems.length > 0);
+console.log('');
+for (const r of results) {
+  console.log(`${r.problems.length === 0 ? 'OK  ' : 'FALLA'} ${r.name}`);
+  for (const p of r.problems) console.log(`       ${p}`);
+}
+console.log('');
+console.log(`${results.length - failed.length}/${results.length} comprobaciones de componentes pasan`);
+if (failed.length > 0) process.exitCode = 1;

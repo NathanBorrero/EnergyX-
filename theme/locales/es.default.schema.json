@@ -1,0 +1,124 @@
+{
+  "settings": {
+    "typography": {
+      "name": "Tipografía",
+      "pending": "La elección final de tipografía es una decisión de marca pendiente. Se cambia aquí sin tocar código: el sistema ya usa dos familias, una de texto y una de display.",
+      "font_body": "Familia de texto",
+      "font_display": "Familia de display",
+      "font_display_info": "Se usa en titulares y en el nombre de producto. Para una dirección editorial, elige aquí una familia con más carácter que la de texto."
+    },
+    "brand": {
+      "name": "Marca",
+      "logo": "Logotipo",
+      "logo_width": "Ancho del logotipo",
+      "favicon": "Favicon",
+      "social_share_image": "Imagen por defecto al compartir"
+    },
+    "product": {
+      "name": "Página de producto",
+      "colour_note": "Los swatches de color se toman del metaobject estándar de Shopify, que admite una foto del material en lugar de un color plano. Se configuran en Contenido → Metaobjetos.",
+      "show_size_guide": "Mostrar guía de tallas",
+      "show_size_recommender": "Mostrar recomendador de talla",
+      "show_size_recommender_info": "Pide la medida del pie en centímetros y sugiere una talla. Requiere que el producto tenga una guía de tallas con medidas reales; si no la tiene, no se muestra.",
+      "3d_mode": "Modelo 3D",
+      "3d_mode_info": "Bajo demanda carga el visor solo cuando el comprador lo pide, que es lo que protege el LCP. El 3D nunca sustituye a la fotografía: si no hay modelo, o WebGL falla, la galería sigue funcionando.",
+      "3d_off": "Desactivado",
+      "3d_on_demand": "Bajo demanda (recomendado)",
+      "3d_eager": "Cargar con la página"
+    },
+    "cod": {
+      "name": "Contra entrega",
+      "note": "La validación previa existe porque los campos del checkout de Shopify solo se pueden personalizar en el plan Plus. Validar antes del checkout es la única vía, y además es donde se reducen las devoluciones.",
+      "prevalidation": "Validar datos antes de ir al checkout",
+      "prevalidation_info": "Comprueba la forma del teléfono y la cobertura del municipio antes de enviar al comprador al checkout.",
+      "coverage_list": "Municipios con cobertura de contra entrega",
+      "coverage_list_info": "Un municipio por línea. Si se deja vacío, la cobertura se considera desconocida y no se bloquea a nadie: no saber si se entrega no es lo mismo que no poder entregar."
+    },
+    "analytics": {
+      "name": "Analítica",
+      "note": "La analítica de comportamiento usa web pixels, que respetan el consentimiento del comprador. Los datos reales de venta vienen de los pedidos de Shopify, no de estos eventos.",
+      "size_selected": "Emitir evento de talla seleccionada",
+      "size_selected_info": "Publica un evento personalizado cuando el comprador elige talla, con el estado real de la combinación. Sirve para entender comportamiento agregado; no es una fuente de ventas ni de stock."
+    }
+  },
+  "sections": {
+    "header": {
+      "name": "Cabecera",
+      "menu": "Menú"
+    },
+    "footer": {
+      "name": "Pie",
+      "menu": "Menú",
+      "note": "Texto legal"
+    },
+    "editorial_hero": {
+      "name": "Hero editorial",
+      "eyebrow": "Antetítulo",
+      "heading": "Titular",
+      "body": "Texto",
+      "image": "Imagen",
+      "product": "Producto destacado",
+      "cta_label": "Texto del botón",
+      "alignment": "Composición",
+      "align_left": "Alineado a la izquierda",
+      "align_offset": "Desplazado a la retícula",
+      "inverse": "Fondo de tinta"
+    },
+    "product_grid": {
+      "name": "Cuadrícula de producto",
+      "heading": "Titular",
+      "collection": "Colección",
+      "count": "Número de productos",
+      "columns": "Columnas en escritorio"
+    },
+    "statement": {
+      "name": "Declaración",
+      "heading": "Titular",
+      "body": "Texto",
+      "inverse": "Fondo de tinta"
+    },
+    "main_product": {
+      "name": "Producto",
+      "blocks_info": "Cada elemento de la ficha es un bloque, así que se puede reordenar y quitar desde el editor."
+    },
+    "main_collection": {
+      "name": "Colección"
+    },
+    "main_cart": {
+      "name": "Carrito"
+    },
+    "custom_liquid": {
+      "name": "Liquid personalizado",
+      "label": "Código Liquid"
+    }
+  },
+  "blocks": {
+    "vendor": {
+      "name": "Marca"
+    },
+    "title": {
+      "name": "Nombre"
+    },
+    "price": {
+      "name": "Precio"
+    },
+    "variant_picker": {
+      "name": "Selector de color y talla"
+    },
+    "size_guide": {
+      "name": "Guía de tallas"
+    },
+    "buy_buttons": {
+      "name": "Botón de compra"
+    },
+    "description": {
+      "name": "Descripción"
+    },
+    "specs": {
+      "name": "Especificaciones"
+    },
+    "custom_liquid": {
+      "name": "Liquid personalizado"
+    }
+  }
+}

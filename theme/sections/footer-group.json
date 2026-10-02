@@ -1,0 +1,13 @@
+{
+  "name": "Pie",
+  "type": "footer",
+  "sections": {
+    "footer": {
+      "type": "footer",
+      "settings": {
+        "menu": "footer"
+      }
+    }
+  },
+  "order": ["footer"]
+}

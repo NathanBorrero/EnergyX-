@@ -1,0 +1,31 @@
+<section class="ne-section">
+  <div class="ne-shell">
+    <h1 class="ne-display">{{ page_title }}</h1>
+    <ul class="ne-grid ne-collection-list">
+      {%- for collection in collections -%}
+        <li class="ne-collection-list__cell">
+          <a class="ne-collection-list__link" href="{{ collection.url }}">
+            {% render 'ne-image',
+              image: collection.featured_image,
+              role: 'below_fold',
+              sizes: '(max-width: 47.99em) calc(50vw - 1.5rem), 33vw',
+              widths: '320, 480, 768, 960',
+              max: 960,
+              ratio: '3 / 4',
+              alt: collection.title
+            %}
+            <h2 class="ne-title">{{ collection.title }}</h2>
+          </a>
+        </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+{% stylesheet %}
+  .ne-collection-list { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--ne-space-xl); row-gap: var(--ne-space-l); }
+  @media (min-width: 48em) { .ne-collection-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ne-collection-list__link { display: grid; gap: var(--ne-space-xs); color: inherit; text-decoration: none; }
+{% endstylesheet %}
+{% schema %}
+{ "name": "Lista de colecciones", "tag": "section" }
+{% endschema %}

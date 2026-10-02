@@ -1,0 +1,134 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Nathan & Esteban",
+    "theme_version": "0.1.0",
+    "theme_author": "Nathan & Esteban",
+    "theme_documentation_url": "https://github.com/NathanBorrero/EnergyX-",
+    "theme_support_url": "https://github.com/NathanBorrero/EnergyX-/issues"
+  },
+  {
+    "name": "t:settings.typography.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:settings.typography.pending"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_body",
+        "label": "t:settings.typography.font_body",
+        "default": "assistant_n4"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_display",
+        "label": "t:settings.typography.font_display",
+        "info": "t:settings.typography.font_display_info",
+        "default": "assistant_n4"
+      }
+    ]
+  },
+  {
+    "name": "t:settings.brand.name",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "logo",
+        "label": "t:settings.brand.logo"
+      },
+      {
+        "type": "range",
+        "id": "logo_width",
+        "label": "t:settings.brand.logo_width",
+        "min": 60,
+        "max": 320,
+        "step": 10,
+        "unit": "px",
+        "default": 140
+      },
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "t:settings.brand.favicon"
+      },
+      {
+        "type": "image_picker",
+        "id": "social_share_image",
+        "label": "t:settings.brand.social_share_image"
+      }
+    ]
+  },
+  {
+    "name": "t:settings.product.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:settings.product.colour_note"
+      },
+      {
+        "type": "checkbox",
+        "id": "product_show_size_guide",
+        "label": "t:settings.product.show_size_guide",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "product_show_size_recommender",
+        "label": "t:settings.product.show_size_recommender",
+        "info": "t:settings.product.show_size_recommender_info",
+        "default": true
+      },
+      {
+        "type": "select",
+        "id": "product_3d_mode",
+        "label": "t:settings.product.3d_mode",
+        "info": "t:settings.product.3d_mode_info",
+        "options": [
+          { "value": "off", "label": "t:settings.product.3d_off" },
+          { "value": "on_demand", "label": "t:settings.product.3d_on_demand" },
+          { "value": "eager", "label": "t:settings.product.3d_eager" }
+        ],
+        "default": "on_demand"
+      }
+    ]
+  },
+  {
+    "name": "t:settings.cod.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:settings.cod.note"
+      },
+      {
+        "type": "checkbox",
+        "id": "cod_prevalidation",
+        "label": "t:settings.cod.prevalidation",
+        "info": "t:settings.cod.prevalidation_info",
+        "default": false
+      },
+      {
+        "type": "textarea",
+        "id": "cod_coverage_list",
+        "label": "t:settings.cod.coverage_list",
+        "info": "t:settings.cod.coverage_list_info"
+      }
+    ]
+  },
+  {
+    "name": "t:settings.analytics.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:settings.analytics.note"
+      },
+      {
+        "type": "checkbox",
+        "id": "analytics_size_selected_event",
+        "label": "t:settings.analytics.size_selected",
+        "info": "t:settings.analytics.size_selected_info",
+        "default": true
+      }
+    ]
+  }
+]

@@ -1,6 +1,6 @@
 # EnergyX — Estado de verificación
 
-**Fecha del informe:** 2026-10-01
+**Fecha del informe:** 2026-10-02
 **Rama:** `claude/dreamy-maxwell-js5745`
 **Método:** inspección directa del repositorio y del entorno de ejecución, más investigación de
 plataforma sobre documentación oficial. Sin suposiciones (§191).
@@ -17,8 +17,21 @@ El repositorio `NathanBorrero/EnergyX-` estaba **vacío** al iniciar este inform
 (`git` local sobre el clon y la API de GitHub, que devolvió
 `409 Git Repository is empty`).
 
-**No existe código de aplicación todavía.** Este commit aporta únicamente el estándar
-de ejecución y este informe.
+**Ahora existe código.** Dos cuerpos, con una frontera deliberada:
+
+- **`src/lib/`** — 12 módulos de decisión, funciones puras, **321 pruebas**, cero dependencias.
+  Es donde viven las reglas: qué combinaciones existen, qué talla se recomienda, qué se escribe en
+  la línea del carrito, qué contraste cumple.
+- **`theme/`** — un theme de Shopify (Online Store 2.0) escrito de cero: 12 plantillas JSON, 18
+  secciones, 9 snippets, el sistema de diseño en CSS y un único archivo de JavaScript escrito a
+  mano que **no decide nada**: conecta el DOM con esos módulos. Los demás `theme/assets/ne-*.js`
+  son copias generadas de `src/lib`, verificadas sin deriva.
+
+**FASE 2 está cerrada.** El stack es **Shopify Theme / Liquid**, por las razones de
+`ARCHITECTURE.md`, y el theme pasa el linter oficial de Shopify sin infracciones.
+
+Lo que sigue siendo `PLACEHOLDER` son los **datos comerciales**, no el mecanismo: no hay productos,
+precios, materiales ni assets de Nathan & Esteban, y no se inventan.
 
 ## 2. Informe de autoverificación (§235)
 
@@ -26,21 +39,21 @@ de ejecución y este informe.
 
 | Área | Estado | Evidencia / motivo |
 | --- | --- | --- |
-| Arquitectura | `PLACEHOLDER` | Stack no decidido. Opciones y restricciones ya investigadas y verificadas en `DISCOVERY.md` §10; la elección requiere §1–172. Decisión crítica abierta (D2). |
+| Arquitectura | `VERIFIED` (decidida) | **Shopify Theme / Liquid, Online Store 2.0, de cero.** Razonada en `ARCHITECTURE.md` frente a cuatro opciones y confirmada por la directiva Shopify-primero. El theme existe y pasa Theme Check. |
 | Shopify — tienda | `VERIFIED`, pero **es la tienda equivocada** | Conectado a **Magisik** (`magisik.store`), plan **Basic**, COP, Colombia. 4 productos, todos de belleza, **cero footwear**. No es Nathan & Esteban. Ver `DISCOVERY.md` §13. |
 | Shopify — deploy | `PARTIAL` | **Corregido:** la conexión **sí escribe** archivos de theme no publicado (`themeFilesUpsert` ejecutado con éxito), pero **no puede borrarlos** ni escribir en el theme `MAIN`. Esa asimetría hace de la integración de GitHub la vía de despliegue. Ver `VERIFICATION-LOG.md` §8. |
 | Modelo de datos footwear | `VERIFIED` (mecanismo) | Probado por ejecución en el entorno de pruebas: opciones, matriz de variantes, disponibilidad, swatches y guía de tallas. Receta en `shopify/`. Los **datos** siguen siendo `PLACEHOLDER`. |
 | Shopify — plataforma | `VERIFIED` | Capacidades, límites y matriz de planes leídos de documentación oficial. Ver `DISCOVERY.md` §1–§7. |
 | Dropi | `DOCUMENTED` | Ver §4. Nada comprobado contra una cuenta real. |
-| Ecommerce | `PLACEHOLDER` | Sin implementación. |
-| 3D | `PLACEHOLDER` | Sin implementación ni assets. |
-| Motion | `PLACEHOLDER` | Sin implementación. |
-| Mobile | `PLACEHOLDER` | Nada que probar. |
-| Performance | `UNMEASURED` | Nada que medir. |
+| Ecommerce | `PARTIAL` | Ficha de producto, selector de variantes, carrito y formulario de compra implementados y verificados en navegador. **Se compra sin JavaScript** (`<form>` real a la ruta de carrito de Shopify). Falta catálogo real. |
+| 3D | `PARTIAL` | Sistema progresivo implementado con `model_viewer_tag` nativo: puertas de WebGL, ahorro de datos, dispositivo modesto y menos movimiento; fallback a fotografía verificado. **Sin modelo `.glb` real**, y no se finge tenerlo. |
+| Motion | `PARTIAL` | Una curva de easing y tres duraciones en `ne-tokens.css`. Sin animación decorativa, por dirección de arte. |
+| Mobile | `PARTIAL` | Rejilla de dos columnas en móvil, objetivos de pulsado de 44px, `clamp()` en toda la escala tipográfica. **Sin medición en dispositivo real.** |
+| Performance | `PARTIAL` | Arquitectura a favor: elegibilidad de streaming verificada por comprobación automática, CSS del primer paint por encima de `content_for_header`, `image_url`/`image_tag` sin forzar formato, módulos diferidos, cero dependencias de runtime. **Sin medición**: exige una página desplegada. |
 | Security | `PARTIAL` | Solo política documentada (§197–§211). Sin superficie que auditar. |
-| SEO | `PLACEHOLDER` | Sin implementación. |
-| Accessibility | `PLACEHOLDER` | Sin implementación. |
-| Analytics | `PLACEHOLDER` | Sin implementación. |
+| SEO | `PARTIAL` | `ProductGroup` + `hasVariant` + `variesBy` implementado con detección de colisiones de propiedad; metadatos sociales; plantillas JSON. Sin medir en buscador. |
+| Accessibility | `PARTIAL` | Paleta validada con el propio `a11y-contrast.js` **antes** de escribir CSS (encontró un borde a 2.37:1 contra un mínimo de 3:1). Foco visible, enlace de salto, estados anunciados a lector de pantalla, 44px de objetivo. **Sin auditoría con lector de pantalla real.** |
+| Analytics | `PARTIAL` | `ne:size_selected` implementado y verificado en navegador: publica una vez por talla distinta, nunca lleva dinero, y las atribuciones de línea —que **persisten al pedido**— son el canal autoritativo. |
 | Assets | `PLACEHOLDER` | Ningún asset de marca o producto en el repositorio. |
 | Claims | `PLACEHOLDER` | Ningún claim de producto conocido ni verificado. |
 | Marca / categoría | `VERIFIED` (por el propietario) | Nathan & Esteban, footwear premium. Dirección de arte concreta sigue pendiente (§1–172). |

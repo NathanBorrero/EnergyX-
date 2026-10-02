@@ -1,0 +1,130 @@
+{
+  "accessibility": {
+    "skip_to_content": "Saltar al contenido",
+    "close": "Cerrar",
+    "menu": "Menú",
+    "loading": "Cargando",
+    "selected": "seleccionado",
+    "unavailable": "agotado",
+    "nonexistent": "no se fabrica con tu selección actual, al elegirlo se ajustará"
+  },
+  "general": {
+    "meta": {
+      "tags": "Etiquetado «{{ tags }}»",
+      "page": "Página {{ page }}"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "search": {
+      "placeholder": "Buscar",
+      "submit": "Buscar",
+      "no_results": "No encontramos nada para «{{ terms }}»."
+    },
+    "placeholder": {
+      "label": "PENDIENTE",
+      "image": "Imagen pendiente",
+      "model": "Modelo 3D pendiente",
+      "copy": "Texto pendiente de definir"
+    },
+    "404": {
+      "title": "Esta página no existe",
+      "subtext": "El enlace puede estar mal escrito o la página se movió.",
+      "back_home": "Ir al inicio"
+    },
+    "password_page": {
+      "title": "Próximamente",
+      "subtext": "Estamos preparando el lanzamiento.",
+      "password_label": "Contraseña",
+      "password_error": "La contraseña no es correcta.",
+      "admin_link": "Entrar con tu cuenta de la tienda",
+      "submit": "Entrar"
+    }
+  },
+  "products": {
+    "product": {
+      "vendor": "Marca",
+      "sku": "Referencia",
+      "price": "Precio",
+      "price_from": "Desde {{ price }}",
+      "unavailable": "Agotado",
+      "sold_out": "Agotado",
+      "add_to_cart": "Añadir al carrito",
+      "adding": "Añadiendo",
+      "added": "Añadido",
+      "select_options": "Elige {{ options }}",
+      "choose_option": "Elige {{ option }}",
+      "option_unavailable": "{{ value }} · agotado",
+      "option_nonexistent": "{{ value }} · no se fabrica en este color",
+      "view_in_space": "Verlo en tu espacio",
+      "view_3d": "Ver en 3D",
+      "view_3d_loading": "Cargando el modelo",
+      "view_3d_failed": "El modelo 3D no se pudo cargar. Las fotografías siguen disponibles.",
+      "media_gallery": "Galería del producto",
+      "no_description": "Descripción pendiente de definir.",
+      "quantity": "Cantidad",
+      "hide_3d": "Ver fotografías",
+      "upper_material": "Corte",
+      "sole_material": "Suela",
+      "care": "Cuidado"
+    },
+    "size_guide": {
+      "title": "Guía de tallas",
+      "open": "Guía de tallas",
+      "intro": "Mide tu pie y elige con el dato, no con el número de siempre.",
+      "how_to_measure": "Cómo medir",
+      "how_to_measure_steps": "Apoya el talón contra una pared, de pie y con el peso repartido. Marca la punta del dedo más largo en una hoja. Mide del talón a la marca, en centímetros. Hazlo al final del día, cuando el pie está más ancho.",
+      "your_measurement": "Tu medida en centímetros",
+      "measurement_placeholder": "26,5",
+      "recommend": "Ver mi talla",
+      "recommended": "Tu talla es la {{ size }}",
+      "recommended_rounded": "Tu talla es la {{ size }}. Tu medida cae entre dos, y recomendamos la mayor: un zapato algo holgado se usa, uno pequeño no.",
+      "recommended_substituted": "Tu talla sería la {{ original }}, pero está agotada. La {{ size }} es la más cercana disponible.",
+      "out_of_range": "Tu medida queda fuera del rango de este modelo.",
+      "no_data": "Este modelo todavía no tiene tabla de tallas con medidas reales.",
+      "table_size": "Talla",
+      "table_cm": "Largo de pie (cm)",
+      "fit_note": "Horma",
+      "invalid_measurement": "Escribe tu medida en centímetros, por ejemplo 26,5.",
+      "recommended_out_of_stock": "Tu talla está agotada en este color. Prueba otro color o avísanos.",
+      "choose_size": "Elegir la talla {{ size }}"
+    }
+  },
+  "cart": {
+    "general": {
+      "title": "Carrito",
+      "empty": "Tu carrito está vacío.",
+      "continue_shopping": "Seguir viendo",
+      "subtotal": "Subtotal",
+      "checkout": "Finalizar compra",
+      "remove": "Quitar",
+      "taxes_note": "Impuestos y envío se calculan en el checkout.",
+      "item_count": {
+        "one": "{{ count }} artículo",
+        "other": "{{ count }} artículos"
+      }
+    }
+  },
+  "collections": {
+    "general": {
+      "no_products": "Todavía no hay productos en esta colección.",
+      "view_all": "Ver todo"
+    }
+  },
+  "sections": {
+    "header": {
+      "cart": "Carrito",
+      "menu": "Menú",
+      "search": "Buscar"
+    },
+    "footer": {
+      "menu": "Enlaces del pie"
+    }
+  },
+  "errors": {
+    "generic": "Algo no salió como esperábamos. Vuelve a intentarlo.",
+    "add_to_cart": "No pudimos añadir este artículo. Vuelve a intentarlo en un momento.",
+    "network": "Parece que se perdió la conexión. Comprueba tu red y vuelve a intentarlo."
+  }
+}

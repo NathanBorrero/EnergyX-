@@ -1,0 +1,55 @@
+{%- comment -%}
+  Declaración de marca. Un titular grande y un texto corto, desplazados en la
+  retícula. Existe para dar ritmo entre bloques de producto: sin ella la portada
+  es una sucesión de cuadrículas.
+
+  Si no hay copy, no se rellena con nada.
+{%- endcomment -%}
+
+<section
+  class="ne-statement ne-section--vast{% if section.settings.inverse %} ne-inverse{% endif %}"
+  {% if section.settings.heading != blank %}aria-labelledby="ne-statement-{{ section.id }}"{% endif %}
+>
+  <div class="ne-shell">
+    <div class="ne-grid">
+      <div class="ne-statement__body">
+        {%- if section.settings.heading != blank -%}
+          <h2 class="ne-display" id="ne-statement-{{ section.id }}">{{ section.settings.heading }}</h2>
+        {%- endif -%}
+        {%- if section.settings.body != blank -%}
+          <p class="ne-lead ne-statement__text">{{ section.settings.body }}</p>
+        {%- endif -%}
+        {%- if section.settings.heading == blank and section.settings.body == blank -%}
+          <p><span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span></p>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .ne-statement { background: var(--ne-paper); color: var(--ne-text); }
+
+  .ne-statement__body { grid-column: 1 / -1; }
+
+  @media (min-width: 48em) {
+    /* Desplazado dos columnas: el aire a la izquierda es lo que hace que una
+       declaración se lea como una declaración y no como un párrafo más. */
+    .ne-statement__body { grid-column: 3 / span 8; }
+  }
+
+  .ne-statement__text { margin-top: var(--ne-space-m); }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:sections.statement.name",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "t:sections.statement.heading" },
+    { "type": "textarea", "id": "body", "label": "t:sections.statement.body" },
+    { "type": "checkbox", "id": "inverse", "label": "t:sections.statement.inverse", "default": false }
+  ],
+  "presets": [{ "name": "t:sections.statement.name" }]
+}
+{% endschema %}

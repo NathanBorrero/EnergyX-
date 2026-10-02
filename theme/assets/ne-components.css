@@ -1,0 +1,250 @@
+/* ---------------------------------------------------------------------------
+   NATHAN & ESTEBAN — estilos de los componentes de la ficha de producto.
+
+   POR QUÉ ESTÁN AQUÍ Y NO EN UN `{% stylesheet %}` DE CADA PIEZA
+
+   Estos estilos no son decorativos: son parte del CONTRATO. Los tres estados
+   del selector —disponible, agotado, inexistente— se distinguen por estilo, y
+   el área de pulsado de 44px es un requisito de accesibilidad, no un gusto.
+
+   Repartidos por los `{% stylesheet %}` de cada snippet no se pueden verificar:
+   el banco de pruebas en navegador tendría que copiarlos, y una copia se
+   desincroniza. Aquí hay UNA fuente, y es la que el navegador carga tanto en la
+   tienda como en la prueba, así que cuando la prueba dice que un estado se
+   distingue, lo dice del CSS real.
+
+   Se carga por encima de `content_for_header`, con el resto del CSS del primer
+   paint.
+   --------------------------------------------------------------------------- */
+
+/* === Selector de color y talla =================================== */
+  .ne-picker { display: grid; gap: var(--ne-space-m); }
+
+  .ne-picker__group { margin: 0; padding: 0; border: 0; }
+
+  .ne-picker__legend {
+    display: flex;
+    gap: var(--ne-space-2xs);
+    margin-bottom: var(--ne-space-2xs);
+    padding: 0;
+  }
+
+  .ne-picker__chosen { text-transform: none; letter-spacing: 0; color: var(--ne-text); }
+
+  .ne-picker__values { display: flex; flex-wrap: wrap; gap: var(--ne-space-3xs); }
+
+  .ne-picker__chip { cursor: pointer; }
+
+  .ne-picker__chip-face {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ne-space-3xs);
+    /* 44px de alto: por encima del mínimo de 24 exigido, porque este es el
+       control que más se pulsa en móvil y el que decide la talla. */
+    min-height: var(--ne-touch);
+    min-width: var(--ne-touch);
+    justify-content: center;
+    padding-inline: var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+    font-variant-numeric: tabular-nums;
+    transition:
+      border-color var(--ne-dur-fast) var(--ne-ease),
+      background-color var(--ne-dur-fast) var(--ne-ease);
+  }
+
+  .ne-picker__chip:hover .ne-picker__chip-face { border-color: var(--ne-text); }
+
+  /* Seleccionado: inversión completa, no un borde más grueso. Es inequívoco a
+     simple vista y sigue cumpliendo contraste. */
+  .ne-picker__chip input:checked + .ne-picker__chip-face {
+    background: var(--ne-ink);
+    color: var(--ne-paper);
+    border-color: var(--ne-ink);
+  }
+
+  .ne-picker__chip input:focus-visible + .ne-picker__chip-face {
+    outline: 2px solid var(--ne-accent);
+    outline-offset: 2px;
+  }
+
+  /* AGOTADO: existe, no se puede comprar. Tachado, legible, pulsable, porque el
+     comprador puede querer verlo o pedir aviso. */
+  .ne-picker__chip[data-ne-state='unavailable'] .ne-picker__chip-face {
+    color: var(--ne-text-soft);
+    border-color: var(--ne-rule);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  /* INEXISTENTE: esta combinación no se fabrica. Visualmente distinto del
+     agotado y no seleccionable. Confundir los dos es lo que rompe la ficha. */
+  .ne-picker__chip[data-ne-state='nonexistent'] .ne-picker__chip-face {
+    color: var(--ne-text-soft);
+    border-color: var(--ne-rule);
+    border-style: dashed;
+    opacity: 0.65;
+  }
+  .ne-picker__chip[data-ne-state='nonexistent'] { cursor: not-allowed; }
+
+  .ne-picker__swatch {
+    width: 1.125rem;
+    height: 1.125rem;
+    background: var(--ne-swatch);
+    border: var(--ne-hairline) solid var(--ne-border);
+  }
+
+  .ne-picker__swatch-image {
+    width: 1.125rem;
+    height: 1.125rem;
+    object-fit: cover;
+    border: var(--ne-hairline) solid var(--ne-border);
+  }
+
+  .ne-picker__fallback { display: grid; gap: var(--ne-space-3xs); }
+
+  .ne-picker__select {
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs) var(--ne-space-xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+  }
+
+  /* El script oculta el select y muestra los chips solo cuando ha tomado el
+     mando. Sin script, los chips quedan inertes y el select es el control. */
+  .ne-picker:not([data-ne-enhanced]) .ne-picker__values { display: none; }
+  .ne-picker[data-ne-enhanced] .ne-picker__fallback { display: none; }
+
+/* === Guía de tallas y recomendador =============================== */
+  .ne-sizeguide__summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--ne-touch);
+    cursor: pointer;
+    border-bottom: var(--ne-hairline) solid var(--ne-border);
+  }
+  .ne-sizeguide__summary::marker { content: ''; }
+
+  .ne-sizeguide__body {
+    display: grid;
+    gap: var(--ne-space-s);
+    padding-block: var(--ne-space-s);
+  }
+
+  .ne-sizeguide__fit { display: grid; gap: var(--ne-space-3xs); }
+
+  .ne-sizeguide__field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--ne-space-2xs);
+  }
+
+  .ne-sizeguide__field label {
+    flex-basis: 100%;
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+    color: var(--ne-text-soft);
+  }
+
+  .ne-sizeguide__field input {
+    width: 6rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-sizeguide__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-sizeguide__table th,
+  .ne-sizeguide__table td {
+    padding: var(--ne-space-2xs);
+    text-align: left;
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+
+  .ne-sizeguide__table thead th {
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+    color: var(--ne-text-soft);
+    font-weight: 400;
+  }
+
+  .ne-sizeguide__how summary { min-height: var(--ne-touch-min); cursor: pointer; }
+
+/* === Formulario de compra ======================================== */
+  .ne-buy__form { display: grid; gap: var(--ne-space-2xs); }
+
+  .ne-buy__row { display: flex; gap: var(--ne-space-2xs); }
+
+  .ne-buy__qty {
+    width: 4.5rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    border-radius: var(--ne-radius);
+    background: var(--ne-paper);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-buy__submit { flex: 1; }
+
+/* === Ficha de producto y galería ================================= */
+  .ne-pdp__grid { row-gap: var(--ne-space-l); align-items: start; }
+
+  .ne-pdp__media { grid-column: 1 / -1; }
+  .ne-pdp__panel { grid-column: 1 / -1; display: grid; gap: var(--ne-space-m); }
+
+  @media (min-width: 48em) {
+    .ne-pdp__media { grid-column: 1 / span 7; }
+    .ne-pdp__panel {
+      grid-column: 9 / span 4;
+      /* El panel se queda a la vista mientras se recorre la galería: en calzado
+         el comprador baja por las fotos y necesita la talla y el precio
+         presentes, no a dos pantallas de distancia. */
+      position: sticky;
+      top: var(--ne-space-2xl);
+    }
+  }
+
+  .ne-gallery__list { display: grid; gap: var(--ne-space-2xs); }
+
+  .ne-gallery__image,
+  .ne-gallery__video,
+  .ne-gallery__viewer {
+    width: 100%;
+    background: var(--ne-paper-deep);
+  }
+
+  .ne-gallery__image { object-fit: cover; }
+
+  .ne-gallery__viewer {
+    /* Alto explícito: `model-viewer` colapsa sin él y la página salta cuando
+       aparece. */
+    aspect-ratio: 4 / 5;
+    --poster-color: transparent;
+  }
+
+  .ne-gallery__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ne-space-2xs);
+    margin-top: var(--ne-space-s);
+  }
+  .ne-gallery__controls .ne-notice { flex-basis: 100%; }
+
+  .ne-pdp__vendor { margin-bottom: calc(var(--ne-space-2xs) * -1); }
+  .ne-pdp__price { display: grid; gap: var(--ne-space-3xs); }
+  .ne-pdp__price .ne-price__current { font-size: var(--ne-size-lead); font-variant-numeric: tabular-nums; }
+  .ne-pdp__description { padding-top: var(--ne-space-xs); border-top: var(--ne-hairline) solid var(--ne-rule); }

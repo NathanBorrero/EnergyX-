@@ -1,0 +1,18 @@
+<article class="ne-section">
+  <div class="ne-shell">
+    <div class="ne-grid">
+      <header class="ne-col-text">
+        <h1 class="ne-display">{{ article.title }}</h1>
+        <p class="ne-caption ne-soft">{{ article.published_at | date: '%d.%m.%Y' }}</p>
+      </header>
+      <div class="ne-col-text ne-body ne-article__content">{{ article.content }}</div>
+    </div>
+  </div>
+</article>
+{% stylesheet %}
+  .ne-article__content { margin-top: var(--ne-space-l); }
+  .ne-article__content > * + * { margin-top: var(--ne-space-s); }
+{% endstylesheet %}
+{% schema %}
+{ "name": "Artículo", "tag": "section" }
+{% endschema %}

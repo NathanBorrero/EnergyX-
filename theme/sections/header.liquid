@@ -1,0 +1,141 @@
+{%- comment -%}
+  Cabecera. Sin JavaScript para el estado básico: el menú es una lista de
+  enlaces reales y el carrito es un enlace a /cart. Si el script no llega, se
+  navega igual.
+{%- endcomment -%}
+
+{%- comment -%}
+  `data-ne-section-id` lo lee el JavaScript para pedir ESTA sección a la API de
+  renderizado de secciones al añadir al carrito.
+
+  No se deduce el id: una sección dentro de un grupo de secciones no se llama
+  `header` en el DOM, se llama `sections--<plantilla>__header`. Adivinar ese
+  formato es cómo el contador del carrito deja de actualizarse en silencio. Lo
+  dice Liquid, que es quien lo sabe.
+{%- endcomment -%}
+<header class="ne-header" data-ne-header data-ne-section-id="{{ section.id }}">
+  <div class="ne-shell ne-header__inner">
+    <a class="ne-header__brand" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+      {%- if settings.logo != blank -%}
+        {{
+          settings.logo
+          | image_url: width: 600
+          | image_tag:
+              loading: 'eager',
+              fetchpriority: 'high',
+              widths: '140, 280, 420, 600',
+              sizes: settings.logo_width | append: 'px',
+              class: 'ne-header__logo',
+              alt: shop.name,
+              style: 'width: ' | append: settings.logo_width | append: 'px'
+        }}
+      {%- else -%}
+        <span class="ne-header__wordmark">{{ shop.name }}</span>
+      {%- endif -%}
+    </a>
+
+    {%- assign menu = linklists[section.settings.menu] -%}
+    {%- if menu.links.size > 0 -%}
+      <nav class="ne-header__nav" aria-label="{{ 'sections.header.menu' | t }}">
+        <ul class="ne-header__list">
+          {%- for link in menu.links -%}
+            <li>
+              <a
+                class="ne-header__link"
+                href="{{ link.url }}"
+                {% if link.active %}aria-current="page"{% endif %}
+              >{{ link.title }}</a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+    {%- endif -%}
+
+    <a class="ne-header__cart" href="{{ routes.cart_url }}">
+      <span>{{ 'sections.header.cart' | t }}</span>
+      <span class="ne-header__count" data-ne-cart-count aria-hidden="true">{{ cart.item_count }}</span>
+      <span class="ne-visually-hidden" data-ne-cart-count-label>
+        {{ 'cart.general.item_count' | t: count: cart.item_count }}
+      </span>
+    </a>
+  </div>
+  <hr class="ne-rule">
+</header>
+
+{% stylesheet %}
+  .ne-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ne-paper);
+  }
+
+  .ne-header__inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-m);
+    padding-block: var(--ne-space-s);
+  }
+
+  .ne-header__brand {
+    color: inherit;
+    text-decoration: none;
+    min-height: var(--ne-touch-min);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ne-header__wordmark {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-lead);
+    letter-spacing: var(--ne-tracking-title);
+  }
+
+  .ne-header__nav { display: none; }
+
+  @media (min-width: 48em) {
+    .ne-header__nav { display: block; }
+  }
+
+  .ne-header__list {
+    display: flex;
+    gap: var(--ne-space-m);
+  }
+
+  .ne-header__link,
+  .ne-header__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ne-space-3xs);
+    /* 44px de alto real: el mínimo exigido es 24, pero en móvil 44 es el tamaño
+       que de verdad se acierta con el pulgar. */
+    min-height: var(--ne-touch);
+    padding-inline: 2px;
+    color: inherit;
+    text-decoration: none;
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+  }
+
+  .ne-header__link[aria-current='page'] { color: var(--ne-accent); }
+
+  .ne-header__count {
+    font-variant-numeric: tabular-nums;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:sections.header.name",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:sections.header.menu",
+      "default": "main-menu"
+    }
+  ]
+}
+{% endschema %}

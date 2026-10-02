@@ -1,0 +1,91 @@
+{%- comment -%}
+  Formulario de compra.
+
+  Es un `<form>` real de Shopify. Sin JavaScript, postea a `/cart/add` y la
+  compra funciona: ese es el requisito de §214 y §215. El script intercepta para
+  dar respuesta sin recargar, pero no es el mecanismo.
+
+  El `id` de variante lo aporta el `<select name="id">` del selector, vinculado a
+  este formulario por el atributo `form`, de modo que el marcado sigue siendo
+  válido aunque el selector esté en otro bloque.
+{%- endcomment -%}
+
+{%- comment -%}
+  El `id` se calcula ANTES. La etiqueta `form` no acepta filtros en sus
+  argumentos: `id: 'x' | append: section.id` es sintaxis inválida y la etiqueta
+  entera deja de compilar, con lo que no hay formulario de compra. Lo detectó
+  Theme Check.
+
+  El gancho `data-ne-product-form` va en el CONTENEDOR, no en la etiqueta
+  `form`: un argumento con guiones tampoco es válido ahí. El script toma el
+  contenedor y resuelve el `<form>` de dentro, que es el que de verdad postea.
+{%- endcomment -%}
+{%- assign buy_form_id = 'ne-product-form-' | append: section.id -%}
+
+<div class="ne-buy" data-ne-product-form {{ block.shopify_attributes }}>
+  {%- form 'product',
+    product,
+    id: buy_form_id,
+    class: 'ne-buy__form',
+    novalidate: 'novalidate'
+  -%}
+    <div class="ne-buy__row">
+      <label class="ne-visually-hidden" for="ne-qty-{{ section.id }}">
+        {{ 'products.product.quantity' | t }}
+      </label>
+      <input
+        class="ne-buy__qty"
+        id="ne-qty-{{ section.id }}"
+        type="number"
+        name="quantity"
+        value="1"
+        min="1"
+        step="1"
+        inputmode="numeric"
+      >
+
+      <button
+        class="ne-button ne-button--accent ne-button--block ne-buy__submit"
+        type="submit"
+        name="add"
+        data-ne-add-to-cart
+        {% unless current.available %}disabled{% endunless %}
+      >
+        <span data-ne-add-label>
+          {%- if current.available -%}
+            {{ 'products.product.add_to_cart' | t }}
+          {%- else -%}
+            {{ 'products.product.sold_out' | t }}
+          {%- endif -%}
+        </span>
+      </button>
+    </div>
+
+    {%- comment -%}
+      Atribuciones de línea. Persisten al pedido, así que son el único canal que
+      permite cruzar después «qué talla recomendamos» con «se entregó o se
+      devolvió». Un evento de analítica de cliente no permite ese cruce.
+
+      Se rellenan desde el script cuando el comprador usa el recomendador. Vacías
+      no se envían.
+    {%- endcomment -%}
+    <input type="hidden" name="properties[_ne_size_chosen]" value="" data-ne-attr="_ne_size_chosen" disabled>
+    <input type="hidden" name="properties[_ne_size_recommended]" value="" data-ne-attr="_ne_size_recommended" disabled>
+    <input type="hidden" name="properties[_ne_size_followed]" value="" data-ne-attr="_ne_size_followed" disabled>
+    <input type="hidden" name="properties[_ne_foot_length_cm]" value="" data-ne-attr="_ne_foot_length_cm" disabled>
+    <input type="hidden" name="properties[_ne_size_guide_used]" value="" data-ne-attr="_ne_size_guide_used" disabled>
+
+    <p class="ne-notice ne-notice--alert ne-buy__error" data-ne-buy-error hidden role="alert"></p>
+    <p class="ne-visually-hidden" data-ne-buy-status role="status" aria-live="polite"></p>
+  {%- endform -%}
+</div>
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  No es una preferencia de organización: el banco de pruebas en navegador
+  carga ese mismo archivo, así que lo que la prueba verifica es el CSS real.
+  Un `{% stylesheet %}` aquí obligaría al banco a copiarlo, y la copia se
+  desincronizaría sin que nada lo dijera.
+{%- endcomment -%}
+

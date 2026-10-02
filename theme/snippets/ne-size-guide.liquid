@@ -1,0 +1,137 @@
+{%- comment -%}
+  Guía de tallas y recomendador.
+
+  Es la palanca de margen del proyecto: en calzado la talla equivocada es la
+  causa principal de devolución, y con pago contra entrega el comprador no pagó
+  nada, así que rechazar el paquete no le cuesta. Pedir un número de talla es
+  pedirle que adivine; pedirle que mida su pie es un dato objetivo.
+
+  LOS DATOS SON REALES O NO HAY GUÍA. La tabla vive en un metaobject `size_chart`
+  referenciado desde el producto. Si el producto no lo tiene, no se muestra nada:
+  inventar equivalencias provocaría exactamente las devoluciones que esto evita
+  (§191).
+
+  El recomendador es aritmética en el navegador sobre esos datos. Sin servicio
+  externo, sin modelo, sin base de datos.
+{%- endcomment -%}
+
+{%- liquid
+  assign chart = product.metafields.ne.size_chart.value
+  assign fit = product.metafields.ne.fit_profile.value
+  assign has_chart = false
+  if chart != blank and chart.size > 0
+    assign has_chart = true
+  endif
+-%}
+
+{%- if has_chart or fit != blank -%}
+  <ne-size-guide
+    class="ne-sizeguide"
+    data-ne-size-guide
+    data-ne-size-option="{{ size_option_name | escape }}"
+    data-ne-recommender="{% if settings.product_show_size_recommender and has_chart %}on{% else %}off{% endif %}"
+    {{ block.shopify_attributes }}
+  >
+    {%- if has_chart -%}
+      {%- comment -%} Las filas, en la forma que consume `recommendSize`. {%- endcomment -%}
+      <script type="application/json" data-ne-size-chart>
+        [
+          {%- for row in chart -%}
+            {
+              "label": {{ row.label.value | json }},
+              "footLengthCm": {{ row.foot_length_cm.value | json }}
+            }{%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        ]
+      </script>
+    {%- endif -%}
+
+    <details class="ne-sizeguide__details">
+      <summary class="ne-sizeguide__summary">
+        <span class="ne-caption">{{ 'products.size_guide.open' | t }}</span>
+      </summary>
+
+      <div class="ne-sizeguide__body">
+        {%- if fit != blank and fit.advice != blank -%}
+          <p class="ne-sizeguide__fit">
+            <span class="ne-caption">{{ 'products.size_guide.fit_note' | t }}</span>
+            {{ fit.advice }}
+          </p>
+        {%- endif -%}
+
+        {%- if settings.product_show_size_recommender and has_chart -%}
+          <div class="ne-sizeguide__recommender">
+            <p class="ne-sizeguide__intro">{{ 'products.size_guide.intro' | t }}</p>
+
+            <div class="ne-sizeguide__field">
+              <label for="ne-foot-{{ section.id }}">{{ 'products.size_guide.your_measurement' | t }}</label>
+              {%- comment -%}
+                `type="text"` CON `inputmode="decimal"`, no `type="number"`.
+
+                Verificado en Chromium: teclear «25,9» en un input numérico deja
+                el valor "259" y la validación lo acepta. No queda vacío: queda
+                mal. En español la coma decimal es lo que se escribe, así que un
+                comprador que mide bien su pie recibiría «fuera de rango» y la
+                guía de tallas haría lo contrario de su trabajo.
+
+                `inputmode="decimal"` sigue abriendo el teclado numérico en
+                móvil, y la validación la hace el script, que normaliza la coma.
+              {%- endcomment -%}
+              <input
+                id="ne-foot-{{ section.id }}"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                maxlength="5"
+                placeholder="{{ 'products.size_guide.measurement_placeholder' | t }}"
+                data-ne-foot-input
+              >
+              <button class="ne-button ne-button--quiet" type="button" data-ne-recommend>
+                {{ 'products.size_guide.recommend' | t }}
+              </button>
+            </div>
+
+            <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
+
+            <details class="ne-sizeguide__how">
+              <summary><span class="ne-caption">{{ 'products.size_guide.how_to_measure' | t }}</span></summary>
+              <p class="ne-soft">{{ 'products.size_guide.how_to_measure_steps' | t }}</p>
+            </details>
+          </div>
+        {%- endif -%}
+
+        {%- if has_chart -%}
+          <table class="ne-sizeguide__table">
+            <caption class="ne-visually-hidden">{{ 'products.size_guide.title' | t }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ 'products.size_guide.table_size' | t }}</th>
+                <th scope="col">{{ 'products.size_guide.table_cm' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for row in chart -%}
+                <tr>
+                  <th scope="row">{{ row.label.value }}</th>
+                  <td>{{ row.foot_length_cm.value }}</td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        {%- else -%}
+          <p class="ne-notice">{{ 'products.size_guide.no_data' | t }}</p>
+        {%- endif -%}
+      </div>
+    </details>
+  </ne-size-guide>
+{%- endif -%}
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  No es una preferencia de organización: el banco de pruebas en navegador
+  carga ese mismo archivo, así que lo que la prueba verifica es el CSS real.
+  Un `{% stylesheet %}` aquí obligaría al banco a copiarlo, y la copia se
+  desincronizaría sin que nada lo dijera.
+{%- endcomment -%}
+

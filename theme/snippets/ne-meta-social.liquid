@@ -1,0 +1,43 @@
+{%- comment -%}
+  Open Graph y Twitter card. Requisito explícito de los requisitos de theme de
+  Shopify. Sin datos inventados: si un campo no existe, no se emite.
+{%- endcomment -%}
+
+<meta property="og:site_name" content="{{ shop.name }}">
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:title" content="{{ page_title | escape }}">
+<meta property="og:type" content="{% if request.page_type == 'product' %}product{% elsif request.page_type == 'article' %}article{% else %}website{% endif %}">
+
+{%- if page_description -%}
+  <meta property="og:description" content="{{ page_description | escape }}">
+{%- endif -%}
+
+{%- liquid
+  assign share_image = null
+  if request.page_type == 'product' and product.featured_media
+    assign share_image = product.featured_media.preview_image
+  elsif settings.social_share_image != blank
+    assign share_image = settings.social_share_image
+  endif
+-%}
+
+{%- if share_image -%}
+  <meta property="og:image" content="http:{{ share_image | image_url: width: 1200 }}">
+  <meta property="og:image:secure_url" content="https:{{ share_image | image_url: width: 1200 }}">
+  <meta property="og:image:width" content="{{ share_image.width }}">
+  <meta property="og:image:height" content="{{ share_image.height }}">
+  {%- if share_image.alt != blank -%}
+    <meta property="og:image:alt" content="{{ share_image.alt | escape }}">
+  {%- endif -%}
+{%- endif -%}
+
+{%- if request.page_type == 'product' -%}
+  <meta property="og:price:amount" content="{{ product.price | money_without_currency | strip_html }}">
+  <meta property="og:price:currency" content="{{ cart.currency.iso_code }}">
+{%- endif -%}
+
+<meta name="twitter:card" content="{% if share_image %}summary_large_image{% else %}summary{% endif %}">
+<meta name="twitter:title" content="{{ page_title | escape }}">
+{%- if page_description -%}
+  <meta name="twitter:description" content="{{ page_description | escape }}">
+{%- endif -%}

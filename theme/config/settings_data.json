@@ -1,0 +1,26 @@
+{
+  "current": {
+    "font_body": "assistant_n4",
+    "font_display": "assistant_n4",
+    "logo_width": 140,
+    "product_show_size_guide": true,
+    "product_show_size_recommender": true,
+    "product_3d_mode": "on_demand",
+    "cod_prevalidation": false,
+    "cod_coverage_list": "",
+    "analytics_size_selected_event": true
+  },
+  "presets": {
+    "Nathan & Esteban": {
+      "font_body": "assistant_n4",
+      "font_display": "assistant_n4",
+      "logo_width": 140,
+      "product_show_size_guide": true,
+      "product_show_size_recommender": true,
+      "product_3d_mode": "on_demand",
+      "cod_prevalidation": false,
+      "cod_coverage_list": "",
+      "analytics_size_selected_event": true
+    }
+  }
+}

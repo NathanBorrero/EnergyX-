@@ -1,0 +1,17 @@
+<section class="ne-section">
+  <div class="ne-shell">
+    <div class="ne-grid">
+      <div class="ne-col-text">
+        <h1 class="ne-display">{{ page.title }}</h1>
+        <div class="ne-body ne-page__content">{{ page.content }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% stylesheet %}
+  .ne-page__content { margin-top: var(--ne-space-l); }
+  .ne-page__content > * + * { margin-top: var(--ne-space-s); }
+{% endstylesheet %}
+{% schema %}
+{ "name": "Página", "tag": "section" }
+{% endschema %}

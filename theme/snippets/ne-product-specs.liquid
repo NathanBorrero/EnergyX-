@@ -1,0 +1,63 @@
+{%- comment -%}
+  Especificaciones del producto.
+
+  Cada dato viene de un metafield real. Lo que no existe no se lista: no hay
+  «material: algodón premium» inventado (§191). Si no hay ningún metafield, el
+  bloque no se renderiza.
+{%- endcomment -%}
+
+{%- liquid
+  assign upper = product.metafields.ne.upper_material.value
+  assign sole = product.metafields.ne.sole_material.value
+  assign care = product.metafields.ne.care.value
+  assign has_any = false
+  if upper != blank or sole != blank or care != blank or product.selected_or_first_available_variant.sku != blank
+    assign has_any = true
+  endif
+-%}
+
+{%- if has_any -%}
+  <dl class="ne-specs" {{ block.shopify_attributes }}>
+    {%- if upper != blank -%}
+      <div class="ne-specs__row">
+        <dt class="ne-caption">{{ 'products.product.upper_material' | t | default: 'Corte' }}</dt>
+        <dd>{{ upper }}</dd>
+      </div>
+    {%- endif -%}
+    {%- if sole != blank -%}
+      <div class="ne-specs__row">
+        <dt class="ne-caption">{{ 'products.product.sole_material' | t | default: 'Suela' }}</dt>
+        <dd>{{ sole }}</dd>
+      </div>
+    {%- endif -%}
+    {%- if care != blank -%}
+      <div class="ne-specs__row">
+        <dt class="ne-caption">{{ 'products.product.care' | t | default: 'Cuidado' }}</dt>
+        <dd>{{ care }}</dd>
+      </div>
+    {%- endif -%}
+    {%- if product.selected_or_first_available_variant.sku != blank -%}
+      <div class="ne-specs__row">
+        <dt class="ne-caption">{{ 'products.product.sku' | t }}</dt>
+        <dd data-ne-sku>{{ product.selected_or_first_available_variant.sku }}</dd>
+      </div>
+    {%- endif -%}
+  </dl>
+{%- endif -%}
+
+{% stylesheet %}
+  .ne-specs {
+    display: grid;
+    gap: var(--ne-space-2xs);
+    margin: 0;
+    padding-top: var(--ne-space-xs);
+    border-top: var(--ne-hairline) solid var(--ne-rule);
+  }
+  .ne-specs__row {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: var(--ne-space-2xs);
+    align-items: baseline;
+  }
+  .ne-specs dd { margin: 0; }
+{% endstylesheet %}

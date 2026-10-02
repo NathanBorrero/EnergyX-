@@ -1,0 +1,148 @@
+{%- comment -%}
+  Selector de color y talla.
+
+  SE COMPRA SIN JAVASCRIPT. El control real es el `<select name="id">` de abajo,
+  que es lo que el formulario postea a `/cart/add`. Los chips son una mejora que
+  el script conecta encima; si no llega, el select queda visible y funcional.
+
+  TRES ESTADOS, NO DOS. El script calcula qué combinaciones existen a partir de
+  las variantes reales, no de los valores de opción. Verificado contra Shopify:
+  `hasVariants` indica si un valor de opción lo usa alguna variante del producto,
+  NO si la combinación concreta existe. Un selector que se fíe de ese campo
+  ofrece tallas que no se fabrican en el color elegido.
+
+  Los datos de variante viajan como JSON en un `<script type="application/json">`,
+  no incrustados en atributos: así no hay escapado frágil y el script los parsea
+  una sola vez.
+{%- endcomment -%}
+
+{%- if product.variants.size > 1 or product.options_with_values.size > 0 -%}
+  <ne-variant-picker
+    class="ne-picker"
+    data-ne-picker
+    {{ block.shopify_attributes }}
+  >
+    {%- comment -%}
+      Estado y disponibilidad reales, en la forma canónica que consume
+      `createVariantMatrix`: `selectedOptions` con nombre y valor.
+    {%- endcomment -%}
+    <script type="application/json" data-ne-variants>
+      [
+        {%- for variant in product.variants -%}
+          {
+            "id": {{ variant.id | json }},
+            "availableForSale": {{ variant.available | json }},
+            {%- comment -%}
+              El precio viaja YA FORMATEADO por Shopify. El cliente lo sustituye
+              como cadena; nunca compone moneda. Formatear dinero en JavaScript
+              es cómo aparecen precios que no coinciden con el checkout (§209).
+            {%- endcomment -%}
+            "priceFormatted": {{ variant.price | money | json }},
+            "compareAtPriceFormatted": {% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | json }}{% else %}null{% endif %},
+            "sku": {{ variant.sku | json }},
+            "title": {{ variant.title | json }},
+            "selectedOptions": [
+              {%- for opt in variant.options -%}
+                {
+                  "name": {{ product.options_with_values[forloop.index0].name | json }},
+                  "value": {{ opt | json }}
+                }{%- unless forloop.last -%},{%- endunless -%}
+              {%- endfor -%}
+            ]
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ]
+    </script>
+
+    {%- for option in product.options_with_values -%}
+      {%- assign option_index = forloop.index0 -%}
+      <fieldset class="ne-picker__group" data-ne-option="{{ option.name | escape }}">
+        <legend class="ne-caption ne-picker__legend">
+          {{ option.name }}
+          <span class="ne-picker__chosen" data-ne-chosen aria-live="polite"></span>
+        </legend>
+
+        <div class="ne-picker__values">
+          {%- for value in option.values -%}
+            {%- liquid
+              assign input_id = 'ne-opt-' | append: section.id | append: '-' | append: option_index | append: '-' | append: forloop.index0
+              assign is_selected = false
+              if current.options[option_index] == value
+                assign is_selected = true
+              endif
+              assign swatch = value.swatch
+            -%}
+            <label class="ne-picker__chip" for="{{ input_id }}">
+              <input
+                class="ne-visually-hidden"
+                type="radio"
+                id="{{ input_id }}"
+                name="ne-option-{{ option_index }}"
+                value="{{ value | escape }}"
+                data-ne-option-input
+                data-ne-option-name="{{ option.name | escape }}"
+                {% if is_selected %}checked{% endif %}
+              >
+              <span class="ne-picker__chip-face" data-ne-chip-face>
+                {%- if swatch.image != blank -%}
+                  {%- comment -%}
+                    El metaobject estándar de color admite una foto del material.
+                    Para calzado eso es sustancial: un swatch de cuero o de suede
+                    se entiende mirándolo, un cuadrado de color plano no.
+                  {%- endcomment -%}
+                  {{ swatch.image | image_url: width: 96 | image_tag:
+                      loading: 'lazy', widths: '48, 96', sizes: '48px',
+                      class: 'ne-picker__swatch-image', alt: value }}
+                {%- elsif swatch.color != blank -%}
+                  <span class="ne-picker__swatch" style="--ne-swatch: {{ swatch.color }}"></span>
+                {%- endif -%}
+                <span class="ne-picker__label">{{ value }}</span>
+              </span>
+              <span class="ne-visually-hidden" data-ne-chip-state></span>
+            </label>
+          {%- endfor -%}
+        </div>
+      </fieldset>
+    {%- endfor -%}
+
+    {%- comment -%}
+      El control que de verdad postea. Visible por defecto para que el producto
+      se pueda comprar sin JavaScript; el script lo oculta tras tomar el mando.
+    {%- endcomment -%}
+    <div class="ne-picker__fallback" data-ne-picker-fallback>
+      <label class="ne-caption" for="ne-variant-select-{{ section.id }}">
+        {{ 'products.product.select_options' | t: options: product.options | join: ' · ' }}
+      </label>
+      <select
+        class="ne-picker__select"
+        id="ne-variant-select-{{ section.id }}"
+        name="id"
+        form="ne-product-form-{{ section.id }}"
+        data-ne-variant-select
+      >
+        {%- for variant in product.variants -%}
+          <option
+            value="{{ variant.id }}"
+            {% if variant == current %}selected{% endif %}
+            {% unless variant.available %}disabled{% endunless %}
+          >
+            {{ variant.title }}
+            {%- unless variant.available %} · {{ 'products.product.sold_out' | t }}{% endunless -%}
+          </option>
+        {%- endfor -%}
+      </select>
+    </div>
+
+    <p class="ne-notice" data-ne-picker-message hidden></p>
+  </ne-variant-picker>
+{%- endif -%}
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `assets/ne-components.css`.
+
+  No es una preferencia de organización: el banco de pruebas en navegador
+  carga ese mismo archivo, así que lo que la prueba verifica es el CSS real.
+  Un `{% stylesheet %}` aquí obligaría al banco a copiarlo, y la copia se
+  desincronizaría sin que nada lo dijera.
+{%- endcomment -%}
+

@@ -1,0 +1,22 @@
+{%- comment -%}
+  Sección de Liquid personalizado. Requisito explícito de los requisitos de theme
+  de Shopify: debe existir y estar disponible en todas las plantillas que admiten
+  secciones, porque sirve como punto de inserción para ciertas apps.
+{%- endcomment -%}
+
+{%- if section.settings.custom_liquid != blank -%}
+  <div class="ne-section--tight">
+    <div class="ne-shell">{{ section.settings.custom_liquid }}</div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "t:sections.custom_liquid.name",
+  "tag": "section",
+  "settings": [
+    { "type": "liquid", "id": "custom_liquid", "label": "t:sections.custom_liquid.label" }
+  ],
+  "presets": [{ "name": "t:sections.custom_liquid.name" }]
+}
+{% endschema %}

@@ -1,0 +1,25 @@
+{%- comment -%}
+  404. Degrada con dignidad: sin pantalla en blanco, sin stack trace, con una vía
+  de salida clara (§216).
+{%- endcomment -%}
+<section class="ne-section--vast">
+  <div class="ne-shell">
+    <div class="ne-grid">
+      <div class="ne-col-text">
+        <p class="ne-caption">404</p>
+        <h1 class="ne-display">{{ 'general.404.title' | t | default: 'Esta página no existe' }}</h1>
+        <p class="ne-lead">{{ 'general.404.subtext' | t | default: 'El enlace puede haber cambiado. El catálogo sigue donde estaba.' }}</p>
+        <p class="ne-404__actions">
+          <a class="ne-button" href="{{ routes.all_products_collection_url }}">{{ 'collections.general.view_all' | t }}</a>
+          <a class="ne-button ne-button--quiet" href="{{ routes.root_url }}">{{ shop.name }}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% stylesheet %}
+  .ne-404__actions { display: flex; flex-wrap: wrap; gap: var(--ne-space-2xs); margin-top: var(--ne-space-l); }
+{% endstylesheet %}
+{% schema %}
+{ "name": "404", "tag": "section" }
+{% endschema %}

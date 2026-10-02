@@ -1,0 +1,31 @@
+{
+  "sections": {
+    "hero": {
+      "type": "editorial-hero",
+      "settings": {
+        "eyebrow": "",
+        "heading": "",
+        "body": "",
+        "alignment": "offset",
+        "inverse": false
+      }
+    },
+    "featured": {
+      "type": "product-grid",
+      "settings": {
+        "heading": "",
+        "count": 6,
+        "columns": 3
+      }
+    },
+    "statement": {
+      "type": "statement",
+      "settings": {
+        "heading": "",
+        "body": "",
+        "inverse": true
+      }
+    }
+  },
+  "order": ["hero", "featured", "statement"]
+}

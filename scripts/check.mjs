@@ -11,10 +11,14 @@
  * real. Nada de métricas decorativas.
  *
  * Lo que NO comprueba todavía, y por qué:
- *   · Theme Check — requiere Shopify CLI y que el stack sea Liquid. Las dos cosas
- *     están pendientes. Se añadirá cuando ambas existan, no antes.
  *   · Presupuestos de performance — exigen una página desplegada y datos reales.
  *     Inventar un umbral sería inventar información.
+ *
+ * Theme Check —el linter oficial de Shopify— sí se ejecuta, pero SOLO si el
+ * Shopify CLI está disponible, porque es la única dependencia externa de todo el
+ * proyecto y no se versiona. Cuando no está, la comprobación se declara NO
+ * EJECUTADA. No se declara superada: decir que pasó algo que no se ejecutó es
+ * exactamente el éxito falso que §183 prohíbe.
  *
  * Uso:  node scripts/check.mjs [--quiet]
  */
@@ -31,6 +35,16 @@ const QUIET = process.argv.includes('--quiet');
 
 /** @type {{name: string, ok: boolean, detail: string[]}[]} */
 const results = [];
+
+/**
+ * Comprobaciones que no se pudieron ejecutar.
+ *
+ * Existen aparte de `results` porque el informe tiene que poder decir «no se
+ * ejecutó» en lugar de contarlas como superadas. Una comprobación que no corrió
+ * no da ninguna garantía, y presentarla como verde es fabricar un éxito.
+ */
+/** @type {string[]} */
+const notRun = [];
 
 /**
  * @param {string} name
@@ -299,16 +313,155 @@ await check('estado del repositorio', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 11 · Los assets del theme son los módulos probados, sin deriva.
+// ---------------------------------------------------------------------------
+await check('assets del theme sincronizados', async () => {
+  try {
+    await run('node', ['scripts/sync-theme-assets.mjs', '--check'], { cwd: ROOT });
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    return out.split('\n').filter((l) => l.startsWith('FALLA')).map((l) => l.replace(/^FALLA\s+/, ''));
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 12 · El contrato entre el marcado y el script. Aquí es donde falla un theme
+//      de verdad: la mejora no ocurre y nadie se entera.
+// ---------------------------------------------------------------------------
+await check('contratos del theme', async () => {
+  try {
+    const { stdout } = await run('node', ['scripts/check-theme.mjs'], { cwd: ROOT });
+    if (!QUIET) {
+      const line = /(\d+)\/(\d+) comprobaciones del theme pasan/.exec(stdout);
+      if (line) console.log(`  ${line[0]}`);
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    return out
+      .split('\n')
+      .filter((l) => l.startsWith('FALLA'))
+      .map((l) => l.replace(/^FALLA\s+/, ''));
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 13 · Theme Check de Shopify, si el CLI está disponible.
+//
+//      Encuentra lo que ninguna comprobación propia encontraría: sintaxis
+//      Liquid, claves de traducción, ámbito de CSS. Encontró de verdad un error
+//      de sintaxis en la etiqueta `form` del formulario de compra, que habría
+//      dejado la ficha de producto sin forma de comprar.
+// ---------------------------------------------------------------------------
+await check('theme check de Shopify', async () => {
+  const candidates = [
+    process.env.NE_SHOPIFY_CLI,
+    'shopify',
+  ].filter(Boolean);
+
+  for (const bin of candidates) {
+    try {
+      const { stdout } = await run(bin, ['theme', 'check', '--path', 'theme', '--output', 'json'], {
+        cwd: ROOT,
+        maxBuffer: 1024 * 1024 * 20,
+      });
+      const data = JSON.parse(stdout.slice(stdout.indexOf('[')));
+      const offenses = data.flatMap((f) =>
+        (f.offenses ?? []).map((o) => `${rel(f.path)}: [${o.check}] ${o.message}`),
+      );
+      // La salida JSON de Theme Check solo lista archivos CON infracciones, así
+      // que `data.length` no es el número de archivos inspeccionados. No se
+      // informa un recuento que no significa lo que parece.
+      if (!QUIET && offenses.length === 0) console.log('  sin infracciones');
+      return offenses;
+    } catch (error) {
+      const out = /** @type {any} */ (error).stdout ?? '';
+      if (out.includes('[')) {
+        try {
+          const data = JSON.parse(out.slice(out.indexOf('[')));
+          return data.flatMap((f) =>
+            (f.offenses ?? []).map((o) => `${rel(f.path)}: [${o.check}] ${o.message}`),
+          );
+        } catch {
+          /* cae al siguiente candidato */
+        }
+      }
+    }
+  }
+
+  // NO EJECUTADA, que no es lo mismo que superada.
+  if (!QUIET) {
+    console.log('  NO EJECUTADA: Shopify CLI no disponible (define NE_SHOPIFY_CLI con su ruta)');
+  }
+  notRun.push('theme check de Shopify');
+  return [];
+});
+
+// ---------------------------------------------------------------------------
+// 14 · Los componentes, EN UN NAVEGADOR DE VERDAD.
+//
+//      Es la comprobación que más defectos ha encontrado de todas, y los que
+//      encontró eran invisibles por definición:
+//
+//        · `this.slot` pisa una propiedad del DOM, así que la galería 3D no
+//          montaba nunca y el try/catch del componente se tragaba el error.
+//        · `data-ne-3d-mode` se lee como `dataset['ne-3dMode']`, así que el
+//          ajuste de 3D del theme se ignoraba por completo, «off» incluido.
+//        · `<input type="number">` convierte «25,9» en 259 y lo valida, así que
+//          el recomendador de tallas habría dicho «fuera de rango» a quien
+//          escribiera bien su medida.
+//        · La guía de tallas montaba después del selector y se perdía el
+//          anuncio inicial, así que respondía siempre «tu talla está agotada».
+//        · Un valor de opción inexistente se deshabilitaba, y eso dejaba
+//          colores enteros INALCANZABLES.
+//
+//      Ninguno se ve leyendo el código, y ninguno rompe la página de forma
+//      visible. Requiere Playwright, que no se versiona: sin él, NO EJECUTADA.
+// ---------------------------------------------------------------------------
+await check('componentes en navegador', async () => {
+  try {
+    const { stdout } = await run('node', ['scripts/check-components.mjs'], {
+      cwd: ROOT,
+      maxBuffer: 1024 * 1024 * 20,
+      timeout: 600_000,
+    });
+    if (stdout.includes('NO EJECUTADA')) {
+      if (!QUIET) console.log('  NO EJECUTADA: Playwright no disponible (define NE_PLAYWRIGHT con su ruta)');
+      notRun.push('componentes en navegador');
+      return [];
+    }
+    if (!QUIET) {
+      const line = /(\d+)\/(\d+) comprobaciones de componentes pasan/.exec(stdout);
+      if (line) console.log(`  ${line[0]}`);
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    const fails = out
+      .split('\n')
+      .filter((l) => l.startsWith('FALLA'))
+      .map((l) => l.replace(/^FALLA\s+/, ''));
+    return fails.length > 0 ? fails : ['el runner de componentes salió con error'];
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);
 
 console.log('');
 for (const r of results) {
-  console.log(`${r.ok ? 'OK  ' : 'FALLA'} ${r.name}`);
+  const label = notRun.includes(r.name) ? 'N/E ' : r.ok ? 'OK  ' : 'FALLA';
+  console.log(`${label} ${r.name}`);
   for (const d of r.detail) console.log(`       ${d}`);
 }
 console.log('');
-console.log(`${results.length - failed.length}/${results.length} comprobaciones pasan`);
+const ran = results.length - notRun.length;
+console.log(`${ran - failed.length}/${ran} comprobaciones pasan`);
+if (notRun.length > 0) {
+  console.log(`${notRun.length} NO EJECUTADA(S): ${notRun.join(', ')}`);
+}
 
 if (failed.length > 0) process.exitCode = 1;

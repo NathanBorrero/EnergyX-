@@ -1,0 +1,277 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DE LA FICHA DE PRODUCTO.
+
+  QUÉ ES Y QUÉ NO ES
+
+  Es una reproducción del MARCADO que generan las plantillas Liquid del theme,
+  servida en plano para poder ejecutar los componentes reales en un navegador
+  real. No es una página de la tienda, no es una demo y no se despliega: vive en
+  `scripts/fixtures` porque es instrumental de prueba.
+
+  Los datos son DELIBERADAMENTE FICTICIOS Y ETIQUETADOS COMO TALES. El producto
+  se llama «BANCO DE PRUEBAS» y el precio es una cadena inventada: nada de aquí
+  puede confundirse con datos de NATHAN & ESTEBAN, que todavía no existen.
+
+  LA MATRIZ ESTÁ INCOMPLETA A PROPÓSITO:
+
+                 40        41        42
+      Negro    libre    agotada    libre
+      Cuero      —      libre     libre
+
+  Esa casilla vacía —Cuero en 40— es el caso que ningún theme de plantilla
+  distingue: no es «agotada», es que no se fabrica. Y la 41 en Negro sí existe y
+  está agotada. Si los dos se pintaran igual, el banco lo detectaría.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Banco de pruebas · ficha de producto</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ne/semantics": "/theme/assets/ne-shopify-semantics.js",
+          "ne/variant-matrix": "/theme/assets/ne-variant-matrix.js",
+          "ne/size-advisor": "/theme/assets/ne-size-advisor.js",
+          "ne/cart-line": "/theme/assets/ne-cart-line.js",
+          "ne/size-selected-event": "/theme/assets/ne-size-selected-event.js",
+          "ne/cod-guard": "/theme/assets/ne-cod-guard.js",
+          "ne/responsive-image": "/theme/assets/ne-responsive-image.js",
+          "ne/a11y-contrast": "/theme/assets/ne-a11y-contrast.js",
+          "ne/product-contract": "/theme/assets/ne-product-contract.js",
+          "ne/shopify-adapter": "/theme/assets/ne-shopify-adapter.js",
+          "ne/product-jsonld": "/theme/assets/ne-product-jsonld.js",
+          "ne/analytics-taxonomy": "/theme/assets/ne-analytics-taxonomy.js"
+        }
+      }
+    </script>
+
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
+    <link rel="stylesheet" href="/theme/assets/ne-base.css">
+    <!--
+      EL MISMO CSS QUE LA TIENDA, no una copia.
+
+      Antes el banco llevaba un puñado de reglas copiadas a mano, y esa copia es
+      precisamente lo que no se puede verificar: comprobar que un estado «se
+      pinta distinto» contra estilos copiados no dice nada del theme. Ahora
+      carga `ne-components.css`, así que cuando la prueba afirma que «agotada»
+      y «no se fabrica» se distinguen, lo afirma del CSS real.
+    -->
+    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+  </head>
+
+  <body>
+    <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+      <a href="/cart"><span>Carrito</span>
+        <span data-ne-cart-count aria-hidden="true">0</span>
+        <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+      </a>
+    </header>
+
+    <section
+      class="ne-pdp"
+      data-ne-product
+      data-ne-product-id="9999999999"
+      data-ne-product-handle="banco-de-pruebas"
+    >
+      <!-- ------------------------------------------------------- galería -->
+      <ne-product-gallery class="ne-gallery" data-ne-model-mode="on_demand">
+        <ul class="ne-gallery__list" role="list">
+          <li class="ne-gallery__item" data-ne-media-type="image">
+            <img src="/scripts/fixtures/pixel.png" alt="Fotografía de banco de pruebas" width="4" height="5">
+          </li>
+          <li class="ne-gallery__item" data-ne-media-type="model">
+            <div class="ne-gallery__model" data-ne-model-slot hidden>
+              <!-- En el theme esto lo emite `model_viewer_tag`. Aquí se imita el
+                   elemento para poder comprobar el comportamiento progresivo sin
+                   descargar ningún modelo: el banco no finge tener un .glb. -->
+              <model-viewer class="ne-gallery__viewer" reveal="interaction"></model-viewer>
+            </div>
+            <div class="ne-gallery__model-fallback" data-ne-model-fallback>
+              <img src="/scripts/fixtures/pixel.png" alt="Previsualización del modelo" width="4" height="5">
+            </div>
+          </li>
+        </ul>
+        <div class="ne-gallery__controls">
+          <button class="ne-button ne-button--quiet" type="button" data-ne-model-trigger aria-expanded="false">Ver en 3D</button>
+          <button class="ne-button ne-button--quiet" type="button" data-ne-ar-trigger hidden>Verlo en tu espacio</button>
+          <p class="ne-notice" data-ne-model-error hidden>El modelo 3D no se pudo cargar.</p>
+        </div>
+      </ne-product-gallery>
+
+      <!-- --------------------------------------------------------- panel -->
+      <div class="ne-pdp__panel">
+        <h1 class="ne-title">BANCO DE PRUEBAS</h1>
+
+        <div class="ne-price" data-ne-price>
+          <span class="ne-price__current" data-ne-price-current>$000.000</span>
+          <s class="ne-price__compare ne-soft" hidden></s>
+        </div>
+
+        <ne-variant-picker class="ne-picker" data-ne-picker>
+          <script type="application/json" data-ne-variants>
+            [
+              { "id": "4001", "availableForSale": true,  "priceFormatted": "$100.000", "compareAtPriceFormatted": null,       "sku": "BP-NEG-40", "title": "Negro / 40", "selectedOptions": [{ "name": "Color", "value": "Negro" }, { "name": "Talla", "value": "40" }] },
+              { "id": "4002", "availableForSale": false, "priceFormatted": "$100.000", "compareAtPriceFormatted": null,       "sku": "BP-NEG-41", "title": "Negro / 41", "selectedOptions": [{ "name": "Color", "value": "Negro" }, { "name": "Talla", "value": "41" }] },
+              { "id": "4003", "availableForSale": true,  "priceFormatted": "$100.000", "compareAtPriceFormatted": null,       "sku": "BP-NEG-42", "title": "Negro / 42", "selectedOptions": [{ "name": "Color", "value": "Negro" }, { "name": "Talla", "value": "42" }] },
+              { "id": "4004", "availableForSale": true,  "priceFormatted": "$130.000", "compareAtPriceFormatted": "$160.000", "sku": "BP-CUE-41", "title": "Cuero / 41", "selectedOptions": [{ "name": "Color", "value": "Cuero" }, { "name": "Talla", "value": "41" }] },
+              { "id": "4005", "availableForSale": true,  "priceFormatted": "$130.000", "compareAtPriceFormatted": "$160.000", "sku": "BP-CUE-42", "title": "Cuero / 42", "selectedOptions": [{ "name": "Color", "value": "Cuero" }, { "name": "Talla", "value": "42" }] }
+            ]
+          </script>
+
+          <fieldset class="ne-picker__group" data-ne-option="Color">
+            <legend class="ne-caption">Color <span data-ne-chosen aria-live="polite"></span></legend>
+            <div class="ne-picker__values">
+              <label class="ne-picker__chip" for="c-negro">
+                <input class="ne-visually-hidden" type="radio" id="c-negro" name="ne-option-0" value="Negro" data-ne-option-input data-ne-option-name="Color" checked>
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">Negro</span></span>
+                <span class="ne-visually-hidden" data-ne-chip-state></span>
+              </label>
+              <label class="ne-picker__chip" for="c-cuero">
+                <input class="ne-visually-hidden" type="radio" id="c-cuero" name="ne-option-0" value="Cuero" data-ne-option-input data-ne-option-name="Color">
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">Cuero</span></span>
+                <span class="ne-visually-hidden" data-ne-chip-state></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="ne-picker__group" data-ne-option="Talla">
+            <legend class="ne-caption">Talla <span data-ne-chosen aria-live="polite"></span></legend>
+            <div class="ne-picker__values">
+              <label class="ne-picker__chip" for="t-40">
+                <input class="ne-visually-hidden" type="radio" id="t-40" name="ne-option-1" value="40" data-ne-option-input data-ne-option-name="Talla" checked>
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">40</span></span>
+                <span class="ne-visually-hidden" data-ne-chip-state></span>
+              </label>
+              <label class="ne-picker__chip" for="t-41">
+                <input class="ne-visually-hidden" type="radio" id="t-41" name="ne-option-1" value="41" data-ne-option-input data-ne-option-name="Talla">
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">41</span></span>
+                <span class="ne-visually-hidden" data-ne-chip-state></span>
+              </label>
+              <label class="ne-picker__chip" for="t-42">
+                <input class="ne-visually-hidden" type="radio" id="t-42" name="ne-option-1" value="42" data-ne-option-input data-ne-option-name="Talla">
+                <span class="ne-picker__chip-face" data-ne-chip-face><span class="ne-picker__label">42</span></span>
+                <span class="ne-visually-hidden" data-ne-chip-state></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="ne-picker__fallback" data-ne-picker-fallback>
+            <label class="ne-caption" for="ne-variant-select">Elige Color · Talla</label>
+            <select class="ne-picker__select" id="ne-variant-select" name="id" form="ne-product-form-banco" data-ne-variant-select>
+              <option value="4001" selected>Negro / 40</option>
+              <option value="4002" disabled>Negro / 41 · Agotado</option>
+              <option value="4003">Negro / 42</option>
+              <option value="4004">Cuero / 41</option>
+              <option value="4005">Cuero / 42</option>
+            </select>
+          </div>
+
+          <p class="ne-notice" data-ne-picker-message hidden></p>
+        </ne-variant-picker>
+
+        <ne-size-guide class="ne-sizeguide" data-ne-size-guide data-ne-size-option="Talla" data-ne-recommender="on">
+          <script type="application/json" data-ne-size-chart>
+            [
+              { "label": "40", "footLengthCm": 25.2 },
+              { "label": "41", "footLengthCm": 25.9 },
+              { "label": "42", "footLengthCm": 26.6 }
+            ]
+          </script>
+          <details class="ne-sizeguide__details">
+            <summary class="ne-sizeguide__summary"><span class="ne-caption">Guía de tallas</span></summary>
+            <div class="ne-sizeguide__body">
+              <div class="ne-sizeguide__field">
+                <label for="ne-foot">Tu medida en centímetros</label>
+                <input id="ne-foot" type="text" inputmode="decimal" autocomplete="off" maxlength="5" data-ne-foot-input>
+                <button class="ne-button ne-button--quiet" type="button" data-ne-recommend>Ver mi talla</button>
+              </div>
+              <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
+            </div>
+          </details>
+        </ne-size-guide>
+
+        <div class="ne-buy" data-ne-product-form>
+          <form id="ne-product-form-banco" action="/cart/add" method="post" class="ne-buy__form" novalidate>
+            <input type="hidden" name="form_type" value="product">
+            <input type="hidden" name="utf8" value="✓">
+            <div class="ne-buy__row">
+              <label class="ne-visually-hidden" for="ne-qty">Cantidad</label>
+              <input class="ne-buy__qty" id="ne-qty" type="number" name="quantity" value="1" min="1" step="1">
+              <button class="ne-button ne-button--accent ne-buy__submit" type="submit" name="add" data-ne-add-to-cart>
+                <span data-ne-add-label>Añadir al carrito</span>
+              </button>
+            </div>
+
+            <input type="hidden" name="properties[_ne_size_chosen]" value="" data-ne-attr="_ne_size_chosen" disabled>
+            <input type="hidden" name="properties[_ne_size_recommended]" value="" data-ne-attr="_ne_size_recommended" disabled>
+            <input type="hidden" name="properties[_ne_size_followed]" value="" data-ne-attr="_ne_size_followed" disabled>
+            <input type="hidden" name="properties[_ne_foot_length_cm]" value="" data-ne-attr="_ne_foot_length_cm" disabled>
+            <input type="hidden" name="properties[_ne_size_guide_used]" value="" data-ne-attr="_ne_size_guide_used" disabled>
+
+            <p class="ne-notice ne-notice--alert" data-ne-buy-error hidden role="alert"></p>
+            <p class="ne-visually-hidden" data-ne-buy-status role="status" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <dl class="ne-specs"><dt>Referencia</dt><dd data-ne-sku>BP-NEG-40</dd></dl>
+      </div>
+    </section>
+
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+
+    <!--
+      ESTE BLOQUE LO RELLENA EL RUNNER con los textos de
+      `theme/locales/es.default.json`, resueltos con la misma lista de claves que
+      declara `theme.liquid`. Lo de abajo es solo un valor de reserva para poder
+      abrir el banco a mano en un navegador; en la prueba nunca se usa.
+    -->
+    <script type="application/json" id="ne-strings">
+      {
+        "selected": "seleccionado",
+        "unavailable": "agotado",
+        "nonexistent": "no disponible en esta combinación",
+        "sold_out": "Agotado",
+        "add_to_cart": "Añadir al carrito",
+        "adding": "Añadiendo",
+        "added": "Añadido",
+        "choose_option": "Elige [[option]]",
+        "view_3d": "Ver en 3D",
+        "view_3d_loading": "Cargando el modelo",
+        "hide_3d": "Ver fotografías",
+        "recommended": "Tu talla es la [[size]]",
+        "recommended_rounded": "Tu talla es la [[size]]. Tu medida cae entre dos, y recomendamos la mayor.",
+        "recommended_substituted": "Tu talla sería la [[original]], pero está agotada. La [[size]] es la más cercana disponible.",
+        "choose_size": "Elegir la talla [[size]]",
+        "out_of_range": "Tu medida queda fuera del rango de este modelo.",
+        "no_data": "Este modelo todavía no tiene tabla de tallas con medidas reales.",
+        "invalid_measurement": "Escribe tu medida en centímetros, por ejemplo 26,5.",
+        "recommended_out_of_stock": "Tu talla está agotada en este color.",
+        "error_add_to_cart": "No pudimos añadir este artículo.",
+        "error_network": "Parece que se perdió la conexión.",
+        "error_generic": "Algo no salió como esperábamos."
+      }
+    </script>
+
+    <!--
+      El modo de 3D se toma de la URL para poder ejercitar los tres valores del
+      ajuste del theme. Se aplica ANTES del módulo, igual que Liquid lo
+      renderizaría en el atributo: aplicarlo después no probaría nada, porque el
+      componente lo lee al montarse.
+    -->
+    <script>
+      (function () {
+        var mode = new URLSearchParams(location.search).get('model_mode');
+        if (mode) {
+          document.querySelector('ne-product-gallery').setAttribute('data-ne-model-mode', mode);
+        }
+      })();
+    </script>
+
+    <script src="/theme/assets/ne-components.js" type="module"></script>
+  </body>
+</html>

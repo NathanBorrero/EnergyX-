@@ -1,0 +1,74 @@
+{%- comment -%}
+  Imagen responsive.
+
+  Usa `image_url` e `image_tag`, que es lo que la documentación de Shopify pide
+  explícitamente en lugar de construir URLs del CDN a mano. No se fija `format`
+  —Shopify ya detecta si el cliente soporta WebP o AVIF y elige el óptimo— ni
+  `quality`, porque la selección automática suele dar un archivo más pequeño que
+  un valor explícito.
+
+  Parámetros
+    image     objeto de imagen de Shopify. Obligatorio; si falta, se emite un
+              hueco marcado como pendiente en lugar de nada.
+    role      'lcp' | 'above_fold' | 'below_fold'. Decide `loading` y
+              `fetchpriority`. La imagen LCP nunca va en diferido.
+    sizes     descriptor `sizes` mobile-first, con `max-width`.
+    widths    escalera de anchos, como cadena para `image_tag`.
+    max       ancho máximo a pedir al CDN.
+    ratio     relación de aspecto del hueco, para reservar el espacio.
+    class     clases extra.
+    alt       texto alternativo. Si se omite, se usa el del propio archivo.
+{%- endcomment -%}
+
+{%- liquid
+  assign ne_role = role | default: 'below_fold'
+  assign ne_sizes = sizes | default: '100vw'
+  assign ne_widths = widths | default: '320, 480, 640, 768, 960, 1280, 1536, 1920'
+  assign ne_max = max | default: 1920
+  assign ne_ratio = ratio | default: '4 / 5'
+  assign ne_class = class | default: ''
+
+  if ne_role == 'below_fold'
+    assign ne_loading = 'lazy'
+  else
+    assign ne_loading = 'eager'
+  endif
+-%}
+
+{%- if image != blank -%}
+  {%- if ne_role == 'lcp' -%}
+    {{
+      image
+      | image_url: width: ne_max
+      | image_tag:
+          loading: 'eager',
+          fetchpriority: 'high',
+          widths: ne_widths,
+          sizes: ne_sizes,
+          class: ne_class,
+          alt: alt,
+          style: 'aspect-ratio: ' | append: ne_ratio
+    }}
+  {%- else -%}
+    {{
+      image
+      | image_url: width: ne_max
+      | image_tag:
+          loading: ne_loading,
+          decoding: 'async',
+          widths: ne_widths,
+          sizes: ne_sizes,
+          class: ne_class,
+          alt: alt,
+          style: 'aspect-ratio: ' | append: ne_ratio
+    }}
+  {%- endif -%}
+{%- else -%}
+  {%- comment -%}
+    Sin imagen real se emite un hueco explícitamente marcado. Nunca una foto de
+    archivo ni un color de relleno que pueda pasar por producto (§191).
+  {%- endcomment -%}
+  <div class="ne-media-placeholder {{ ne_class }}" style="--ne-media-ratio: {{ ne_ratio }}" role="img" aria-label="{{ 'general.placeholder.image' | t }}">
+    <span class="ne-placeholder">{{ 'general.placeholder.image' | t }}</span>
+  </div>
+{%- endif -%}

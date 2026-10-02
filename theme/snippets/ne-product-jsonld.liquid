@@ -1,0 +1,92 @@
+{%- comment -%}
+  Datos estructurados del producto.
+
+  Se emiten aquí porque NO hay evidencia de que Shopify los genere
+  automáticamente: se buscó documentación que lo afirme y no se encontró, así que
+  se tratan como responsabilidad del theme.
+
+  Modelo `ProductGroup` + `hasVariant`, que es el que Google introdujo para
+  variantes y encaja con la decisión ya tomada —un producto por modelo con
+  opciones Color y Talla—, porque las combined listings son solo Plus.
+
+  REGLA DURA: lo que no existe no se emite. Sin precio no hay `offers`, sin marca
+  no hay `brand`, sin disponibilidad no se declara. Un dato inventado en datos
+  estructurados es una declaración falsa ante un buscador.
+
+  PENDIENTE DE VERIFICAR: pasar la salida por la prueba de resultados
+  enriquecidos de Google. `developers.google.com` está bloqueado en el entorno de
+  desarrollo, así que los niveles de requisito son DOCUMENTED, no VERIFIED.
+{%- endcomment -%}
+
+{%- liquid
+  assign variesby = ''
+  for option in product.options_with_values
+    assign folded = option.name | downcase
+    if folded == 'color' or folded == 'colour'
+      assign variesby = variesby | append: '"https://schema.org/color",'
+    elsif folded == 'talla' or folded == 'size'
+      assign variesby = variesby | append: '"https://schema.org/size",'
+    elsif folded == 'material'
+      assign variesby = variesby | append: '"https://schema.org/material",'
+    endif
+  endfor
+  assign variesby = variesby | split: ',' | uniq | join: ','
+-%}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProductGroup",
+  "name": {{ product.title | json }},
+  "url": {{ request.origin | append: product.url | json }}
+  {%- if product.description != blank -%}
+    ,"description": {{ product.description | strip_html | truncate: 500 | json }}
+  {%- endif -%}
+  {%- if product.vendor != blank -%}
+    ,"brand": { "@type": "Brand", "name": {{ product.vendor | json }} }
+  {%- endif -%}
+  {%- if product.featured_media -%}
+    ,"image": [{{ product.featured_media.preview_image | image_url: width: 1600 | prepend: 'https:' | json }}]
+  {%- endif -%}
+  {%- if variesby != blank -%}
+    ,"variesBy": [{{ variesby }}]
+  {%- endif -%}
+  {%- if product.variants.size > 0 -%}
+    ,"hasVariant": [
+      {%- for variant in product.variants -%}
+        {
+          "@type": "Product",
+          "name": {{ variant.title | prepend: ' — ' | prepend: product.title | json }}
+          {%- for opt in variant.options -%}
+            {%- liquid
+              assign opt_name = product.options_with_values[forloop.index0].name | downcase
+            -%}
+            {%- if opt_name == 'color' or opt_name == 'colour' -%}
+              ,"color": {{ opt | json }}
+            {%- elsif opt_name == 'talla' or opt_name == 'size' -%}
+              ,"size": {{ opt | json }}
+            {%- elsif opt_name == 'material' -%}
+              ,"material": {{ opt | json }}
+            {%- endif -%}
+          {%- endfor -%}
+          {%- if variant.sku != blank -%}
+            ,"sku": {{ variant.sku | json }}
+          {%- endif -%}
+          {%- if variant.barcode != blank -%}
+            ,"gtin": {{ variant.barcode | json }}
+          {%- endif -%}
+          {%- if variant.price != blank -%}
+            ,"offers": {
+              "@type": "Offer",
+              "price": {{ variant.price | divided_by: 100.0 | json }},
+              "priceCurrency": {{ cart.currency.iso_code | json }},
+              "availability": {% if variant.available %}"https://schema.org/InStock"{% else %}"https://schema.org/OutOfStock"{% endif %},
+              "url": {{ request.origin | append: variant.url | json }}
+            }
+          {%- endif -%}
+        }{%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    ]
+  {%- endif -%}
+}
+</script>

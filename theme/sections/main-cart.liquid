@@ -1,0 +1,156 @@
+{%- comment -%}
+  Carrito.
+
+  Es el carrito nativo de Shopify. No se recalcula ningún total en el cliente: la
+  fuente de verdad comercial es Shopify y el frontend solo representa el estado
+  (§209). El botón de checkout lleva al checkout real de Shopify.
+{%- endcomment -%}
+
+<section class="ne-section" aria-labelledby="ne-cart-title">
+  <div class="ne-shell">
+    <h1 class="ne-display" id="ne-cart-title">{{ 'cart.general.title' | t }}</h1>
+
+    {%- if cart.item_count > 0 -%}
+      <form action="{{ routes.cart_url }}" method="post" novalidate class="ne-cart__form">
+        <ul class="ne-cart__list">
+          {%- for line in cart.items -%}
+            <li class="ne-cart__line">
+              <a class="ne-cart__media" href="{{ line.url }}" tabindex="-1" aria-hidden="true">
+                {% render 'ne-image',
+                  image: line.image,
+                  role: 'below_fold',
+                  sizes: '96px',
+                  widths: '96, 192',
+                  max: 192,
+                  ratio: '4 / 5',
+                  alt: line.product.title
+                %}
+              </a>
+
+              <div class="ne-cart__info">
+                <a class="ne-cart__title" href="{{ line.url }}">{{ line.product.title }}</a>
+                {%- unless line.variant.title contains 'Default' -%}
+                  <p class="ne-caption ne-soft">{{ line.variant.title }}</p>
+                {%- endunless -%}
+
+                {%- comment -%}
+                  Atribuciones de línea visibles al comprador. Las internas, que
+                  empiezan por guion bajo, Shopify no las muestra; se filtran aquí
+                  igualmente para no depender de ese comportamiento.
+                {%- endcomment -%}
+                {%- if line.properties.size > 0 -%}
+                  <dl class="ne-cart__props ne-caption ne-soft">
+                    {%- for prop in line.properties -%}
+                      {%- unless prop.first == blank or prop.last == blank or prop.first contains '_ne_' -%}
+                        <dt>{{ prop.first }}</dt><dd>{{ prop.last }}</dd>
+                      {%- endunless -%}
+                    {%- endfor -%}
+                  </dl>
+                {%- endif -%}
+              </div>
+
+              <div class="ne-cart__controls">
+                <label class="ne-visually-hidden" for="ne-cart-qty-{{ line.index | plus: 1 }}">
+                  {{ 'products.product.quantity' | t }}
+                </label>
+                <input
+                  class="ne-cart__qty"
+                  id="ne-cart-qty-{{ line.index | plus: 1 }}"
+                  type="number"
+                  name="updates[]"
+                  value="{{ line.quantity }}"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                >
+                <p class="ne-cart__price">{{ line.final_line_price | money }}</p>
+                <a class="ne-button--text" href="{{ line.url_to_remove }}">{{ 'cart.general.remove' | t }}</a>
+              </div>
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        <footer class="ne-cart__foot">
+          <button class="ne-button ne-button--quiet" type="submit" name="update">
+            {{ 'cart.general.title' | t }}
+          </button>
+
+          <div class="ne-cart__totals">
+            <p class="ne-cart__subtotal">
+              <span class="ne-caption">{{ 'cart.general.subtotal' | t }}</span>
+              <strong>{{ cart.total_price | money }}</strong>
+            </p>
+            <p class="ne-caption ne-soft">{{ 'cart.general.taxes_note' | t }}</p>
+          </div>
+
+          <button class="ne-button ne-button--accent" type="submit" name="checkout">
+            {{ 'cart.general.checkout' | t }}
+          </button>
+        </footer>
+      </form>
+    {%- else -%}
+      <p class="ne-lead">{{ 'cart.general.empty' | t }}</p>
+      <p><a class="ne-button" href="{{ routes.all_products_collection_url }}">{{ 'cart.general.continue_shopping' | t }}</a></p>
+    {%- endif -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .ne-cart__list { display: grid; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+
+  .ne-cart__line {
+    display: grid;
+    grid-template-columns: 5rem 1fr;
+    gap: var(--ne-space-s);
+    padding-bottom: var(--ne-space-m);
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+
+  @media (min-width: 48em) {
+    .ne-cart__line { grid-template-columns: 6rem 1fr auto; align-items: start; }
+  }
+
+  .ne-cart__media { display: block; }
+  .ne-cart__info { display: grid; gap: var(--ne-space-3xs); align-content: start; }
+  .ne-cart__title { color: inherit; text-decoration: none; font-family: var(--ne-font-display); }
+  .ne-cart__props { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--ne-space-2xs); }
+  .ne-cart__props dd { margin: 0; }
+
+  .ne-cart__controls {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--ne-space-s);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__controls { grid-column: auto; flex-direction: column; align-items: end; }
+  }
+
+  .ne-cart__qty {
+    width: 4rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-cart__price { font-variant-numeric: tabular-nums; }
+
+  .ne-cart__foot {
+    display: grid;
+    gap: var(--ne-space-m);
+    margin-top: var(--ne-space-xl);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__foot { grid-template-columns: auto 1fr auto; align-items: center; }
+  }
+
+  .ne-cart__totals { display: grid; gap: var(--ne-space-3xs); justify-items: end; }
+  .ne-cart__subtotal { display: flex; gap: var(--ne-space-2xs); align-items: baseline; font-variant-numeric: tabular-nums; }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "t:sections.main_cart.name", "tag": "section" }
+{% endschema %}

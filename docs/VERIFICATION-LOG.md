@@ -212,3 +212,139 @@ Estado de Magisik tras las pruebas, comprobado con una consulta posterior:
 
 No se modificó ningún producto, precio, inventario ni configuración de Magisik. El producto de
 prueba se creó en `DRAFT`, con precio `0.00` y descripción que lo marcaba como prueba, y se eliminó.
+
+---
+
+## 10. FASE 2 — El theme, verificado en navegador
+
+Esta sección registra lo que se comprobó **ejecutando**, no leyendo. Todo lo de aquí se puede
+reproducir con `node scripts/check.mjs` cuando las dos herramientas opcionales están presentes.
+
+### 10.1 Theme Check de Shopify — VERIFICADO
+
+El linter oficial (`shopify theme check`) se ejecutó sobre `theme/`:
+
+```
+44 files inspected with no offenses found.
+```
+
+Antes de llegar ahí reportó **12 infracciones en 8 archivos**, y una era grave:
+
+| Comprobación | Archivo | Qué significaba |
+| --- | --- | --- |
+| `LiquidSyntaxError` | `snippets/ne-buy-buttons.liquid` | **La etiqueta `form` no compilaba.** Le había pasado un filtro en un argumento (`id: 'x' | append: section.id`), que no es sintaxis válida. **La ficha de producto se habría quedado sin forma de comprar.** |
+| `ValidSchemaTranslations` ×3 | `sections/custom-liquid.liquid` | Claves de esquema sin entrada en el locale: la sección aparecería sin nombre en el editor. |
+| `TranslationKeyExists` ×5 | varios | Textos que habrían salido como la clave cruda en pantalla. |
+| `UnusedAssign` | `sections/editorial-hero.liquid` | Variable muerta. |
+| `ValidScopedCSSClass` ×2 | colección y búsqueda | `.ne-product-grid` definida en el `{% stylesheet %}` de **otra** sección: en una página sin esa sección, la rejilla se quedaba **sin columnas**. Movida a `assets/ne-base.css`. |
+
+### 10.2 Seis defectos que solo un navegador real podía encontrar
+
+`scripts/check-components.mjs` carga el banco de pruebas en Chromium y ejercita los componentes
+contra los módulos reales. Encontró seis defectos. **Ninguno se ve leyendo el código y ninguno
+rompe la página de forma visible**, que es exactamente por qué hacía falta la prueba.
+
+#### A. `this.slot` pisa una propiedad del DOM — la galería 3D no montaba nunca
+
+`slot` es una propiedad de **todo** elemento (el nombre de ranura de shadow DOM, y es una cadena).
+`this.slot = <div>` escribe el atributo con el objeto convertido a texto, así que la lectura
+siguiente murió con `this.slot.querySelector is not a function`.
+
+El `try/catch` del componente hizo su trabajo: la ficha siguió funcionando con la fotografía, el
+error quedó en `window.__ne_errors` y **nada en la pantalla lo delataba**.
+
+Corregido renombrando a `this.modelSlot`, y con él `open`, `select`, `input`, `output`, `button` y
+`error`, que llevan nombre de propiedad del DOM en algún elemento. Añadida una comprobación que
+enumera la cadena de prototipos **en el navegador** y falla ante cualquier colisión: una lista
+escrita a mano se habría quedado corta justo en la propiedad que nadie recuerda.
+
+#### B. `data-ne-3d-mode` no se lee como `dataset.ne3dMode` — el ajuste de 3D se ignoraba
+
+Verificado en Chromium:
+
+```js
+// <div data-ne-3d-mode="eager" data-ne-model-mode="eager">
+el.dataset.ne3dMode     // undefined
+el.dataset['ne-3dMode'] // "eager"
+el.dataset.neModelMode  // "eager"
+```
+
+El guion solo se colapsa cuando le sigue una **letra minúscula**. Con un dígito detrás, el guion
+permanece en la clave, y el acceso con punto devuelve `undefined`.
+
+Consecuencia: **el ajuste `product_3d_mode` del theme se ignoraba por completo**, incluido `off`.
+Poner el 3D en «apagado» no lo apagaba.
+
+Corregido renombrando el atributo a `data-ne-model-mode`. `check-theme.mjs` ahora **prohíbe la
+forma entera**: cualquier `data-ne-*` con un dígito tras un guion falla la comprobación.
+
+#### C. `<input type="number">` destruye la coma decimal — el recomendador diría «fuera de rango»
+
+Verificado en Chromium, tecleando carácter a carácter:
+
+| Entrada tecleada | `type="number"` | `type="text"` + `inputmode="decimal"` |
+| --- | --- | --- |
+| `25,9` | `"259"`, y `validity.valid === true` | `"25,9"` |
+
+No queda vacío: **queda mal, y pasa la validación**. En español la coma decimal es lo que la gente
+escribe, así que un comprador que mide bien su pie habría recibido «tu medida queda fuera del rango
+de este modelo». La pieza que existe para evitar devoluciones habría hecho lo contrario.
+
+Corregido a `type="text"` con `inputmode="decimal"`, que sigue abriendo el teclado numérico en
+móvil. La validación la hace `parseMeasurement`, que ya normaliza la coma.
+
+#### D. La guía de tallas nunca se enteraba del stock — respondía siempre «agotada»
+
+Los elementos personalizados montan en orden de DOM. El selector monta primero y **anuncia su
+estado antes de que la guía de tallas esté escuchando**, así que la guía se quedaba con la lista de
+tallas comprables vacía.
+
+Con una lista vacía, `reconcileWithStock` concluye que nada se puede comprar. Resultado: el
+recomendador respondía **siempre** «tu talla está agotada en este color», con stock de todo.
+
+Corregido con una petición explícita (`ne:request-state`): quien necesita el estado lo pide y el
+selector contesta. Así da igual el orden de montaje, y también funciona cuando el editor del theme
+reinyecta una sección sola.
+
+#### E. Deshabilitar los valores inexistentes dejaba colores INALCANZABLES
+
+Con la matriz de prueba —Cuero no se fabrica en 40, y la 40 solo existe en Negro— partiendo de
+Negro/40, preguntar «¿existe Cuero?» con la talla 40 fija devuelve `nonexistent`. Es verdad. Pero el
+selector lo deshabilitaba, y entonces **nunca se podía llegar a Cuero**: para cambiar de color había
+que cambiar antes de talla, y la talla puesta no existe en Cuero.
+
+Corregido por semántica, no por cálculo: **todo valor que la matriz lista existe en alguna variante,
+así que todo valor es alcanzable**. Elegirlo es precisamente lo que dispara la reconciliación. No se
+deshabilita nada; «inexistente» ahora significa «no se fabrica con tu selección actual, y al
+elegirlo ajustaremos el resto», que es accionable.
+
+Los tres estados siguen distinguiéndose visualmente, y la prueba lo verifica contra el **CSS real**.
+
+#### F. `form.id` no devuelve el id cuando el formulario tiene un control llamado `id`
+
+Verificado en Chromium: el acceso con nombre de los controles gana sobre la propiedad. Un formulario
+de producto **siempre** tiene un `<select name="id">`, así que `form.id` devuelve ese elemento, no la
+cadena. No llegó a código de producción —era una aserción de la prueba—, pero queda registrado
+porque es una trampa que cualquier código de theme puede pisar.
+
+### 10.3 Lo que las comprobaciones garantizan ahora
+
+| Comprobación | Qué cubre | Validada inyectando |
+| --- | --- | --- |
+| `contratos del theme` (10) | ganchos DOM, puente de textos, puente de rutas, atribuciones de línea, elementos personalizados, assets, snippets, secciones, elegibilidad de streaming, JSON | **13 fallos inyectados, 13 detectados** |
+| `theme check de Shopify` | sintaxis Liquid, traducciones, esquemas, ámbito de CSS | el propio linter |
+| `componentes en navegador` (9) | mejora progresiva, tres estados, reconciliación, recomendador de punta a punta, evento de talla, añadir al carrito, 3D progresivo, **compra sin JavaScript**, colisiones con el DOM | los seis defectos de §10.2 |
+
+### 10.4 Dos dependencias opcionales, declaradas
+
+Theme Check y las pruebas en navegador necesitan Shopify CLI y Playwright. **Ninguno se versiona**:
+el repositorio sigue con cero dependencias. Cuando no están, la comprobación se declara
+**`NO EJECUTADA`**, nunca superada:
+
+```
+N/E  theme check de Shopify
+1 NO EJECUTADA(S): theme check de Shopify
+```
+
+Decir que pasó algo que no se ejecutó es el éxito falso que §183 prohíbe. Para ejecutarlas se
+definen `NE_SHOPIFY_CLI` y `NE_PLAYWRIGHT` con la ruta de cada herramienta.

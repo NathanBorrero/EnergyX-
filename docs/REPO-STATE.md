@@ -1,11 +1,12 @@
 # Estado del repositorio
 
-**Fecha:** 2026-10-01 · tras la auditoría cruzada de módulos.
-**Pruebas:** 142, todas pasando. **Dependencias:** 0.
+**Fecha:** 2026-10-02 · tras cerrar FASE 2 y verificar el theme en navegador.
+**Pruebas:** 321 (`node:test`) + 9 en navegador (Chromium) + 10 de contrato de theme + Theme Check.
+**Dependencias de runtime:** 0. **Dependencias opcionales de verificación:** 2, no versionadas.
 
 ---
 
-## 1. Archivos
+## 1. Qué existe
 
 ```
 README.md
@@ -15,121 +16,132 @@ package.json                            sin dependencias, type: module
 docs/
   STANDARD.md                           estándar §173–246
   STATUS.md                             estado por área
-  DISCOVERY.md                          hechos de plataforma
-  VERIFICATION-LOG.md                   lo comprobado por ejecución
+  DISCOVERY.md                          hechos de plataforma verificados
+  VERIFICATION-LOG.md                   lo comprobado POR EJECUCIÓN (§10: el theme)
   REQUIREMENTS.md                       requisitos, reversibilidad, contradicciones
-  ARCHITECTURE.md                       comparación y modelos
+  ARCHITECTURE.md                       comparación de stacks y modelos de datos
   STRATEGY.md                           estrategias por área
-  THIRD-OPTION-ANALYSIS.md              las cuatro vías, sin decidir
+  THIRD-OPTION-ANALYSIS.md              las cuatro vías
+  PROJECT-MAP.md                        mapa único de FASE 0
   REPO-STATE.md                         este archivo
 
 shopify/
-  README.md
+  README.md                             orden de ejecución para cuando exista la tienda N&E
   footwear-data-model.graphql           validado contra el esquema, NO ejecutado en N&E
 
 src/
   README.md                             incluye límites de confianza
-  lib/
+  lib/                                  12 módulos de DECISIÓN, funciones puras
     shopify-semantics.js                foldKey · isPurchasable · hasAvailabilityData
-    variant-matrix.js                   disponibilidad de combinaciones
-    size-advisor.js                     recomendación de talla
-    product-jsonld.js                   datos estructurados
+    variant-matrix.js                   tres estados de combinación
+    size-advisor.js                     recomendación de talla y cruce con stock
+    cart-line.js                        línea de carrito y atribuciones
+    size-selected-event.js              evento ne:size_selected
+    cod-guard.js                        validación de contra entrega (Colombia)
+    product-contract.js                 contrato canónico de producto
+    shopify-adapter.js                  Admin API y Storefront API a la forma canónica
+    product-jsonld.js                   ProductGroup / hasVariant / variesBy
     analytics-taxonomy.js               embudo consciente de contra entrega
-    __tests__/
-      variant-matrix.test.js
-      size-advisor.test.js
-      product-jsonld.test.js
-      analytics-taxonomy.test.js
-      audit-fixes.test.js               regresiones de la auditoría y de seguridad
+    responsive-image.js                 plan de imagen responsive (no construye URLs)
+    a11y-contrast.js                    contraste WCAG y objetivo de pulsado
+    __tests__/                          321 pruebas
+
+theme/                                  THEME DE SHOPIFY, Online Store 2.0, escrito de cero
+  layout/theme.liquid                   CSS del primer paint sobre content_for_header,
+                                        import map, puentes de textos y rutas
+  templates/                            12 plantillas, TODAS JSON (requisito de streaming)
+  sections/                             18 secciones + 2 grupos
+  snippets/                             9 snippets
+  config/                               settings_schema.json · settings_data.json
+  locales/                              es.default.json · es.default.schema.json
+  assets/
+    ne-tokens.css                       sistema de diseño: color, tipografía, espacio, rejilla
+    ne-base.css                         reset, foco, tipografía, botones, rejilla de producto
+    ne-components.css                   estilos de los componentes, UNA fuente
+    ne-components.js                    el ÚNICO JavaScript escrito a mano
+    ne-*.js                             12 copias GENERADAS de src/lib (no editar)
+
+scripts/
+  check.mjs                             14 comprobaciones con código de salida
+  check-theme.mjs                       10 contratos entre marcado y script
+  check-components.mjs                  9 comprobaciones en Chromium
+  sync-theme-assets.mjs                 publica src/lib como assets del theme
+  fixtures/
+    product-harness.html                banco de pruebas (datos ficticios, etiquetados)
+    pixel.png                           imagen mínima, sin dependencia externa
 ```
 
 ---
 
-## 2. Módulos: estado real
+## 2. La frontera que gobierna el código
 
-| Módulo | Estado | Pruebas | Qué le falta |
-| --- | --- | --- | --- |
-| `shopify-semantics.js` | **Terminado** | Cubierto | Nada. Son tres funciones con una responsabilidad |
-| `variant-matrix.js` | **Terminado para su alcance** | Completo: matriz incompleta, tres estados, reconciliación, 1–3 opciones, entrada defectuosa, nombres no canónicos | Nada funcional. Falta usarlo en una página |
-| `size-advisor.js` | **Terminado para su alcance** | Completo: exacto, entre tallas, fuera de rango, tabla sucia, regresión de coma flotante, cruce con stock | **Datos reales de tabla de tallas** (`DECISION PENDING`) |
-| `product-jsonld.js` | **Funcionalmente terminado, no validado externamente** | Completo en lógica y seguridad | **Pasar la salida por la prueba de resultados enriquecidos de Google.** No se pudo: `developers.google.com` bloqueado |
-| `analytics-taxonomy.js` | **Terminado como definición** | Completo en integridad y aritmética | Dos etapas con mecanismo `NOT VERIFIED`: entrega y RTO |
+**`src/lib` decide. `theme` presenta. `ne-components.js` conecta, y no decide nada.**
 
-### Probado de verdad frente a parcialmente probado
+No es una preferencia de organización. Si la lógica de qué talla recomendar viviera en el
+JavaScript del theme, sería código sin pruebas tomando decisiones de negocio, y una segunda
+implementación divergiría de la probada. Por eso:
 
-**Probado de verdad** — comportamiento verificado con asserts:
-toda la lógica de los cinco módulos, incluidos los casos límite de §214, la entrada malformada de
-§216 y las cinco regresiones de seguridad.
+- `src/lib` son funciones puras, sin DOM, con 321 pruebas.
+- `scripts/sync-theme-assets.mjs` las publica como assets del theme, reescribiendo los imports
+  relativos a especificadores del import map. **No hay bundler ni paso de compilación.**
+- La comprobación `assets del theme sincronizados` falla si alguien edita la copia.
 
-**Parcialmente probado** — la lógica está probada, el contrato externo no:
+### Por qué un import map y no imports relativos
 
-| Qué | Por qué está incompleto |
-| --- | --- |
-| JSON-LD contra Google | `developers.google.com` y `schema.org` bloqueados por egress. Los niveles de requisito son `DOCUMENTED` |
-| Taxonomía contra datos reales | Las etapas de entrega y RTO no se pueden confirmar sin pedidos reales |
-| `footwear-data-model.graphql` | Validado contra el esquema y ejecutado en el entorno de pruebas; **no ejecutado en la tienda de N&E**, que no existe |
-
-**Sin probar porque no existe:** la página. No hay theme, ni componente, ni plantilla.
+Shopify sirve los assets en plano con un parámetro de versión en la URL. Un
+`import './variant-matrix.js'` perdería ese parámetro, y el navegador podría servir una copia
+caducada de un módulo junto a otra reciente. El import map de `theme.liquid` resuelve
+`ne/variant-matrix` a la URL real con su versión.
 
 ---
 
-## 3. Qué depende de §1–172
+## 3. Qué está terminado y verificado
 
-| Bloqueado | Consecuencia de no tenerlo |
-| --- | --- |
-| **Dirección de arte** | No hay propuesta visual posible sin inventar (§187) |
-| **Concepto de 3D** | Decide entre fotografía, `model-viewer` nativo o WebGL propio, y eso influye en el stack |
-| **Peso de los 13 criterios** | Sin ponderación, elegir arquitectura es preferencia, no decisión |
-| **Decisión de arquitectura (D2)** | Depende de los tres anteriores. Es la única cosa que impide empezar el storefront |
-
-Nada de los cinco módulos depende de §1–172: son funciones puras sin DOM, reutilizables en Liquid,
-React o Vue.
-
----
-
-## 4. Qué depende de información real de Dropi
-
-| Bloqueado | Estado |
-| --- | --- |
-| Si el proveedor surte más de un ancho o material por modelo | `NOT VERIFIED`. Decide si B, C o D son siquiera posibles |
-| API real de Dropi: endpoints, autenticación, límites, idempotencia | `NOT VERIFIED`. **No se transcriben desde fuentes no oficiales** (§187) |
-| Sincronía de inventario Dropi → Shopify | `NOT VERIFIED`. Es el riesgo de oversell (R2) |
-| Confirmación de entrega y de RTO | `NOT VERIFIED`. Puede venir de Dropi y no de Shopify |
-| Scopes que la app de Dropi solicita | `NOT VERIFIED`. `apps.shopify.com` bloqueado |
-
-Dropi es **condicional** por decisión del propietario, no requisito de lanzamiento. Nada se marcará
-como integrado sin ejecutarlo contra una cuenta real (§186).
-
----
-
-## 5. Qué depende de una decisión del propietario
-
-| # | Decisión | Por qué solo él puede tomarla |
+| Pieza | Estado | Cómo se verificó |
 | --- | --- | --- |
-| 1 | Dirección de arte | Es la identidad de la marca |
-| 2 | Concepto de 3D: ¿qué debe entender el comprador que hoy no puede? | Decisión creativa, no técnica |
-| 3 | Tercera opción de producto: A, B, C o D | Análisis entregado. Irreversible tras cargar catálogo |
-| 4 | Catálogo real: modelos, colores, tallas, materiales, precios | Datos de negocio. `PLACEHOLDER` hasta entonces |
-| 5 | Tabla de tallas con medidas reales | Del fabricante o por medición física. Inventarla causaría el RTO que se intenta evitar |
-| 6 | ¿Lanzamiento solo Colombia o multi-mercado? | Afecta a market overrides y hreflang |
-| 7 | Textos legales: envíos, devoluciones, garantía, privacidad | No se inventan (§191) |
-| 8 | Quién mantiene el sistema tras el lanzamiento | Pesa en la elección de stack (§233) |
-| 9 | ¿Se renombra el repositorio de `EnergyX-` a algo de N&E? | Cosmético pero conviene antes de conectar GitHub a una tienda |
+| 12 módulos de `src/lib` | terminado | 321 pruebas, barridos de `null` y de entrada adversaria |
+| Sistema de diseño (CSS) | terminado | paleta validada con `a11y-contrast.js` **antes** de escribir CSS |
+| Theme: layout, plantillas, secciones, snippets | terminado | **Theme Check: 44 archivos, 0 infracciones** |
+| Selector de variantes, tres estados | terminado | Chromium, contra el CSS real |
+| Reconciliación de selección | terminado | Chromium: cambiar de color suelta la talla imposible |
+| Guía de tallas y recomendador | terminado | Chromium de punta a punta, incluida la coma decimal |
+| Atribuciones de línea | terminado | Chromium: viajan las que existen, no las vacías |
+| `ne:size_selected` | terminado | Chromium: una vez por talla distinta, sin dinero |
+| Añadir al carrito sin recargar | terminado | Chromium, con la ruta de Shopify y la sección real |
+| 3D progresivo | terminado (sin asset) | Chromium: los tres modos y el camino de fallo |
+| **Compra sin JavaScript** | terminado | Chromium con JavaScript desactivado |
+| Tubería de comprobaciones | terminado | 13 fallos inyectados en los contratos, 13 detectados |
 
 ---
 
-## 6. Bloqueos reales
+## 4. Qué NO está terminado, y de qué depende
 
-Solo uno impide avanzar en la dirección principal:
+| Pendiente | Depende de |
+| --- | --- |
+| Catálogo real: productos, variantes, precios, materiales | **el dueño**. No se inventa (§191). |
+| Assets: fotografía, modelo `.glb`, tipografía definitiva | **el dueño**. El theme ya los acepta. |
+| Tienda Shopify de Nathan & Esteban | **el dueño**. La conexión actual apunta a Magisik. |
+| Despliegue del theme | la tienda N&E + integración de GitHub (`VERIFICATION-LOG.md` §8) |
+| Medición de performance | una página desplegada. Inventar un umbral sería inventar datos. |
+| Auditoría con lector de pantalla | una página desplegada |
+| Integración Dropi | credenciales y documentación reales. Hoy es `DOCUMENTED`. |
+| Secciones §1–172 del estándar | **el dueño**. Anunciadas cuatro veces, nunca recibidas. |
 
-> **No se puede empezar el storefront sin decidir la arquitectura, y la arquitectura depende de la
-> dirección de arte y del concepto de 3D, que están en §1–172.**
+---
 
-Todo lo demás tiene camino: la lógica se construye y se prueba, el modelo de datos está validado y
-esperando a que exista la tienda, y la documentación registra lo verificado y lo que no.
+## 5. Cómo se ejecutan las comprobaciones
 
-### Residuo conocido
+```sh
+node scripts/check.mjs          # las 14; las dos opcionales salen como N/E
+```
 
-Un archivo que no se pudo borrar: `snippets/ne-write-probe-delete-me.liquid` en el theme **no
-publicado** de la tienda de pruebas. `themeFilesDelete` está bloqueado por política de seguridad. Es
-un comentario Liquid, no ejecuta nada, y el theme no está publicado. Se elimina a mano desde el admin.
+Para ejecutar también las dos opcionales, sin añadirlas al repositorio:
+
+```sh
+NE_SHOPIFY_CLI=/ruta/a/shopify \
+NE_PLAYWRIGHT=/ruta/a/playwright/index.js \
+  node scripts/check.mjs
+```
+
+Sin ellas, el informe dice **`N/E` — NO EJECUTADA**, nunca `OK`. Una comprobación que no corrió no
+da ninguna garantía, y presentarla como verde es fabricar un éxito (§183).

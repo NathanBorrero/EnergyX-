@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    {%- comment -%}
+      ORDEN DELIBERADO: todo lo que afecta al primer paint va ANTES de
+      `content_for_header`.
+
+      Verificado en la guía de rendimiento de Shopify: cuando la plataforma hace
+      streaming de la respuesta, lo que está por encima de `content_for_header`
+      llega al navegador antes de que se rendericen las secciones, así que las
+      hojas de estilo y las fuentes se descargan mientras Liquid trabaja. Mover
+      el CSS por debajo pierde ese solape y retrasa FCP y LCP.
+
+      `content_for_header` se emite como etiqueta simple, sin filtros, no dentro
+      de un snippet y no asignada a variable: son las condiciones de elegibilidad
+      del streaming. Si se incumplen, la página deja de streamearse en silencio.
+    {%- endcomment -%}
+
+    <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+
+    {{ 'ne-tokens.css' | asset_url | stylesheet_tag }}
+    {{ 'ne-base.css' | asset_url | stylesheet_tag }}
+    {{ 'ne-components.css' | asset_url | stylesheet_tag }}
+
+    {%- comment -%} Las familias tipográficas vienen de los ajustes del theme, así
+      que no hay hosting de fuentes externo. La elección final de tipografía es
+      DECISION PENDING y se cambia en el editor sin tocar código. {%- endcomment -%}
+    {%- liquid
+      assign body_font = settings.font_body
+      assign display_font = settings.font_display
+    -%}
+    {{ body_font | font_face: font_display: 'swap' }}
+    {{ body_font | font_modify: 'weight', '500' | font_face: font_display: 'swap' }}
+    {{ display_font | font_face: font_display: 'swap' }}
+
+    <style>
+      :root {
+        --ne-font-body-shopify: {{ body_font.family }}, {{ body_font.fallback_families }};
+        --ne-font-display-shopify: {{ display_font.family }}, {{ display_font.fallback_families }};
+      }
+    </style>
+
+    <title>
+      {{- page_title -}}
+      {%- if current_tags %} &mdash; {{ 'general.meta.tags' | t: tags: current_tags | join: ', ' }}{% endif -%}
+      {%- if current_page != 1 %} &mdash; {{ 'general.meta.page' | t: page: current_page }}{% endif -%}
+      {%- unless page_title contains shop.name %} &mdash; {{ shop.name }}{% endunless -%}
+    </title>
+
+    {%- if page_description -%}
+      <meta name="description" content="{{ page_description | escape }}">
+    {%- endif -%}
+
+    <link rel="canonical" href="{{ canonical_url }}">
+
+    {%- if settings.favicon != blank -%}
+      <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+    {%- endif -%}
+
+    {% render 'ne-meta-social' %}
+
+    {{ content_for_header }}
+  </head>
+
+  <body class="ne-body-root template--{{ template.name | handle }}">
+    <a class="ne-skip-link" href="#ne-main">{{ 'accessibility.skip_to_content' | t }}</a>
+
+    {%- sections 'header-group' -%}
+
+    <main id="ne-main" role="main" tabindex="-1">
+      {{ content_for_layout }}
+    </main>
+
+    {%- sections 'footer-group' -%}
+
+    {%- comment -%}
+      El módulo del mapa de importación deja que los assets usen especificadores
+      con nombre en lugar de URLs del CDN incrustadas. Es estándar del navegador,
+      no una herramienta de build: así el theme conserva la estructura de carpetas
+      por defecto, que es lo único que admite la integración de GitHub de Shopify.
+    {%- endcomment -%}
+    <script type="importmap">
+      {
+        "imports": {
+          "ne/semantics": {{ 'ne-shopify-semantics.js' | asset_url | json }},
+          "ne/variant-matrix": {{ 'ne-variant-matrix.js' | asset_url | json }},
+          "ne/size-advisor": {{ 'ne-size-advisor.js' | asset_url | json }},
+          "ne/cart-line": {{ 'ne-cart-line.js' | asset_url | json }},
+          "ne/size-selected-event": {{ 'ne-size-selected-event.js' | asset_url | json }},
+          "ne/cod-guard": {{ 'ne-cod-guard.js' | asset_url | json }},
+          "ne/responsive-image": {{ 'ne-responsive-image.js' | asset_url | json }},
+          "ne/a11y-contrast": {{ 'ne-a11y-contrast.js' | asset_url | json }},
+          "ne/product-contract": {{ 'ne-product-contract.js' | asset_url | json }},
+          "ne/shopify-adapter": {{ 'ne-shopify-adapter.js' | asset_url | json }},
+          "ne/product-jsonld": {{ 'ne-product-jsonld.js' | asset_url | json }},
+          "ne/analytics-taxonomy": {{ 'ne-analytics-taxonomy.js' | asset_url | json }}
+        }
+      }
+    </script>
+
+    {%- comment -%}
+      Los componentes son elementos personalizados y se registran con `defer`, así
+      que no bloquean el parser. Cada uno degrada a HTML utilizable si su script
+      no llega: el formulario de producto es un `<form>` real que postea a
+      `/cart/add`, así que la compra funciona sin JavaScript.
+    {%- endcomment -%}
+    {%- comment -%}
+      RUTAS.
+
+      Nunca se escriben a mano. Una tienda con varios mercados o idiomas sirve el
+      carrito bajo un prefijo —`/es-co/cart/add`— y un `/cart/add.js` incrustado
+      en el JavaScript fallaría exactamente en los mercados que importan. Las
+      rutas las da Shopify con el objeto `routes`.
+    {%- endcomment -%}
+    <script type="application/json" id="ne-routes">
+      {
+        "cart": {{ routes.cart_url | json }},
+        "cart_add": {{ routes.cart_add_url | json }},
+        "cart_change": {{ routes.cart_change_url | json }},
+        "predictive_search": {{ routes.predictive_search_url | json }}
+      }
+    </script>
+
+    {%- comment -%}
+      TEXTOS PARA JAVASCRIPT.
+
+      Todo lo que el navegador escribe en pantalla sale de los archivos de
+      idioma de Shopify, no de cadenas incrustadas en el JavaScript. Así la
+      traducción se edita donde Shopify espera que se edite y el theme sigue
+      siendo traducible desde el admin.
+
+      Van como JSON, no como atributos: un solo parseo y sin escapado frágil.
+    {%- endcomment -%}
+    <script type="application/json" id="ne-strings">
+      {
+        "selected": {{ 'accessibility.selected' | t | json }},
+        "unavailable": {{ 'accessibility.unavailable' | t | json }},
+        "nonexistent": {{ 'accessibility.nonexistent' | t | json }},
+        "sold_out": {{ 'products.product.sold_out' | t | json }},
+        "add_to_cart": {{ 'products.product.add_to_cart' | t | json }},
+        "adding": {{ 'products.product.adding' | t | json }},
+        "added": {{ 'products.product.added' | t | json }},
+        "choose_option": {{ 'products.product.choose_option' | t: option: '[[option]]' | json }},
+        "view_3d": {{ 'products.product.view_3d' | t | json }},
+        "view_3d_loading": {{ 'products.product.view_3d_loading' | t | json }},
+        "hide_3d": {{ 'products.product.hide_3d' | t | json }},
+        "recommended": {{ 'products.size_guide.recommended' | t: size: '[[size]]' | json }},
+        "recommended_rounded": {{ 'products.size_guide.recommended_rounded' | t: size: '[[size]]' | json }},
+        "recommended_substituted": {{ 'products.size_guide.recommended_substituted' | t: size: '[[size]]', original: '[[original]]' | json }},
+        "choose_size": {{ 'products.size_guide.choose_size' | t: size: '[[size]]' | json }},
+        "out_of_range": {{ 'products.size_guide.out_of_range' | t | json }},
+        "no_data": {{ 'products.size_guide.no_data' | t | json }},
+        "invalid_measurement": {{ 'products.size_guide.invalid_measurement' | t | json }},
+        "recommended_out_of_stock": {{ 'products.size_guide.recommended_out_of_stock' | t | json }},
+        "error_add_to_cart": {{ 'errors.add_to_cart' | t | json }},
+        "error_network": {{ 'errors.network' | t | json }},
+        "error_generic": {{ 'errors.generic' | t | json }}
+      }
+    </script>
+
+    <script src="{{ 'ne-components.js' | asset_url }}" type="module"></script>
+  </body>
+</html>

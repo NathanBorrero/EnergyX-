@@ -1,0 +1,37 @@
+{%- comment -%}
+  Precio. La fuente de verdad es Shopify: se renderiza el precio del objeto, no
+  un número calculado en cliente (§209).
+
+  Sin precio real, no se inventa uno: se marca como pendiente.
+{%- endcomment -%}
+
+{%- liquid
+  assign target = variant | default: product
+  assign ne_class = class | default: ''
+-%}
+
+<div class="ne-price {{ ne_class }}" data-ne-price>
+  {%- if target.price != blank -%}
+    <span class="ne-price__current" data-ne-price-current>
+      {%- if product.price_varies and variant == blank -%}
+        {{ 'products.product.price_from' | t: price: product.price_min | money }}
+      {%- else -%}
+        {{ target.price | money }}
+      {%- endif -%}
+    </span>
+    {%- comment -%}
+      El comparativo se renderiza SIEMPRE, oculto cuando no aplica.
+
+      Si no existiera en el marcado, cambiar a una variante que sí tiene precio
+      comparativo no podría mostrarlo: el script sustituye texto, no inventa
+      estructura. Oculto con el atributo `hidden`, no con una clase, para que
+      también desaparezca para un lector de pantalla.
+    {%- endcomment -%}
+    <s
+      class="ne-price__compare ne-soft"
+      {% unless target.compare_at_price > target.price %}hidden{% endunless %}
+    >{% if target.compare_at_price > target.price %}{{ target.compare_at_price | money }}{% endif %}</s>
+  {%- else -%}
+    <span class="ne-placeholder">{{ 'general.placeholder.label' | t }}</span>
+  {%- endif -%}
+</div>

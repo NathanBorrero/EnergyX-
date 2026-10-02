@@ -1,0 +1,69 @@
+{%- comment -%}
+  Cuadrícula de producto. No son «tres cards» decorativas: es el catálogo real de
+  una colección de Shopify. Si no hay colección elegida, lo dice en lugar de
+  inventar productos.
+{%- endcomment -%}
+
+{%- liquid
+  assign collection = collections[section.settings.collection]
+  assign count = section.settings.count | default: 6
+-%}
+
+<section class="ne-section" aria-labelledby="ne-grid-heading-{{ section.id }}">
+  <div class="ne-shell">
+    <header class="ne-grid-head">
+      <h2 class="ne-title" id="ne-grid-heading-{{ section.id }}">
+        {%- if section.settings.heading != blank -%}
+          {{ section.settings.heading }}
+        {%- elsif collection != blank -%}
+          {{ collection.title }}
+        {%- else -%}
+          <span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span>
+        {%- endif -%}
+      </h2>
+      {%- if collection != blank -%}
+        <a class="ne-button--text" href="{{ collection.url }}">{{ 'collections.general.view_all' | t }}</a>
+      {%- endif -%}
+    </header>
+
+    {%- if collection != blank and collection.products.size > 0 -%}
+      <ul class="ne-grid ne-product-grid" style="--ne-grid-cols: {{ section.settings.columns }}">
+        {%- for product in collection.products limit: count -%}
+          <li class="ne-product-grid__cell">
+            {% render 'ne-product-card', product: product, card_index: forloop.index0 %}
+          </li>
+        {%- endfor -%}
+      </ul>
+    {%- else -%}
+      <p class="ne-notice">{{ 'collections.general.no_products' | t }}</p>
+    {%- endif -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .ne-grid-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-m);
+    margin-bottom: var(--ne-space-l);
+  }
+
+  /* `.ne-product-grid` vive en ne-base.css: la comparten la colección, la
+     búsqueda y esta sección, y definirla aquí la dejaría sin estilos en las
+     páginas donde esta sección no esté presente. */
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:sections.product_grid.name",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "t:sections.product_grid.heading" },
+    { "type": "collection", "id": "collection", "label": "t:sections.product_grid.collection" },
+    { "type": "range", "id": "count", "label": "t:sections.product_grid.count", "min": 2, "max": 24, "step": 1, "default": 6 },
+    { "type": "range", "id": "columns", "label": "t:sections.product_grid.columns", "min": 2, "max": 4, "step": 1, "default": 3 }
+  ],
+  "presets": [{ "name": "t:sections.product_grid.name" }]
+}
+{% endschema %}

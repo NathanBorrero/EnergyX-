@@ -9,6 +9,61 @@ Hechos de plataforma y sus fuentes: [`DISCOVERY.md`](DISCOVERY.md).
 
 ---
 
+## 4bis. DECISIÓN DE FASE 2 — tomada
+
+**Stack: Shopify Theme / Liquid, Online Store 2.0, escrito de cero.**
+
+No es la opción por defecto ni la más fácil: es la que gana por razones concretas, dada la dirección
+de arte recibida.
+
+### Qué pedía la dirección de arte
+
+Editorial, arquitectónica, minimalista con identidad propia. Prioridad a **composición, espacio,
+tipografía, fotografía, producto, movimiento y narrativa**, por delante de los efectos. Sin
+glassmorphism, sin blobs, sin gradientes aleatorios, sin partículas, sin animación decorativa.
+**La identidad debe funcionar incluso sin 3D.**
+
+### Por qué eso decide el stack
+
+Un frontend headless compra dos cosas: control total del render y una cáscara de WebGL persistente
+entre páginas. **Ninguna de las dos la pide esta dirección de arte.** Una identidad que descansa en
+composición, tipografía y fotografía se construye con CSS y buen Liquid; no necesita que React posea
+el documento. Y si el 3D es progresivo y opcional —lo es, por decisión explícita—, no hay cáscara
+de WebGL que preservar.
+
+Lo que el theme sí trae, sin construir nada:
+
+| Capacidad | En theme | Headless |
+| --- | --- | --- |
+| Streaming de HTML y Early Hints | nativo, verificado | hay que montarlo |
+| SEO, `hreflang`, sitemaps, mercados | nativo | hay que montarlo |
+| 3D y AR (`model_viewer_tag`, Shopify-XR) | nativo | hay que integrarlo |
+| Section Rendering API | nativo | no aplica |
+| Theme Check (linter oficial) | **ejecutado: 0 infracciones** | no existe |
+| Editor visual para el dueño | nativo | hay que construirlo |
+| Hosting, CDN, certificados | incluido | hay que pagarlo y operarlo |
+| Bloques de apps (`@app`) | nativo | se pierden |
+
+La única ventaja de headless que quedó **verificada** es la CSP con nonce. No es un requisito aquí:
+Shopify es dueño de la autenticación, el pago y los datos personales, así que la superficie que esa
+CSP protegería no vive en nuestro código.
+
+### Lo que esta decisión cuesta, dicho claro
+
+- **Sin control del checkout.** En plan Basic las extensiones de UI de checkout son solo Plus, así
+  que da igual el stack: no se podría personalizar de todos modos.
+- **Liquid en lugar de componentes.** Mitigado con snippets y un único archivo de JavaScript que
+  conecta módulos probados en lugar de reimplementarlos.
+- **Sin paso de compilación.** Resuelto con un import map, que es estándar del navegador y además
+  conserva la estructura de carpetas que exige la integración de GitHub de Shopify.
+
+### La directiva Shopify-primero confirma la decisión, no la causa
+
+La decisión estaba tomada por el razonamiento de arriba antes de que llegara la directiva
+«si Shopify puede hacerlo, hazlo en Shopify». Que coincidan es una confirmación, no el motivo.
+
+---
+
 ## 5. Comparación objetiva de alternativas
 
 Solo alternativas **oficialmente soportadas** por Shopify. Descarto construir un frontend
