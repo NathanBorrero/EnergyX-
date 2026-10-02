@@ -71,7 +71,10 @@ function selectionKey(optionNames, selection) {
  *   primera variante, que es el orden de `position` que devuelve Shopify.
  * @returns {VariantMatrix}
  */
-export function createVariantMatrix(variants, opts = {}) {
+export function createVariantMatrix(variants, rawOpts = {}) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const opts = rawOpts && typeof rawOpts === 'object' ? rawOpts : {};
   const list = Array.isArray(variants) ? variants : [];
 
   const usable = list.filter(

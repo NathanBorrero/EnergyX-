@@ -99,7 +99,10 @@ export function resolveShopifyPublish() {
  *
  * @param {TrackerOptions} [options]
  */
-export function createSizeSelectionTracker(options = {}) {
+export function createSizeSelectionTracker(rawOptions = {}) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const options = rawOptions && typeof rawOptions === 'object' ? rawOptions : {};
   const sizeOptionName = field(options.sizeOptionName) ?? 'Talla';
   const now = typeof options.now === 'function' ? options.now : () => Date.now();
   const publish =

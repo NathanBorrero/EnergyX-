@@ -128,7 +128,10 @@ function usableRows(chart) {
  * @param {number} [opts.easeCm] Holgura a añadir a la medida antes de buscar.
  * @returns {Recommendation}
  */
-export function recommendSize(footLengthCm, chart, opts = {}) {
+export function recommendSize(footLengthCm, chart, rawOpts = {}) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const opts = rawOpts && typeof rawOpts === 'object' ? rawOpts : {};
   const rows = usableRows(chart);
   const rounding = opts.rounding ?? DEFAULT_ROUNDING;
   const easeCm = isFiniteNumber(opts.easeCm) ? opts.easeCm : DEFAULT_EASE_CM;
@@ -266,7 +269,13 @@ function round1(n) {
  * @param {readonly SizeRow[]} chart
  * @returns {Recommendation & { substituted: boolean }}
  */
-export function reconcileWithStock(recommendation, purchasableLabels, chart) {
+export function reconcileWithStock(rawRecommendation, purchasableLabels, chart) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const recommendation =
+    rawRecommendation && typeof rawRecommendation === 'object'
+      ? rawRecommendation
+      : { label: null, confidence: CONFIDENCE.NO_DATA, reason: 'recommendation_missing', matched: null, alternatives: [], slackCm: null };
   const buyable = new Set(
     (Array.isArray(purchasableLabels) ? purchasableLabels : []).map(foldKey),
   );

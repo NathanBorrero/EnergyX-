@@ -355,3 +355,37 @@ describe('SEGURIDAD — endurecimiento tras la sonda de auditoría', () => {
     assert.equal(out.includes('__collisions'), false);
   });
 });
+
+describe('HALLAZGO 5 — un parámetro por defecto no cubre null', () => {
+  /**
+   * Defecto real, encontrado barriendo todas las funciones exportadas con null en
+   * cada posición de argumento. `function f(opts = {})` solo aplica el valor por
+   * defecto cuando el argumento es `undefined`; con `null` entra como null y la
+   * primera lectura de propiedad lanza.
+   *
+   * Afectaba a seis funciones de cinco módulos. §216 exige degradar, no lanzar, y
+   * un `null` llega solo en cuanto una interfaz pasa una variable sin inicializar.
+   */
+  test('ninguna función exportada lanza con null o undefined en ninguna posición', async () => {
+    const modulos = [
+      'variant-matrix', 'size-advisor', 'product-jsonld', 'analytics-taxonomy',
+      'shopify-semantics', 'product-contract', 'shopify-adapter',
+      'size-selected-event', 'cart-line', 'cod-guard', 'responsive-image',
+    ];
+    const fallos = [];
+    for (const nombre of modulos) {
+      const mod = await import(`../${nombre}.js`);
+      for (const [clave, fn] of Object.entries(mod)) {
+        if (typeof fn !== 'function') continue;
+        for (const args of [[null], [undefined], [{}, null], [null, null], [null, null, null]]) {
+          try {
+            fn(...args);
+          } catch (error) {
+            fallos.push(`${nombre}.${clave}(${args.map(String).join(', ')}): ${error.message}`);
+          }
+        }
+      }
+    }
+    assert.deepEqual(fallos, []);
+  });
+});

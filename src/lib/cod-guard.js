@@ -227,7 +227,10 @@ export function checkCodCoverage(municipality, coverage) {
  *   el repartidor de contra entrega llama, y a un fijo puede no contestar nadie.
  * @returns {CodValidation}
  */
-export function validateCodDraft(draft, options = {}) {
+export function validateCodDraft(draft, rawOptions = {}) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const options = rawOptions && typeof rawOptions === 'object' ? rawOptions : {};
   const d = draft && typeof draft === 'object' ? draft : {};
   const requireMobile = options.requireMobile !== false;
 

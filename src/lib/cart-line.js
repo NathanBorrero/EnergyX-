@@ -192,7 +192,10 @@ export function buildCartLine(args) {
  * @param {boolean} [args.usedSizeGuide]    Si abrió la guía de tallas.
  * @returns {Record<string, string>}
  */
-export function sizeFitAttributes(args = {}) {
+export function sizeFitAttributes(rawArgs = {}) {
+  // Un parámetro por defecto solo cubre `undefined`, no `null`. Normalizado
+  // explícitamente: §216 exige degradar, no lanzar.
+  const args = rawArgs && typeof rawArgs === 'object' ? rawArgs : {};
   /** @type {Record<string, string>} */
   const out = {};
   const chosen = str(args.chosenSize);
