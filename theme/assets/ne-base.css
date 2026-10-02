@@ -333,8 +333,16 @@ button, input, select, textarea {
   grid-column: span 1;
 }
 
+/* Conjunto CERRADO de columnas. El ajuste del theme es un `range` de 2 a 4, y
+   estas son las tres reglas que existen: un valor fuera de rango no coincide con
+   ninguna y la rejilla cae al valor por defecto. Nada que interpretar, nada que
+   inyectar — a diferencia de interpolar el número dentro de un atributo
+   `style`, que es lo que había y que `escape` no puede asegurar. */
 @media (min-width: 48em) {
   .ne-product-grid {
     grid-template-columns: repeat(var(--ne-grid-cols, 3), minmax(0, 1fr));
   }
+  .ne-product-grid--cols-2 { --ne-grid-cols: 2; }
+  .ne-product-grid--cols-3 { --ne-grid-cols: 3; }
+  .ne-product-grid--cols-4 { --ne-grid-cols: 4; }
 }

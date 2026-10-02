@@ -27,7 +27,13 @@
     </header>
 
     {%- if collection != blank and collection.products.size > 0 -%}
-      <ul class="ne-grid ne-product-grid" style="--ne-grid-cols: {{ section.settings.columns }}">
+      {%- comment -%}
+        Columnas por CLASE, no por `style`. Interpolar un ajuste dentro de un
+        atributo `style` es una forma que `escape` no puede asegurar; una clase de
+        un conjunto cerrado sí: un valor fuera de rango no coincide con ninguna
+        regla y cae al valor por defecto.
+      {%- endcomment -%}
+      <ul class="ne-grid ne-product-grid ne-product-grid--cols-{{ section.settings.columns | escape }}">
         {%- for product in collection.products limit: count -%}
           <li class="ne-product-grid__cell">
             {% render 'ne-product-card', product: product, card_index: forloop.index0 %}

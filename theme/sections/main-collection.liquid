@@ -9,7 +9,7 @@
 
     {%- if collection.products.size > 0 -%}
       {%- paginate collection.products by 24 -%}
-        <ul class="ne-grid ne-product-grid" style="--ne-grid-cols: 3">
+        <ul class="ne-grid ne-product-grid ne-product-grid--cols-3">
           {%- for product in collection.products -%}
             <li class="ne-product-grid__cell">
               {% render 'ne-product-card', product: product, card_index: forloop.index0 %}

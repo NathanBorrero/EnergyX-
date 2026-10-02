@@ -706,3 +706,95 @@ demostró es el detector con una inyección realista.
 
 Las tres están bloqueadas por lo mismo: la política de red del entorno deniega el dominio de la
 tienda. Ninguna se declara estimada.
+
+---
+
+## 15. Seguridad del theme
+
+### 15.1 Dónde está la superficie de verdad
+
+Shopify es dueño de la autenticación, del pago y de los datos personales, así que este theme no
+guarda credenciales, no valida contraseñas y no toca tarjetas. Lo que sí puede hacer mal es corto y
+concreto, y eso es exactamente lo que se comprueba.
+
+El punto de partida es un hecho que cambia todo lo demás: **Liquid no escapa por defecto.** Un
+`{{ }}` con texto que escribe una persona es una inyección esperando a ocurrir.
+
+### 15.2 XSS reflejado real, por el término de búsqueda
+
+```liquid
+{{ 'general.search.no_results' | t: terms: search.terms }}
+```
+
+`search.terms` viene de un parámetro de URL: **lo controla cualquiera que consiga que alguien abra
+un enlace**. Se interpolaba en una cadena traducida que se emite cruda.
+
+Y aquí está lo importante: **la documentación de Shopify no dice si el filtro `t` escapa lo que
+interpola**, y su propio ejemplo de búsqueda emite `search.terms` sin escapar en un atributo. No se
+puede saber cuál de las dos cosas significa eso.
+
+**Regla aplicada: un control de seguridad no se apoya en un comportamiento de plataforma sin
+verificar.** Se escapa explícitamente, antes de interpolar. Si Shopify además escapa, el único
+efecto es que alguien que busque literalmente `<b>` vea `&lt;b&gt;`: un defecto cosmético en un caso
+extremo, frente a un XSS reflejado si no se escapa. Para un término normal —letras, números,
+acentos— `escape` no cambia nada.
+
+### 15.3 Texto del comerciante en atributos
+
+Tres sitios emitían texto libre del comerciante dentro de un atributo sin escapar: `shop.name` en
+un `aria-label` y en un `og:site_name`, y un ajuste de sección en un `class`. Gravedad menor —hace
+falta acceso al admin—, pero una comilla en el nombre de la tienda rompe el atributo igual.
+Escapados.
+
+### 15.4 Un `style` interpolado, cambiado por un conjunto cerrado de clases
+
+```liquid
+style="--ne-grid-cols: {{ section.settings.columns }}"
+```
+
+El ajuste es de tipo `range`, así que Shopify lo acota a un entero y **hoy no es explotable**. Pero
+la forma es mala por una razón concreta: **`escape` no impediría una inyección de CSS**, así que
+escaparlo no arreglaría nada, y el día que alguien cambie ese ajuste a `text` el agujero aparece sin
+que nada avise.
+
+Sustituido por una clase de un conjunto cerrado (`ne-product-grid--cols-2|3|4`). Un valor fuera de
+rango no coincide con ninguna regla y la rejilla cae al valor por defecto: **no hay nada que
+inyectar, porque no hay nada que interpretar.**
+
+### 15.5 Por qué NO se comprueba «todo `{{ }}` debe llevar escape»
+
+Se midió: el theme tiene **86 interpolaciones dentro de atributos**, y 63 no llevan filtro de
+escape. Exigirlo a todas daría 62 avisos de ruido —URLs que genera Shopify, ids de sección, enums,
+números— por cada hallazgo real. **Una comprobación con ese ruido se desactiva a la semana.**
+
+Así que se comprueba lo que de verdad puede contener una comilla: una lista explícita de fuentes de
+**texto que escribe una persona** (`search.terms`, `request.path`, `shop.*`, `*.settings.*`,
+`*.title`, `*.alt`, `*.label`, `*.vendor`, `*.description`…). De 86 interpolaciones, señaló 4. Las
+4 eran reales.
+
+### 15.6 Las seis comprobaciones, validadas inyectando la vulnerabilidad
+
+| Vulnerabilidad inyectada | Detectada |
+| --- | --- |
+| XSS reflejado por el término de búsqueda | sí |
+| Texto del comerciante sin escapar en un atributo | sí |
+| Interpolación cruda dentro de un bloque JSON | sí |
+| `<script>` de un tercero (`cdn.jsdelivr.net`) | sí |
+| `target="_blank"` sin `rel="noopener"` | sí |
+| Una credencial asignada, incluso dentro de un comentario de Liquid | sí |
+
+Sobre la última: un secreto dentro de un comentario de Liquid **sí** se elimina del lado del
+servidor, así que el mensaje no afirma que se sirva al navegador. Lo que afirma es que está
+versionado y en el historial, que es motivo suficiente para sacarlo y rotarlo. La búsqueda es por
+**forma** —el prefijo de un token de Shopify, una clave privada, una asignación con un valor largo—
+y no por palabras: buscar «token» daría un falso positivo en cada comentario que explique por qué
+no hay tokens.
+
+### 15.7 Lo que queda fuera del alcance del theme
+
+| No se comprueba | Por qué |
+| --- | --- |
+| CSP con nonce | Shopify no permite cabeceras propias en el Online Store. Era la única ventaja de seguridad verificada de headless, y no es requisito: la superficie que protegería no vive en nuestro código. |
+| Validación de pago y PII | las tiene Shopify. El theme no las ve. |
+| Rotación de credenciales de app | no hay app todavía. |
+| Liquid personalizado del comerciante | es un requisito de la tienda de themes y solo lo usa quien ya tiene acceso al admin. Se informa en cada ejecución para que esté a la vista, no se trata como hallazgo. |

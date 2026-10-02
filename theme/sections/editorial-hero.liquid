@@ -18,7 +18,7 @@
 -%}
 
 <section
-  class="ne-hero ne-section--vast{% if section.settings.inverse %} ne-inverse{% endif %} ne-hero--{{ section.settings.alignment }}"
+  class="ne-hero ne-section--vast{% if section.settings.inverse %} ne-inverse{% endif %} ne-hero--{{ section.settings.alignment | escape }}"
   aria-labelledby="ne-hero-heading-{{ section.id }}"
 >
   <div class="ne-shell">

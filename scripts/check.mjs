@@ -534,6 +534,34 @@ await check('presupuestos de rendimiento', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// 17 · Seguridad del theme.
+//
+//      La superficie real es corta, porque Shopify es dueño de la
+//      autenticación, del pago y de los datos personales. Lo que este theme sí
+//      puede hacer mal: emitir texto de otro sin escapar —y LIQUID NO ESCAPA
+//      POR DEFECTO—, romper un bloque JSON, traer código de un tercero, abrir
+//      una ventana sin aislar, o filtrar un secreto en un archivo público.
+//
+//      Encontró un XSS reflejado real: el término de búsqueda, que viene de un
+//      parámetro de URL, se interpolaba sin escapar en una cadena traducida.
+// ---------------------------------------------------------------------------
+await check('seguridad del theme', async () => {
+  try {
+    const { stdout } = await run('node', ['scripts/check-security.mjs'], { cwd: ROOT, maxBuffer: 1024 * 1024 * 10 });
+    if (!QUIET) {
+      const line = /(\d+)\/(\d+) comprobaciones de seguridad pasan/.exec(stdout);
+      if (line) console.log(`  ${line[0]}`);
+    }
+    return [];
+  } catch (error) {
+    const out = `${/** @type {any} */ (error).stdout ?? ''}${/** @type {any} */ (error).stderr ?? ''}`;
+    const fails = out.split('\n').filter((l) => l.startsWith('FALLA')).map((l) => l.replace(/^FALLA\s+/, ''));
+    const detail = out.split('\n').filter((l) => /^\s{7}theme/.test(l)).slice(0, 6).map((l) => l.trim());
+    return fails.length > 0 ? [...fails, ...detail] : ['el runner de seguridad salió con error'];
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);

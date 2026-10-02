@@ -18,7 +18,7 @@
     {%- if search.performed -%}
       {%- if search.results.size > 0 -%}
         {%- paginate search.results by 24 -%}
-          <ul class="ne-grid ne-product-grid" style="--ne-grid-cols: 3">
+          <ul class="ne-grid ne-product-grid ne-product-grid--cols-3">
             {%- for item in search.results -%}
               {%- if item.object_type == 'product' -%}
                 <li class="ne-product-grid__cell">
@@ -29,7 +29,15 @@
           </ul>
         {%- endpaginate -%}
       {%- else -%}
-        <p class="ne-notice">{{ 'general.search.no_results' | t: terms: search.terms }}</p>
+        {%- comment -%}
+          `search.terms` viene de un parámetro de URL: lo controla cualquiera
+          que consiga que alguien abra un enlace. Se escapa ANTES de
+          interpolarlo, porque la documentación no dice si el filtro `t` escapa
+          sus interpolaciones, y un control de seguridad no se apoya en un
+          comportamiento sin verificar.
+        {%- endcomment -%}
+        {%- assign safe_terms = search.terms | escape -%}
+        <p class="ne-notice">{{ 'general.search.no_results' | t: terms: safe_terms }}</p>
       {%- endif -%}
     {%- endif -%}
   </div>

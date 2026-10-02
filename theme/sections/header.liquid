@@ -15,7 +15,7 @@
 {%- endcomment -%}
 <header class="ne-header" data-ne-header data-ne-section-id="{{ section.id }}">
   <div class="ne-shell ne-header__inner">
-    <a class="ne-header__brand" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+    <a class="ne-header__brand" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }}">
       {%- if settings.logo != blank -%}
         {{
           settings.logo
