@@ -1,0 +1,111 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DEL CARRITO.
+
+  Reproduce el marcado de `sections/main-cart.liquid` para poder ejercitar el
+  componente en un navegador real. Datos ficticios y etiquetados: el producto se
+  llama «BANCO DE PRUEBAS» y los precios son cadenas inventadas.
+
+  DOS LÍNEAS, y las dos del mismo producto en tallas distintas. Es el caso que
+  importa: si las etiquetas de cantidad comparten `id` —el fallo que tenía la
+  sección, por usar una propiedad de Liquid que no existe— un lector de pantalla
+  anuncia la cantidad equivocada y pulsar la etiqueta de la segunda línea enfoca
+  la primera.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <link rel="icon" href="data:,">
+    <title>Banco de pruebas · carrito</title>
+    <link rel="stylesheet" href="/theme/assets/ne-tokens.css">
+    <link rel="stylesheet" href="/theme/assets/ne-base.css">
+    <link rel="stylesheet" href="/theme/assets/ne-components.css">
+  </head>
+  <body>
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <a href="/cart"><span>Carrito</span>
+          <span data-ne-cart-count aria-hidden="true">3</span>
+          <span class="ne-visually-hidden" data-ne-cart-count-label>3 artículos</span>
+        </a>
+      </header>
+    </div>
+
+    <div id="shopify-section-banco-cart">
+      <ne-cart class="ne-section" data-ne-cart data-ne-section-id="banco-cart">
+        <section aria-labelledby="ne-cart-title">
+          <div class="ne-shell">
+            <h1 class="ne-display" id="ne-cart-title">Carrito</h1>
+            <p class="ne-visually-hidden" data-ne-cart-status role="status" aria-live="polite"></p>
+            <p class="ne-notice ne-notice--alert" data-ne-cart-error hidden role="alert"></p>
+
+            <form action="/cart" method="post" novalidate class="ne-cart__form">
+              <ul class="ne-cart__list" data-ne-cart-lines>
+                <li class="ne-cart__line" data-ne-cart-line data-ne-line-key="4001:aaaaaaaa">
+                  <div class="ne-cart__info">
+                    <a class="ne-cart__title" href="/products/banco">BANCO DE PRUEBAS</a>
+                    <p class="ne-caption ne-soft">Negro / 40</p>
+                  </div>
+                  <div class="ne-cart__controls">
+                    <label class="ne-visually-hidden" for="ne-cart-qty-banco-cart-1">Cantidad · BANCO DE PRUEBAS</label>
+                    <input class="ne-cart__qty" id="ne-cart-qty-banco-cart-1" type="number" name="updates[]" value="1" min="0" step="1" inputmode="numeric" data-ne-line-qty>
+                    <p class="ne-cart__price">$100.000</p>
+                    <a class="ne-button--text" href="/cart/change?line=1&amp;quantity=0" data-ne-line-remove>Quitar<span class="ne-visually-hidden"> · BANCO DE PRUEBAS</span></a>
+                  </div>
+                </li>
+                <li class="ne-cart__line" data-ne-cart-line data-ne-line-key="4005:bbbbbbbb">
+                  <div class="ne-cart__info">
+                    <a class="ne-cart__title" href="/products/banco">BANCO DE PRUEBAS</a>
+                    <p class="ne-caption ne-soft">Cuero / 42</p>
+                  </div>
+                  <div class="ne-cart__controls">
+                    <label class="ne-visually-hidden" for="ne-cart-qty-banco-cart-2">Cantidad · BANCO DE PRUEBAS</label>
+                    <input class="ne-cart__qty" id="ne-cart-qty-banco-cart-2" type="number" name="updates[]" value="2" min="0" step="1" inputmode="numeric" data-ne-line-qty>
+                    <p class="ne-cart__price">$260.000</p>
+                    <a class="ne-button--text" href="/cart/change?line=2&amp;quantity=0" data-ne-line-remove>Quitar<span class="ne-visually-hidden"> · BANCO DE PRUEBAS</span></a>
+                  </div>
+                </li>
+              </ul>
+
+              <footer class="ne-cart__foot">
+                <button class="ne-button ne-button--quiet" type="submit" name="update">Carrito</button>
+                <div class="ne-cart__totals">
+                  <p class="ne-cart__subtotal"><span class="ne-caption">Subtotal</span><strong data-ne-cart-subtotal>$360.000</strong></p>
+                </div>
+                <button class="ne-button ne-button--accent" type="submit" name="checkout">Finalizar compra</button>
+              </footer>
+            </form>
+          </div>
+        </section>
+      </ne-cart>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "ne/semantics": "/theme/assets/ne-shopify-semantics.js",
+          "ne/variant-matrix": "/theme/assets/ne-variant-matrix.js",
+          "ne/size-advisor": "/theme/assets/ne-size-advisor.js",
+          "ne/cart-line": "/theme/assets/ne-cart-line.js",
+          "ne/size-selected-event": "/theme/assets/ne-size-selected-event.js",
+          "ne/cod-guard": "/theme/assets/ne-cod-guard.js",
+          "ne/responsive-image": "/theme/assets/ne-responsive-image.js",
+          "ne/a11y-contrast": "/theme/assets/ne-a11y-contrast.js",
+          "ne/product-contract": "/theme/assets/ne-product-contract.js",
+          "ne/shopify-adapter": "/theme/assets/ne-shopify-adapter.js",
+          "ne/product-jsonld": "/theme/assets/ne-product-jsonld.js",
+          "ne/analytics-taxonomy": "/theme/assets/ne-analytics-taxonomy.js"
+        }
+      }
+    </script>
+
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+
+    <!-- Lo rellena el runner con los textos reales. Ver product-harness.html. -->
+    <script type="application/json" id="ne-strings">{ "cart_updated": "Carrito actualizado", "cart_updating": "Actualizando", "error_cart_update": "No pudimos actualizar el carrito.", "error_network": "Se perdió la conexión." }</script>
+
+    <script src="/theme/assets/ne-components.js" type="module"></script>
+  </body>
+</html>

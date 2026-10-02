@@ -248,3 +248,71 @@
   .ne-pdp__price { display: grid; gap: var(--ne-space-3xs); }
   .ne-pdp__price .ne-price__current { font-size: var(--ne-size-lead); font-variant-numeric: tabular-nums; }
   .ne-pdp__description { padding-top: var(--ne-space-xs); border-top: var(--ne-hairline) solid var(--ne-rule); }
+
+/* === Carrito (sección) ========================================= */
+  .ne-cart__list { display: grid; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+
+  .ne-cart__line {
+    display: grid;
+    grid-template-columns: 5rem 1fr;
+    gap: var(--ne-space-s);
+    padding-bottom: var(--ne-space-m);
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+
+  @media (min-width: 48em) {
+    .ne-cart__line { grid-template-columns: 6rem 1fr auto; align-items: start; }
+  }
+
+  .ne-cart__media { display: block; }
+  .ne-cart__info { display: grid; gap: var(--ne-space-3xs); align-content: start; }
+  .ne-cart__title { color: inherit; text-decoration: none; font-family: var(--ne-font-display); }
+  .ne-cart__props { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--ne-space-2xs); }
+  .ne-cart__props dd { margin: 0; }
+
+  .ne-cart__controls {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--ne-space-s);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__controls { grid-column: auto; flex-direction: column; align-items: end; }
+  }
+
+  .ne-cart__qty {
+    width: 4rem;
+    min-height: var(--ne-touch);
+    padding: var(--ne-space-2xs);
+    border: var(--ne-hairline) solid var(--ne-border);
+    background: var(--ne-paper);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ne-cart__price { font-variant-numeric: tabular-nums; }
+
+  .ne-cart__foot {
+    display: grid;
+    gap: var(--ne-space-m);
+    margin-top: var(--ne-space-xl);
+  }
+  @media (min-width: 48em) {
+    .ne-cart__foot { grid-template-columns: auto 1fr auto; align-items: center; }
+  }
+
+  .ne-cart__totals { display: grid; gap: var(--ne-space-3xs); justify-items: end; }
+  .ne-cart__subtotal { display: flex; gap: var(--ne-space-2xs); align-items: baseline; font-variant-numeric: tabular-nums; }
+
+/* === Carrito ============================================================== */
+
+/* Mientras una actualización está en vuelo, el carrito queda inerte: dos
+   cambios simultáneos sobre el mismo carrito se pisarían, y el segundo
+   repintaría un estado ya caducado. */
+ne-cart[data-ne-busy] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Sin `transition` en la opacidad a propósito: el parpadeo tiene que ser
+   inmediato para que se lea como «estoy trabajando», no como una animación. */

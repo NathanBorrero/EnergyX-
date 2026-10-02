@@ -932,6 +932,140 @@ class NeProductGallery extends HTMLElement {
 define('ne-product-gallery', NeProductGallery);
 
 // ---------------------------------------------------------------------------
+// <ne-cart>
+// ---------------------------------------------------------------------------
+
+/**
+ * Carrito: cambiar cantidad y quitar líneas sin recargar.
+ *
+ * NO ES EL MECANISMO. El mecanismo es el `<form>` que postea a la ruta de
+ * carrito con sus `updates[]`, y el enlace nativo de quitar. Los dos funcionan
+ * con este archivo ausente. Esto evita la recarga, que en un carrito con
+ * fotografías se nota.
+ *
+ * TODO LO COMERCIAL LO CALCULA SHOPIFY. No se suma ningún total aquí: se pide a
+ * la API de carrito que repinte las secciones y se sustituye el HTML que
+ * devuelve. Un subtotal calculado en el navegador acaba discrepando del que
+ * cobra el checkout —impuestos, descuentos automáticos, envío— y ese es el peor
+ * error posible en una tienda.
+ *
+ * La línea se identifica por su `key`, no por su posición. `key` es estable
+ * aunque las líneas se reordenen; un índice no.
+ */
+class NeCart extends HTMLElement {
+  connectedCallback() {
+    if (this.dataset.neMounted === 'true') return;
+    try {
+      this.#mount();
+      this.dataset.neMounted = 'true';
+    } catch (error) {
+      report('cart', 'mount', error);
+      // Sin mejora, el formulario nativo sigue siendo el carrito.
+    }
+  }
+
+  #mount() {
+    if (!ROUTES.cart_change) return; // Sin ruta de Shopify no se inventa una.
+
+    this.status = this.querySelector('[data-ne-cart-status]');
+    this.failure = this.querySelector('[data-ne-cart-error]');
+    this.busy = false;
+
+    // Delegación: una sola escucha para todas las líneas, así no hay que
+    // reenganchar nada cuando el HTML de la sección se sustituye.
+    this.addEventListener('change', (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || !input.hasAttribute('data-ne-line-qty')) return;
+      const key = input.closest('[data-ne-line-key]')?.dataset?.neLineKey;
+      const quantity = Number.parseInt(input.value, 10);
+      if (!key || !Number.isFinite(quantity) || quantity < 0) return;
+      event.preventDefault();
+      this.#change(key, quantity);
+    });
+
+    this.addEventListener('click', (event) => {
+      const link = event.target instanceof Element ? event.target.closest('[data-ne-line-remove]') : null;
+      if (!link) return;
+      const key = link.closest('[data-ne-line-key]')?.dataset?.neLineKey;
+      if (!key) return;
+      // Quitar es poner la cantidad a cero: la misma operación de la API, sin
+      // recargar. Si algo falla, el `href` nativo sigue ahí para reintentarlo.
+      event.preventDefault();
+      this.#change(key, 0);
+    });
+
+    this.dataset.neEnhanced = 'true';
+  }
+
+  /**
+   * @param {string} key   Identificador estable de la línea.
+   * @param {number} quantity 0 quita la línea.
+   */
+  async #change(key, quantity) {
+    if (this.busy) return;
+    this.busy = true;
+    this.dataset.neBusy = 'true';
+    if (this.status) this.status.textContent = text('cart_updating');
+    if (this.failure) this.failure.hidden = true;
+
+    // Se repintan las dos secciones que el cambio afecta: el carrito y la
+    // cabecera, que lleva el contador. Los ids los declara el marcado; no se
+    // adivinan, porque una sección dentro de un grupo no se llama como su
+    // archivo.
+    const sections = [
+      this.dataset.neSectionId,
+      document.querySelector('[data-ne-header]')?.dataset?.neSectionId,
+    ].filter(Boolean);
+
+    try {
+      const response = await fetch(ROUTES.cart_change, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          id: key,
+          quantity,
+          sections,
+          sections_url: globalThis.location.pathname,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          (payload && typeof payload.description === 'string' && payload.description) ||
+          (payload && typeof payload.message === 'string' && payload.message) ||
+          text('error_cart_update');
+        throw new Error(message);
+      }
+
+      if (this.status) this.status.textContent = text('cart_updated');
+      document.dispatchEvent(new CustomEvent(EVENT.CART_UPDATED, { detail: { payload } }));
+
+      // Sustituir las secciones destruye y recrea este elemento, así que esto
+      // va al final: después ya no hay `this` que mantener.
+      applyRenderedSections(payload?.sections);
+    } catch (caught) {
+      report('cart', 'change', caught);
+      if (this.failure) {
+        const offline = caught instanceof TypeError || globalThis.navigator?.onLine === false;
+        this.failure.textContent = offline
+          ? text('error_network')
+          : caught instanceof Error && caught.message
+            ? caught.message
+            : text('error_cart_update');
+        this.failure.hidden = false;
+      }
+      if (this.status) this.status.textContent = '';
+    } finally {
+      this.busy = false;
+      delete this.dataset.neBusy;
+    }
+  }
+}
+
+define('ne-cart', NeCart);
+
+// ---------------------------------------------------------------------------
 // Formulario de compra
 // ---------------------------------------------------------------------------
 

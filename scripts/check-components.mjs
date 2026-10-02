@@ -137,7 +137,7 @@ const server = createServer(async (req, res) => {
       return;
     }
     let body = await readFile(target);
-    if (target.endsWith('product-harness.html')) {
+    if (target.endsWith('-harness.html')) {
       // Se sustituye el bloque de textos del banco por el resuelto de los
       // archivos de idioma reales.
       body = Buffer.from(
@@ -159,6 +159,7 @@ const server = createServer(async (req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
 const HARNESS = `http://127.0.0.1:${port}/scripts/fixtures/product-harness.html`;
+const CART_HARNESS = `http://127.0.0.1:${port}/scripts/fixtures/cart-harness.html`;
 
 const browser = await chromium.launch({ executablePath: process.env.NE_CHROMIUM ?? '/opt/pw-browsers/chromium' });
 
@@ -637,6 +638,135 @@ await check('la ficha se compra con JavaScript desactivado', async () => {
 
   const guideOpens = await page.locator('.ne-sizeguide__details').isVisible();
   if (!guideOpens) problems.push('la guía de tallas usa <details>: debe seguir abriéndose sin JavaScript');
+
+  await context.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 9 · El carrito: una sola fuente de totales, y sin recargar.
+// ---------------------------------------------------------------------------
+await check('el carrito actualiza por la API de Shopify, no recalculando', async () => {
+  const problems = [];
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`${CART_HARNESS}`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+
+  // Las etiquetas de cantidad tienen que apuntar cada una a SU campo. Es el
+  // fallo que tenía la sección: `line.index` no existe en Liquid, así que todas
+  // las líneas recibían el mismo id y todas las etiquetas enfocaban la primera.
+  const labels = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.ne-cart__line')).map((li) => {
+      const label = li.querySelector('label');
+      const input = li.querySelector('[data-ne-line-qty]');
+      return { for: label?.getAttribute('for'), id: input?.id, apunta: label?.control === input };
+    }),
+  );
+  const ids = new Set(labels.map((l) => l.id));
+  if (ids.size !== labels.length) {
+    problems.push(`los campos de cantidad comparten id: ${[...ids].join(', ')}`);
+  }
+  for (const l of labels) {
+    if (!l.apunta) problems.push(`la etiqueta "${l.for}" no apunta a su propio campo (${l.id})`);
+  }
+
+  const enhanced = await page.locator('[data-ne-cart]').getAttribute('data-ne-enhanced');
+  if (enhanced !== 'true') problems.push('el carrito no se marcó como mejorado');
+
+  // Se intercepta la API de carrito y se devuelve una cabecera y un carrito
+  // RENDERIZADOS POR SHOPIFY, que es de donde salen los totales.
+  const calls = [];
+  await page.route('**/cart/change', async (route) => {
+    calls.push(JSON.parse(route.request().postData() ?? '{}'));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        item_count: 1,
+        sections: {
+          'banco-cart': '<div id="shopify-section-banco-cart"><ne-cart class="ne-section" data-ne-cart data-ne-section-id="banco-cart"><p class="ne-visually-hidden" data-ne-cart-status role="status"></p><strong data-ne-cart-subtotal>$260.000</strong></ne-cart></div>',
+          'sections--banco__header':
+            '<div id="shopify-section-sections--banco__header"><header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header"><span data-ne-cart-count>2</span></header></div>',
+        },
+      }),
+    });
+  });
+
+  await page.evaluate(() => {
+    globalThis.__neAlive = true;
+  });
+
+  // Quitar la primera línea: es el enlace nativo, interceptado.
+  await page.locator('[data-ne-cart-line] [data-ne-line-remove]').first().click();
+  await page.waitForTimeout(400);
+
+  if (!(await page.evaluate(() => globalThis.__neAlive === true))) {
+    problems.push('el documento se recargó: la intercepción no funcionó');
+  }
+
+  if (calls.length !== 1) {
+    problems.push(`debe hacerse una petición; se hicieron ${calls.length}`);
+  } else {
+    const body = calls[0];
+    // Por `key`, no por posición: la posición cambia si las líneas se reordenan.
+    if (body.id !== '4001:aaaaaaaa') problems.push(`la línea se identificó como "${body.id}"`);
+    if (body.quantity !== 0) problems.push(`quitar es cantidad 0; se envió ${body.quantity}`);
+    if (!Array.isArray(body.sections) || body.sections.length !== 2) {
+      problems.push(`deben pedirse las dos secciones afectadas; se pidieron ${JSON.stringify(body.sections)}`);
+    }
+    if (!body.sections_url?.startsWith('/')) {
+      problems.push(`sections_url debe empezar por «/»; es "${body.sections_url}"`);
+    }
+  }
+
+  // Los totales vienen de Shopify: se sustituye el HTML, no se recalcula.
+  const after = await page.evaluate(() => ({
+    subtotal: document.querySelector('[data-ne-cart-subtotal]')?.textContent?.trim() ?? null,
+    contador: document.querySelector('[data-ne-cart-count]')?.textContent?.trim() ?? null,
+  }));
+  if (after.subtotal !== '$260.000') problems.push(`el subtotal debe venir de Shopify; es "${after.subtotal}"`);
+  if (after.contador !== '2') problems.push(`el contador debe venir de Shopify; es "${after.contador}"`);
+
+  // El componente se recrea al sustituir su sección, y vuelve a montar.
+  const remounted = await page.locator('[data-ne-cart]').getAttribute('data-ne-enhanced');
+  if (remounted !== 'true') problems.push('tras repintar la sección el carrito no volvió a montarse');
+
+  if (errors.length > 0) problems.push(`errores en consola: ${errors.join(' | ')}`);
+  await page.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 10 · El carrito se usa sin JavaScript.
+// ---------------------------------------------------------------------------
+await check('el carrito funciona con JavaScript desactivado', async () => {
+  const problems = [];
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto(CART_HARNESS, { waitUntil: 'load' });
+
+  if ((await page.locator('[data-ne-cart]').getAttribute('data-ne-enhanced')) !== null) {
+    problems.push('el contexto no tenía JavaScript desactivado: la comprobación no vale');
+  }
+
+  const action = await page.locator('form.ne-cart__form').getAttribute('action');
+  if (action !== '/cart') problems.push(`el formulario debe postear al carrito; postea a "${action}"`);
+
+  const updates = await page.locator('[name="updates[]"]').count();
+  if (updates !== 2) problems.push(`deben haber dos campos updates[]; hay ${updates}`);
+
+  const removeHref = await page.locator('[data-ne-line-remove]').first().getAttribute('href');
+  if (!removeHref?.includes('/cart/change')) {
+    problems.push(`quitar debe ser un enlace nativo de Shopify; es "${removeHref}"`);
+  }
+
+  for (const name of ['update', 'checkout']) {
+    if (!(await page.locator(`button[name="${name}"]`).isEnabled())) {
+      problems.push(`el botón "${name}" debe estar activo sin JavaScript`);
+    }
+  }
 
   await context.close();
   return problems;

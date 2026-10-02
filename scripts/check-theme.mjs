@@ -81,7 +81,25 @@ const liquidFiles = await walk(THEME, /\.liquid$/);
 const jsonFiles = await walk(THEME, /\.json$/);
 const liquidSource = new Map();
 for (const f of liquidFiles) liquidSource.set(f, await readFile(f, 'utf8'));
-const allLiquid = [...liquidSource.values()].join('\n');
+
+/**
+ * Quita los comentarios de Liquid.
+ *
+ * Imprescindible y no cosmético: los comentarios de este theme EXPLICAN las
+ * trampas que el código evita —«`forloop.index`, NO `line.index`»— y escanear
+ * el archivo entero convierte esas explicaciones en falsos positivos. Ya pasó
+ * tres veces: con `content_for_header`, con los ganchos del script y con esta.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+function withoutComments(source) {
+  return source.replace(/\{%-?\s*comment\s*-?%\}[\s\S]*?\{%-?\s*endcomment\s*-?%\}/g, '');
+}
+
+/** Igual que `liquidSource`, sin comentarios. Es lo que se escanea. */
+const liquidCode = new Map([...liquidSource].map(([f, src]) => [f, withoutComments(src)]));
+const allLiquid = [...liquidCode.values()].join('\n');
 const js = await readFile(COMPONENTS, 'utf8');
 const layout = await readFile(LAYOUT, 'utf8');
 
@@ -116,6 +134,7 @@ function datasetToAttribute(camel) {
 const HOOKS_CSS_ONLY = new Set([
   'data-ne-state', // tres estados del selector, pintado por el script, estilado por CSS
   'data-ne-loading', // estado de botón, pintado por el script
+  'data-ne-busy', // actualización de carrito en vuelo, pintado por el script
   'data-ne-enhanced', // el script declara que tomó el mando; lo lee el CSS
   'data-ne-mounted', // guardia de montaje, solo del script
   'data-ne-media-type', // lo pinta Liquid para el CSS, el script no lo necesita
@@ -288,7 +307,7 @@ await check('snippets renderizados existen', async () => {
   const present = new Set(
     (await readdir(path.join(THEME, 'snippets'))).map((f) => f.replace(/\.liquid$/, '')),
   );
-  for (const [file, source] of liquidSource) {
+  for (const [file, source] of liquidCode) {
     for (const m of source.matchAll(/\{%-?\s*render\s+'([A-Za-z0-9._-]+)'/g)) {
       if (!present.has(m[1])) {
         problems.push(`${rel(file)} renderiza el snippet '${m[1]}', que no existe`);
@@ -316,6 +335,36 @@ await check('secciones de plantillas y grupos existen', async () => {
       if (type.startsWith('@')) continue; // bloques de app
       if (!present.has(type)) {
         problems.push(`${name}: la sección '${id}' es de tipo '${type}', que no existe en theme/sections`);
+      }
+    }
+  }
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6bis. `.index` sobre la variable de un bucle: la propiedad no existe.
+//
+//   Pasó de verdad en el carrito: `line.index` NO es una propiedad del objeto
+//   `line_item`. Liquid devuelve nil ante una propiedad inexistente, y
+//   `nil | plus: 1` es 1, así que TODAS las líneas del carrito recibieron el id
+//   `ne-cart-qty-1`: ids duplicados y etiquetas que enfocaban todas el primer
+//   campo. Theme Check no lo ve porque no sigue las propiedades de los objetos.
+//
+//   El contador del bucle en Liquid es `forloop.index`, siempre.
+// ---------------------------------------------------------------------------
+await check('ninguna variable de bucle usa .index', () => {
+  const problems = [];
+  for (const [file, source] of liquidCode) {
+    // Variables de bucle declaradas en este archivo.
+    const loopVars = new Set(
+      [...source.matchAll(/\{%-?\s*for\s+([A-Za-z_][\w]*)\s+in\s/g)].map((m) => m[1]),
+    );
+    for (const v of loopVars) {
+      const bad = new RegExp(`\\b${v}\\.index\\b`);
+      if (bad.test(source)) {
+        problems.push(
+          `${rel(file)}: usa \`${v}.index\`, que no existe en los objetos de Liquid; el contador es \`forloop.index\``,
+        );
       }
     }
   }

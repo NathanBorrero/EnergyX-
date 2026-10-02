@@ -348,3 +348,94 @@ N/E  theme check de Shopify
 
 Decir que pasó algo que no se ejecutó es el éxito falso que §183 prohíbe. Para ejecutarlas se
 definen `NE_SHOPIFY_CLI` y `NE_PLAYWRIGHT` con la ruta de cada herramienta.
+
+---
+
+## 11. Carrito — verificado, y el límite de Shopify que no se pudo cruzar
+
+### 11.1 `line.index` no existe — todas las líneas compartían el mismo `id`
+
+Verificado contra la documentación de Liquid: el objeto `line_item` **no documenta `index`**, y el
+patrón oficial del template de carrito recorre `cart.items` con `forloop`.
+
+Liquid devuelve `nil` ante una propiedad inexistente, y `nil | plus: 1` es **1**. Así que:
+
+```liquid
+{{ line.index | plus: 1 }}   <!-- 1, 1, 1, 1... en TODAS las líneas -->
+```
+
+Las etiquetas de cantidad de todas las líneas apuntaban al **primer** campo. Un lector de pantalla
+anuncia la cantidad equivocada, y pulsar la etiqueta de la tercera línea enfoca la primera.
+
+Theme Check no lo ve: no sigue las propiedades de los objetos de Liquid. Corregido con
+`forloop.index`, y añadida la comprobación `ninguna variable de bucle usa .index`, que prohíbe el
+patrón entero. Verificada reinyectando el fallo: detectado.
+
+La línea se identifica además por `line.key` —que sí está documentado— en lugar de por su posición:
+`key` es estable aunque las líneas se reordenen.
+
+### 11.2 El carrito actualiza por la API de Shopify, no recalculando
+
+Verificado en navegador: cambiar cantidad o quitar una línea manda una petición a la ruta de
+carrito con `id` (la `key`), `quantity`, `sections` y `sections_url`, y **sustituye el HTML que
+Shopify devuelve**.
+
+No se suma ningún total en el navegador. Un subtotal calculado en cliente acaba discrepando del que
+cobra el checkout —impuestos, descuentos automáticos, envío—, y la prueba verifica justamente que el
+subtotal y el contador que aparecen son los que vinieron renderizados por Shopify.
+
+Confirmado en la documentación de la Cart API: `sections` acepta lista o array, y `sections_url`
+**debe empezar por `/`**. La comprobación lo verifica.
+
+### 11.3 Tres veces el mismo falso positivo, y la lección
+
+Las comprobaciones escaneaban el archivo entero, comentarios incluidos. Pero los comentarios de este
+theme **explican las trampas que el código evita**, así que la explicación se contaba como el
+defecto:
+
+| Comprobación | Qué contaba mal |
+| --- | --- |
+| elegibilidad de streaming | el comentario que explica las reglas del streaming |
+| ganchos del script | el comentario que explica la trampa de `data-ne-3d-mode` |
+| variable de bucle `.index` | el comentario que explica por qué no se usa `line.index` |
+
+Resuelto de una vez: hay una función `withoutComments` y **todas** las extracciones trabajan sobre
+el código sin comentarios, tanto en Liquid como en JavaScript. Documentar una trampa no puede
+contar como caer en ella.
+
+### 11.4 `git checkout` sobre un archivo con cambios sin commitear
+
+Al restaurar una inyección de prueba usé `git checkout` sobre `main-cart.liquid`, que tenía cambios
+**sin commitear**: se perdieron todos. Las comprobaciones lo detectaron en la siguiente ejecución
+—cinco ganchos que el script buscaba y ningún Liquid pintaba, más `<ne-cart>` definido y sin usar—,
+así que la pérdida duró una ejecución. Queda registrado porque §188 obliga a reportar lo que se
+rompe, no solo lo que se arregla.
+
+### 11.5 Subir el theme a Shopify — NO PUEDO HACERLO CON EL ACCESO/CAPACIDADES ACTUALES DE SHOPIFY
+
+La autorización existe y las mutaciones existen en el esquema (`themeCreate`, `themeDelete`,
+`themeFilesUpsert`, `themePublish`). Lo que falta es poder **comprobar el resultado**:
+
+| Host | Resultado |
+| --- | --- |
+| `magisik.store` | sin conexión |
+| `www.magisik.store` | sin conexión |
+| `cdn.shopify.com` | sin conexión |
+
+La política de red del entorno deniega esos hosts, así que una vez subido el theme **no podría
+cargar ni una página** para verificar que renderiza. Y `themeFilesDelete` está bloqueado por
+política de seguridad (ver §8), con lo que lo más probable es que `themeDelete` también lo esté.
+
+Subirlo dejaría unos sesenta archivos que quizá no se puedan borrar en una tienda que **no es** la
+de Nathan & Esteban, a cambio de saber solo que el validador de archivos los aceptó —que es
+aproximadamente lo que Theme Check ya verifica en local, con 0 infracciones sobre 44 archivos.
+
+**Decisión: no se sube.** Lo que sí se verificó sin tocar la tienda:
+
+- Theme Check oficial: 44 archivos, 0 infracciones.
+- 11 contratos entre marcado y script, validados inyectando 14 fallos.
+- 11 comprobaciones de comportamiento en Chromium, contra el CSS y los textos reales.
+
+Para desbloquearlo hay que permitir el dominio de la tienda en los ajustes de red del entorno, o
+desplegar por la integración de GitHub de Shopify una vez exista la tienda de Nathan & Esteban
+(`DISCOVERY.md`, integración de GitHub).

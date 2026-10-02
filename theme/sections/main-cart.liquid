@@ -6,15 +6,27 @@
   (§209). El botón de checkout lleva al checkout real de Shopify.
 {%- endcomment -%}
 
-<section class="ne-section" aria-labelledby="ne-cart-title">
+<ne-cart
+  class="ne-section"
+  data-ne-cart
+  data-ne-section-id="{{ section.id }}"
+>
+<section aria-labelledby="ne-cart-title">
   <div class="ne-shell">
     <h1 class="ne-display" id="ne-cart-title">{{ 'cart.general.title' | t }}</h1>
 
+    {%- comment -%}
+      Lo que el script anuncia al actualizar. `role="status"`, así que un lector
+      de pantalla lo lee sin robar el foco: el comprador se queda donde estaba.
+    {%- endcomment -%}
+    <p class="ne-visually-hidden" data-ne-cart-status role="status" aria-live="polite"></p>
+    <p class="ne-notice ne-notice--alert" data-ne-cart-error hidden role="alert"></p>
+
     {%- if cart.item_count > 0 -%}
       <form action="{{ routes.cart_url }}" method="post" novalidate class="ne-cart__form">
-        <ul class="ne-cart__list">
+        <ul class="ne-cart__list" data-ne-cart-lines>
           {%- for line in cart.items -%}
-            <li class="ne-cart__line">
+            <li class="ne-cart__line" data-ne-cart-line data-ne-line-key="{{ line.key }}">
               <a class="ne-cart__media" href="{{ line.url }}" tabindex="-1" aria-hidden="true">
                 {% render 'ne-image',
                   image: line.image,
@@ -50,21 +62,38 @@
               </div>
 
               <div class="ne-cart__controls">
-                <label class="ne-visually-hidden" for="ne-cart-qty-{{ line.index | plus: 1 }}">
-                  {{ 'products.product.quantity' | t }}
+                {%- comment -%}
+                  `forloop.index`, NO `line.index`: esa propiedad no existe en el
+                  objeto `line_item`, y Liquid devuelve nil ante una propiedad
+                  inexistente, así que `nil | plus: 1` daba 1 y TODAS las líneas
+                  acababan con el mismo id. Etiquetas duplicadas: un lector de
+                  pantalla anuncia la cantidad equivocada y pulsar la etiqueta de
+                  la tercera línea enfoca la primera.
+                {%- endcomment -%}
+                <label class="ne-visually-hidden" for="ne-cart-qty-{{ section.id }}-{{ forloop.index }}">
+                  {{ 'products.product.quantity' | t }} · {{ line.product.title }}
                 </label>
                 <input
                   class="ne-cart__qty"
-                  id="ne-cart-qty-{{ line.index | plus: 1 }}"
+                  id="ne-cart-qty-{{ section.id }}-{{ forloop.index }}"
                   type="number"
                   name="updates[]"
                   value="{{ line.quantity }}"
                   min="0"
                   step="1"
                   inputmode="numeric"
+                  data-ne-line-qty
                 >
                 <p class="ne-cart__price">{{ line.final_line_price | money }}</p>
-                <a class="ne-button--text" href="{{ line.url_to_remove }}">{{ 'cart.general.remove' | t }}</a>
+                {%- comment -%}
+                  Enlace nativo de Shopify, que funciona sin JavaScript. El
+                  script lo intercepta y manda una cantidad 0 por la API de
+                  carrito: la misma operación, sin recargar.
+                {%- endcomment -%}
+                <a class="ne-button--text" href="{{ line.url_to_remove }}" data-ne-line-remove>
+                  {{ 'cart.general.remove' | t }}
+                  <span class="ne-visually-hidden">· {{ line.product.title }}</span>
+                </a>
               </div>
             </li>
           {%- endfor -%}
@@ -94,62 +123,14 @@
     {%- endif -%}
   </div>
 </section>
+</ne-cart>
 
-{% stylesheet %}
-  .ne-cart__list { display: grid; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+{%- comment -%}
+  Los estilos de esta sección viven en `assets/ne-components.css`, con los de las
+  demás piezas: el banco de pruebas en navegador carga ese mismo archivo, así que
+  lo que la prueba verifica es el CSS real.
+{%- endcomment -%}
 
-  .ne-cart__line {
-    display: grid;
-    grid-template-columns: 5rem 1fr;
-    gap: var(--ne-space-s);
-    padding-bottom: var(--ne-space-m);
-    border-bottom: var(--ne-hairline) solid var(--ne-rule);
-  }
-
-  @media (min-width: 48em) {
-    .ne-cart__line { grid-template-columns: 6rem 1fr auto; align-items: start; }
-  }
-
-  .ne-cart__media { display: block; }
-  .ne-cart__info { display: grid; gap: var(--ne-space-3xs); align-content: start; }
-  .ne-cart__title { color: inherit; text-decoration: none; font-family: var(--ne-font-display); }
-  .ne-cart__props { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--ne-space-2xs); }
-  .ne-cart__props dd { margin: 0; }
-
-  .ne-cart__controls {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: var(--ne-space-s);
-  }
-  @media (min-width: 48em) {
-    .ne-cart__controls { grid-column: auto; flex-direction: column; align-items: end; }
-  }
-
-  .ne-cart__qty {
-    width: 4rem;
-    min-height: var(--ne-touch);
-    padding: var(--ne-space-2xs);
-    border: var(--ne-hairline) solid var(--ne-border);
-    background: var(--ne-paper);
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .ne-cart__price { font-variant-numeric: tabular-nums; }
-
-  .ne-cart__foot {
-    display: grid;
-    gap: var(--ne-space-m);
-    margin-top: var(--ne-space-xl);
-  }
-  @media (min-width: 48em) {
-    .ne-cart__foot { grid-template-columns: auto 1fr auto; align-items: center; }
-  }
-
-  .ne-cart__totals { display: grid; gap: var(--ne-space-3xs); justify-items: end; }
-  .ne-cart__subtotal { display: flex; gap: var(--ne-space-2xs); align-items: baseline; font-variant-numeric: tabular-nums; }
-{% endstylesheet %}
 
 {% schema %}
 { "name": "t:sections.main_cart.name", "tag": "section" }

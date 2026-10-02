@@ -103,7 +103,9 @@
       "item_count": {
         "one": "{{ count }} artículo",
         "other": "{{ count }} artículos"
-      }
+      },
+      "updated": "Carrito actualizado",
+      "updating": "Actualizando"
     }
   },
   "collections": {
@@ -125,6 +127,7 @@
   "errors": {
     "generic": "Algo no salió como esperábamos. Vuelve a intentarlo.",
     "add_to_cart": "No pudimos añadir este artículo. Vuelve a intentarlo en un momento.",
-    "network": "Parece que se perdió la conexión. Comprueba tu red y vuelve a intentarlo."
+    "network": "Parece que se perdió la conexión. Comprueba tu red y vuelve a intentarlo.",
+    "cart_update": "No pudimos actualizar el carrito. Vuelve a intentarlo."
   }
 }
