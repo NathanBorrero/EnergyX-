@@ -61,8 +61,16 @@ async function check(name, fn) {
  * comprobación falla aquí, la pregunta no es «subo el número», es «qué entró».
  */
 const BUDGET = Object.freeze({
-  /** El CSS que carga TODA página. Medido: 3 559 B. */
+  /**
+   * El CSS que carga TODA página. Medido: 3 571 B.
+   *
+   * BAJÓ al sacar las secciones editoriales de la portada —héroe, declaración,
+   * THE FOUNDATION, actividades— a su propio paquete. La ficha, el carrito y la
+   * colección pagaban 1,2 KB de secciones que no pintan nunca.
+   */
   cssFirstPaint: 4_200,
+  /** El CSS de la portada: héroe, declaración, THE FOUNDATION, actividades. */
+  cssHome: 2_200,
   /** El CSS extra de la ficha de producto. Medido: 1 423 B. */
   cssProduct: 1_800,
   /** El CSS extra del carrito. Medido: 802 B. */
@@ -109,10 +117,13 @@ await check('presupuesto de bytes del primer paint', async () => {
   const cssProduct = await gz('ne-product.css');
   const cssCart = await gz('ne-cart.css');
   const cssCollection = await gz('ne-collection.css');
+  const cssHome = await gz('ne-home.css');
   const js = await gz('ne-components.js');
 
   notes.push(`CSS de toda página: ${css} B comprimidos (presupuesto ${BUDGET.cssFirstPaint})`);
-  notes.push(`CSS extra de ficha: ${cssProduct} B · de carrito: ${cssCart} B · de colección: ${cssCollection} B`);
+  notes.push(
+    `CSS extra de ficha: ${cssProduct} B · carrito: ${cssCart} B · colección: ${cssCollection} B · portada: ${cssHome} B`,
+  );
   notes.push(`ne-components.js: ${js} B comprimidos (presupuesto ${BUDGET.componentsJs})`);
 
   if (css > BUDGET.cssFirstPaint) {
@@ -123,6 +134,9 @@ await check('presupuesto de bytes del primer paint', async () => {
   }
   if (cssCart > BUDGET.cssCart) {
     problems.push(`el CSS del carrito pesa ${cssCart} B comprimidos, por encima de ${BUDGET.cssCart}`);
+  }
+  if (cssHome > BUDGET.cssHome) {
+    problems.push(`el CSS de la portada pesa ${cssHome} B comprimidos, por encima de ${BUDGET.cssHome}`);
   }
   if (cssCollection > BUDGET.cssCollection) {
     problems.push(`el CSS de la colección pesa ${cssCollection} B comprimidos, por encima de ${BUDGET.cssCollection}`);

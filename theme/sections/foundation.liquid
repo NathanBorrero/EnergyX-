@@ -1,0 +1,155 @@
+{%- comment -%}
+  THE FOUNDATION — la suela y la construcción, como protagonistas.
+
+  POR QUÉ EXISTE
+
+  Lo que separa un zapato diseñado de un producto genérico no se ve en una foto
+  de catálogo: está en la construcción. Esta sección le da escenario propio a eso
+  —la suela, las capas, el método— en lugar de esconderlo en una ficha técnica
+  debajo del botón de comprar.
+
+  CÓMO ESTÁ COMPUESTA
+
+  · Superficie de tinta por defecto. Un fondo oscuro no es decoración: hace que
+    el objeto sea lo único que brilla en la página, que es exactamente el trabajo
+    de esta sección.
+  · Las capas se numeran de abajo arriba, como se construye un zapato. La
+    numeración dice algo verdadero sobre el contenido; si fuera una lista de
+    características sueltas, numerarlas sería decorar.
+  · Cifras en cifras tabulares, para que la columna quede recta como en un
+    pliego técnico.
+
+  LO QUE NO HACE, Y NO ES UN OLVIDO
+
+  · No trae texto. Ni el título, ni las capas, ni la foto. Todo sale de los
+    ajustes y, vacío, se marca como pendiente: el contenido de marca es del
+    propietario y no se inventa (§191).
+  · No lleva 3D. El modelo vive en la ficha, atado a los medios del producto,
+    que es donde Shopify lo da y donde el comprador lo pide. Un visor aquí sería
+    3D porque sí.
+{%- endcomment -%}
+
+{%- liquid
+  assign surface = 'ne-inverse'
+  unless section.settings.inverse
+    assign surface = ''
+  endunless
+-%}
+
+<section class="ne-foundation ne-section--vast {{ surface }}" aria-labelledby="ne-foundation-{{ section.id }}">
+  <div class="ne-shell">
+    <div class="ne-grid ne-foundation__grid">
+
+      <div class="ne-foundation__stage">
+        {%- if section.settings.image != blank -%}
+          {% render 'ne-image',
+            image: section.settings.image,
+            role: 'below_fold',
+            sizes: '(max-width: 47.99em) 100vw, 50vw',
+            widths: '480, 768, 960, 1280, 1600',
+            max: 1600,
+            ratio: '1 / 1',
+            class: 'ne-foundation__image',
+            alt: section.settings.image_alt
+          %}
+        {%- else -%}
+          <div class="ne-media-placeholder ne-foundation__image" style="--ne-media-ratio: 1 / 1" role="img" aria-label="{{ 'general.placeholder.image' | t }}">
+            <span class="ne-placeholder">{{ 'general.placeholder.image' | t }}</span>
+          </div>
+        {%- endif -%}
+      </div>
+
+      <div class="ne-foundation__copy">
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="ne-caption ne-foundation__eyebrow">{{ section.settings.eyebrow }}</p>
+        {%- else -%}
+          <p class="ne-caption ne-foundation__eyebrow"><span class="ne-placeholder">{{ 'general.placeholder.label' | t }}</span></p>
+        {%- endif -%}
+
+        <h2 class="ne-display ne-foundation__heading" id="ne-foundation-{{ section.id }}">
+          {%- if section.settings.heading != blank -%}
+            {{ section.settings.heading }}
+          {%- else -%}
+            <span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span>
+          {%- endif -%}
+        </h2>
+
+        {%- if section.settings.body != blank -%}
+          <p class="ne-lead ne-foundation__body">{{ section.settings.body }}</p>
+        {%- endif -%}
+
+        {%- if section.blocks.size > 0 -%}
+          {%- comment -%}
+            Una lista de definición, no una lista de puntos: cada capa es un
+            término con su descripción, y eso es lo que un lector de pantalla
+            tiene que oír.
+          {%- endcomment -%}
+          <dl class="ne-foundation__layers">
+            {%- for block in section.blocks -%}
+              <div class="ne-foundation__layer" {{ block.shopify_attributes }}>
+                <span class="ne-foundation__index" aria-hidden="true">{{ forloop.index | prepend: '0' | slice: -2, 2 }}</span>
+                <dt class="ne-foundation__term">
+                  {%- if block.settings.label != blank -%}
+                    {{ block.settings.label }}
+                  {%- else -%}
+                    <span class="ne-placeholder">{{ 'general.placeholder.label' | t }}</span>
+                  {%- endif -%}
+                </dt>
+                <dd class="ne-foundation__note">
+                  {%- if block.settings.note != blank -%}
+                    {{ block.settings.note }}
+                  {%- else -%}
+                    <span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span>
+                  {%- endif -%}
+                </dd>
+              </div>
+            {%- endfor -%}
+          </dl>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `src/theme/css/shell.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
+
+{% schema %}
+{
+  "name": "t:sections.foundation.name",
+  "tag": "section",
+  "settings": [
+    { "type": "paragraph", "content": "t:sections.foundation.info" },
+    { "type": "text", "id": "eyebrow", "label": "t:sections.foundation.eyebrow" },
+    { "type": "text", "id": "heading", "label": "t:sections.foundation.heading" },
+    { "type": "textarea", "id": "body", "label": "t:sections.foundation.body" },
+    { "type": "image_picker", "id": "image", "label": "t:sections.foundation.image" },
+    { "type": "text", "id": "image_alt", "label": "t:sections.foundation.image_alt", "info": "t:sections.foundation.image_alt_info" },
+    { "type": "checkbox", "id": "inverse", "label": "t:sections.foundation.inverse", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "layer",
+      "name": "t:sections.foundation.layer",
+      "limit": 6,
+      "settings": [
+        { "type": "text", "id": "label", "label": "t:sections.foundation.layer_label" },
+        { "type": "textarea", "id": "note", "label": "t:sections.foundation.layer_note" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.foundation.name",
+      "blocks": [{ "type": "layer" }, { "type": "layer" }, { "type": "layer" }]
+    }
+  ]
+}
+{% endschema %}

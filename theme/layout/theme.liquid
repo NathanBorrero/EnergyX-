@@ -85,6 +85,11 @@
       if t == 'collection' or t == 'search' or t == 'blog'
         echo 'ne-collection.css' | asset_url | stylesheet_tag
       endif
+      # Las secciones editoriales de la portada —héroe, declaración, THE
+      # FOUNDATION, actividades— pesan 1,5 KB que la ficha y el carrito no usan.
+      if t == 'index'
+        echo 'ne-home.css' | asset_url | stylesheet_tag
+      endif
     -%}
 
     {%- comment -%} Las familias tipográficas vienen de los ajustes del theme, así

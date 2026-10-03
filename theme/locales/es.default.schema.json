@@ -101,6 +101,33 @@
     "password": {
       "message": "Mensaje",
       "message_info": "Lo que ve quien llega antes del lanzamiento. Si se deja vacío no se muestra nada."
+    },
+    "foundation": {
+      "name": "THE FOUNDATION",
+      "info": "La suela y la construcción, con escenario propio. Lo que separa un zapato diseñado de uno genérico no se ve en una foto de catálogo: está en cómo está hecho.",
+      "eyebrow": "Antetítulo",
+      "heading": "Título",
+      "body": "Texto",
+      "image": "Fotografía de la suela o la construcción",
+      "image_alt": "Texto alternativo",
+      "image_alt_info": "Describe lo que se ve. Si se deja vacío se usa el del propio archivo.",
+      "inverse": "Fondo de tinta",
+      "layer": "Capa",
+      "layer_label": "Nombre de la capa",
+      "layer_note": "Qué hace"
+    },
+    "activities": {
+      "name": "Actividades",
+      "info": "El mismo zapato en distintos contextos. Cambiar de actividad no necesita JavaScript: es un grupo de opciones de verdad, así que funciona con el teclado y con el script desactivado.",
+      "eyebrow": "Antetítulo",
+      "heading": "Título",
+      "inverse": "Fondo de tinta",
+      "activity": "Actividad",
+      "activity_name": "Nombre",
+      "activity_note": "Texto",
+      "activity_image": "Fotografía",
+      "activity_alt": "Texto alternativo",
+      "legend": "Actividad"
     }
   },
   "blocks": {

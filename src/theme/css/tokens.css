@@ -1,44 +1,48 @@
 /*
  * NATHAN & ESTEBAN — tokens de diseño
  *
- * Dirección de arte: editorial, arquitectónica, minimalista con identidad propia.
- * Referencia conceptual: pigmento, yeso, tinta de imprenta. Deliberadamente NO
- * es blanco puro de producto tecnológico ni gris neutro de SaaS.
+ * DIRECCIÓN DE ARTE: la interfaz calla para que hable el producto.
  *
- * TODO PAR DE COLOR DE ESTE ARCHIVO ESTÁ VALIDADO contra los umbrales de WCAG
- * que el proyecto se fijó, con `src/lib/a11y-contrast.js`, y hay una prueba
- * permanente que falla si alguien los cambia a algo que suspenda.
+ * Blanco, negro, grises. NINGÚN color de marca en la interfaz: el color lo
+ * pone el zapato. Un acento de marca en los botones, los enlaces y los focos
+ * compite con la fotografía del producto en cada pantalla, y en una tienda de
+ * calzado de diseño el que tiene que ganar es el objeto.
  *
- * El candidato inicial tenía un filete a 2.37:1 cuando el mínimo no textual es
- * 3:1. Se detectó antes de escribir una línea de CSS, que era el objetivo de
- * construir el validador antes del sistema visual.
+ * Los neutros no son grises puros ni crema: llevan un sesgo cálido de un par de
+ * puntos, el del papel de impresión. Un gris matemáticamente neutro se lee como
+ * «sin elegir»; este se lee como elegido, y sigue siendo neutro al lado de una
+ * fotografía en color.
+ *
+ * TODO PAR DE COLOR ESTÁ VALIDADO con `src/lib/a11y-contrast.js`, y además
+ * medido sobre la página RENDERIZADA, que es lo único que demuestra que el
+ * comprador lo ve: un texto puede heredar un color que el token no predice.
  */
 
 :root {
   /* ---- Superficies ---------------------------------------------------- */
-  --ne-paper: #f2efe9;        /* yeso cálido. Fondo por defecto */
-  --ne-paper-deep: #e7e2d9;   /* superficie elevada: cards, celdas */
-  --ne-ink: #14120e;          /* tinta casi negra, cálida. Secciones inversas */
+  --ne-paper: #faf9f7;        /* papel. Fondo por defecto */
+  --ne-paper-deep: #efeeea;   /* superficie elevada: celdas, campos */
+  --ne-ink: #0e0e0c;          /* tinta. Secciones inversas y botones */
 
   /* ---- Texto ---------------------------------------------------------- */
-  --ne-text: var(--ne-ink);       /* 16.30:1 sobre paper */
-  --ne-text-soft: #4a4640;        /*  8.16:1 sobre paper ·  7.26:1 sobre paper-deep */
-  --ne-text-inverse: var(--ne-paper); /* 16.30:1 sobre ink */
+  --ne-text: var(--ne-ink);       /* 18.36:1 sobre papel */
+  --ne-text-soft: #56554f;        /*  7.11:1 sobre papel ·  6.44:1 sobre papel elevado */
+  --ne-text-inverse: var(--ne-paper); /* 18.36:1 sobre tinta */
 
   /* ---- Líneas --------------------------------------------------------- */
-  /* Borde SIGNIFICATIVO: inputs, chips seleccionables, indicador de foco.
-     3.88:1 sobre paper · 3.45:1 sobre paper-deep · 4.20:1 sobre ink.
+  /* Borde SIGNIFICATIVO: campos, chips seleccionables, indicador de foco.
+     3.62:1 sobre papel · 3.28:1 sobre papel elevado · 5.08:1 sobre tinta.
      Cumple el mínimo de 3:1 en las tres superficies. */
-  --ne-border: #7c776d;
+  --ne-border: #84837c;
   /* Filete DECORATIVO: separadores que no transmiten información y por tanto no
      están sujetos al mínimo de 3:1. No usarlo para bordes de control. */
-  --ne-rule: #d6d0c5;
+  --ne-rule: #dddcd6;
 
   /* ---- Acento --------------------------------------------------------- */
-  /* Un solo acento, de pigmento óxido. 6.77:1 sobre paper, así que vale para
-     texto de cuerpo, no solo para decoración. */
-  --ne-accent: #8a3a1e;
-  --ne-accent-deep: #6e2d16; /* 8.93:1 sobre paper. Estado activo */
+  /* El acento NO es un color: es tinta. Los estados se distinguen por forma y
+     por valor, no por tinte. 16.41:1 sobre papel. */
+  --ne-accent: #1b1b18;
+  --ne-accent-deep: #000000;
 
   /* ---- Tipografía ----------------------------------------------------- */
   /* Las familias las inyecta Liquid desde los ajustes del theme, para no
@@ -46,9 +50,10 @@
   --ne-font-body: var(--ne-font-body-shopify, ui-sans-serif, system-ui, sans-serif);
   --ne-font-display: var(--ne-font-display-shopify, var(--ne-font-body));
 
-  /* Escala tipográfica. Razón 1.26 en móvil, 1.33 en escritorio vía clamp.
-     Editorial significa contraste real de tamaño, no diez tamaños intermedios:
-     hay seis, y cada uno tiene un trabajo. */
+  /* Escala tipográfica. Cuatro papeles, no cinco familias:
+     DISPLAY para el héroe y las declaraciones · TÍTULO para secciones y
+     producto · CUERPO para descripciones · MICROTEXTO para etiquetas y estados.
+     Editorial significa contraste real de tamaño, no diez tamaños intermedios. */
   --ne-size-caption: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem);
   --ne-size-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
   --ne-size-lead: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
@@ -73,8 +78,9 @@
   --ne-measure-narrow: 46ch;
 
   /* ---- Espacio -------------------------------------------------------- */
-  /* Escala de 4px con saltos no lineales: el espacio arquitectónico necesita
-     intervalos grandes disponibles, no una progresión suave. */
+  /* El espacio negativo es parte de la dirección de arte, así que la escala
+     llega mucho más arriba de lo que un sistema de interfaz necesita: hay
+     saltos pensados para que una sección pueda estar casi vacía a propósito. */
   --ne-space-3xs: 0.25rem;
   --ne-space-2xs: 0.5rem;
   --ne-space-xs: 0.75rem;
@@ -102,8 +108,8 @@
   --ne-touch: 44px;
 
   /* ---- Movimiento ----------------------------------------------------- */
-  /* Una sola física para todo el sitio: misma curva, tres duraciones. Eso es lo
-     que hace que las transiciones se sientan del mismo sistema. */
+  /* Una sola física para todo el sitio. La curva es de salida: arranca rápido y
+     frena, que es como se detiene un objeto con masa. Nada rebota. */
   --ne-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ne-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ne-dur-fast: 140ms;
@@ -120,16 +126,18 @@
 
 /* El tema inverso no es un modo oscuro del navegador: es una sección con fondo
    de tinta dentro de una página clara. Se activa por clase, no por media query,
-   porque es una decisión de composición. */
+   porque es una decisión de composición.
+   Sobre tinta el acento también es tinta invertida: papel. Sigue sin haber un
+   color de marca en ninguna de las dos superficies. */
 .ne-inverse {
-  --ne-paper: #14120e;
-  --ne-paper-deep: #1e1b16;
-  --ne-text: #f2efe9;
-  --ne-text-soft: #b8b2a6;
-  --ne-border: #7c776d;
-  --ne-rule: #332e26;
-  --ne-accent: #d4714c;      /* el óxido se aclara para mantener contraste sobre tinta */
-  --ne-accent-deep: #e08c6a;
+  --ne-paper: #0e0e0c;
+  --ne-paper-deep: #191916;
+  --ne-text: #faf9f7;
+  --ne-text-soft: #a8a7a0;
+  --ne-border: #84837c;
+  --ne-rule: #2b2b27;
+  --ne-accent: #faf9f7;
+  --ne-accent-deep: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {

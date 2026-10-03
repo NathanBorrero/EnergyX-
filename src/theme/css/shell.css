@@ -165,80 +165,19 @@
   }
   .ne-footer__business p { margin: 0; }
 
-/* === Portada editorial =========================================== */
-  .ne-hero {
-    background: var(--ne-paper);
-    color: var(--ne-text);
-    overflow: clip;
-  }
-
-  .ne-hero__grid {
-    align-items: end;
-    row-gap: var(--ne-space-l);
-  }
-
-  .ne-hero__copy { grid-column: 1 / -1; }
-  .ne-hero__figure { grid-column: 1 / -1; margin: 0; }
-
-  @media (min-width: 48em) {
-    .ne-hero__copy {
-      grid-column: 1 / span 7;
-      /* El texto baja respecto a la imagen para que la lectura empiece abajo a la
-         izquierda, no en el centro óptico. Es composición, no decoración. */
-      padding-bottom: var(--ne-space-l);
-    }
-    .ne-hero__figure { grid-column: 8 / span 5; }
-
-    /* Variante desplazada: el titular rompe hacia el margen izquierdo y la
-       imagen se adentra una columna. Da la tensión editorial sin ningún efecto. */
-    .ne-hero--offset .ne-hero__copy { grid-column: 1 / span 6; }
-    .ne-hero--offset .ne-hero__figure {
-      grid-column: 7 / span 6;
-      margin-bottom: calc(var(--ne-space-2xl) * -1);
-    }
-  }
-
-  .ne-hero__eyebrow { margin-bottom: var(--ne-space-m); }
-
-  .ne-hero__heading {
-    /* El titular puede exceder la columna a propósito en pantallas grandes: es
-       lo que separa una portada compuesta de una centrada. */
-    margin-bottom: var(--ne-space-m);
-  }
-
-  .ne-hero__body { margin-bottom: var(--ne-space-l); }
-
-  .ne-hero__image { width: 100%; object-fit: cover; }
-
-  .ne-hero__caption { margin-top: var(--ne-space-2xs); }
-
-/* === Declaración ================================================= */
-  .ne-statement { background: var(--ne-paper); color: var(--ne-text); }
-
-  .ne-statement__body { grid-column: 1 / -1; }
-
-  @media (min-width: 48em) {
-    /* Desplazado dos columnas: el aire a la izquierda es lo que hace que una
-       declaración se lea como una declaración y no como un párrafo más. */
-    .ne-statement__body { grid-column: 3 / span 8; }
-  }
-
-  .ne-statement__text { margin-top: var(--ne-space-m); }
-
-/* === Rejilla de producto (sección) =============================== */
-  .ne-grid-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--ne-space-m);
-    margin-bottom: var(--ne-space-l);
-  }
-
-  /* `.ne-product-grid` vive en ne-base.css: la comparten la colección, la
-     búsqueda y esta sección, y definirla aquí la dejaría sin estilos en las
-     páginas donde esta sección no esté presente. */
-
 /* === Tarjeta de producto ========================================= */
+/*
+   LA IMAGEN MANDA. El texto va debajo, pequeño y quieto.
+
+   Una tarjeta de tienda genérica es foto + título + precio + etiqueta + botón,
+   los cinco compitiendo. Aquí hay foto, nombre y precio, y el nombre y el precio
+   pesan lo mismo que un pie de foto: la tarjeta es una lámina de un catálogo,
+   no una ficha de inventario.
+
+   Sin botón de compra. Comprar una talla desde una miniatura no se puede hacer
+   bien, y el botón que lo intenta es justo el que hace que la rejilla parezca
+   un marketplace.
+*/
   .ne-card { position: relative; }
 
   .ne-card__link {
@@ -248,53 +187,67 @@
     text-decoration: none;
   }
 
-  .ne-card__media { position: relative; background: var(--ne-paper-deep); }
-
-  .ne-card__image {
-    width: 100%;
-    object-fit: cover;
-    transition: opacity var(--ne-dur) var(--ne-ease);
+  .ne-card__media {
+    position: relative;
+    overflow: clip;
+    background: var(--ne-paper-deep);
   }
-  .ne-card__link:hover .ne-card__image { opacity: 0.88; }
 
+  /* El acercamiento al pasar por encima es de un 2%: suficiente para que la
+     lámina responda, demasiado poco para que parezca un carrusel. Solo donde hay
+     puntero de verdad: en táctil no existe el estado y la regla sobraría. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    /* Sin `will-change`: retendría una capa de compositor por tarjeta —seis en
+       la portada— para un hover que puede no ocurrir nunca. El navegador
+       promociona solo cuando la transición arranca, que es cuando hace falta. */
+    .ne-card__image {
+      transition: transform var(--ne-dur-slow) var(--ne-ease-out);
+    }
+    .ne-card__link:hover .ne-card__image { transform: scale(1.02); }
+  }
+
+  /* El filete bajo el nombre aparece al pasar por encima: es la señal de que la
+     lámina entera es un enlace, sin añadir un botón. */
+  .ne-card__title {
+    font-family: var(--ne-font-display);
+    font-size: var(--ne-size-body);
+    font-weight: 400;
+    letter-spacing: var(--ne-tracking-title);
+    display: inline;
+    background-image: linear-gradient(currentcolor, currentcolor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% var(--ne-hairline);
+    transition: background-size var(--ne-dur) var(--ne-ease);
+  }
+  .ne-card__link:hover .ne-card__title { background-size: 100% var(--ne-hairline); }
+
+  .ne-card__meta { display: grid; gap: var(--ne-space-3xs); }
+
+  .ne-card__price {
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    color: var(--ne-text-soft);
+  }
+
+  /* `ne-price.liquid` es un snippet COMPARTIDO: lo pintan la tarjeta —portada,
+     colección, búsqueda— y la ficha. Su clase base vive en el paquete que TODAS
+     las páginas cargan, no en el de la ficha. */
+  .ne-price__current { font-variant-numeric: tabular-nums; }
+
+  /* AGOTADO: una palabra en la esquina inferior, sobre el papel, no una pegatina
+     de color encima de la fotografía. El producto no se tapa. */
   .ne-card__flag {
     position: absolute;
-    inset: auto auto var(--ne-space-2xs) var(--ne-space-2xs);
-    padding: 0.2em 0.5em;
+    left: 0;
+    bottom: 0;
+    padding: var(--ne-space-3xs) var(--ne-space-2xs);
     background: var(--ne-paper);
     color: var(--ne-text);
     font-size: var(--ne-size-caption);
     letter-spacing: var(--ne-tracking-caption);
     text-transform: uppercase;
   }
-
-  .ne-card__meta {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--ne-space-s);
-  }
-
-  .ne-card__title {
-    /* `font-weight: 500` exigía una TERCERA descarga de fuente para una sola
-       regla. La fuente de display ya se descarga y da el mismo peso visual sin
-       un archivo más compitiendo con el primer paint. */
-    font-family: var(--ne-font-display);
-    font-size: var(--ne-size-body);
-    font-weight: 400;
-    letter-spacing: 0;
-  }
-
-  .ne-card__price { font-variant-numeric: tabular-nums; }
-
-  /* `ne-price.liquid` es un snippet COMPARTIDO: lo pintan la tarjeta —portada,
-     colección, búsqueda— y la ficha. Su clase base tiene que vivir en el
-     paquete que TODAS las páginas cargan, no en el de la ficha, o en tres de
-     cuatro páginas la clase no hace nada.
-     La regla no cambia nada a la vista: en la tarjeta ya la daba el contenedor
-     y en la ficha ya la da su propio selector. Lo que cambia es que ahora la
-     clase significa lo mismo en todas partes. */
-  .ne-price__current { font-variant-numeric: tabular-nums; }
 
 /* === Colección =================================================== */
   .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }

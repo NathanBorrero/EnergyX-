@@ -135,6 +135,9 @@
     },
     "footer": {
       "menu": "Enlaces del pie"
+    },
+    "activities": {
+      "legend": "Elige una actividad"
     }
   },
   "errors": {

@@ -25,7 +25,117 @@
         "body": "",
         "inverse": true
       }
+    },
+    "foundation": {
+      "type": "foundation",
+      "blocks": {
+        "capa1": {
+          "type": "layer",
+          "settings": {
+            "label": "",
+            "note": ""
+          }
+        },
+        "capa2": {
+          "type": "layer",
+          "settings": {
+            "label": "",
+            "note": ""
+          }
+        },
+        "capa3": {
+          "type": "layer",
+          "settings": {
+            "label": "",
+            "note": ""
+          }
+        }
+      },
+      "block_order": [
+        "capa1",
+        "capa2",
+        "capa3"
+      ],
+      "settings": {
+        "eyebrow": "",
+        "heading": "",
+        "body": "",
+        "image_alt": "",
+        "inverse": true
+      }
+    },
+    "activities": {
+      "type": "activities",
+      "blocks": {
+        "act1": {
+          "type": "activity",
+          "settings": {
+            "name": "RUN",
+            "note": "",
+            "image_alt": ""
+          }
+        },
+        "act2": {
+          "type": "activity",
+          "settings": {
+            "name": "GYM",
+            "note": "",
+            "image_alt": ""
+          }
+        },
+        "act3": {
+          "type": "activity",
+          "settings": {
+            "name": "WALK",
+            "note": "",
+            "image_alt": ""
+          }
+        },
+        "act4": {
+          "type": "activity",
+          "settings": {
+            "name": "VOLLEYBALL",
+            "note": "",
+            "image_alt": ""
+          }
+        },
+        "act5": {
+          "type": "activity",
+          "settings": {
+            "name": "TRAIN",
+            "note": "",
+            "image_alt": ""
+          }
+        },
+        "act6": {
+          "type": "activity",
+          "settings": {
+            "name": "EVERYDAY",
+            "note": "",
+            "image_alt": ""
+          }
+        }
+      },
+      "block_order": [
+        "act1",
+        "act2",
+        "act3",
+        "act4",
+        "act5",
+        "act6"
+      ],
+      "settings": {
+        "eyebrow": "",
+        "heading": "",
+        "inverse": false
+      }
     }
   },
-  "order": ["hero", "featured", "statement"]
+  "order": [
+    "hero",
+    "foundation",
+    "featured",
+    "activities",
+    "statement"
+  ]
 }

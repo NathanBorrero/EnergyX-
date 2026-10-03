@@ -1,0 +1,350 @@
+/* ---------------------------------------------------------------------------
+   NATHAN & ESTEBAN — portada
+
+   Las piezas que SOLO pinta la portada: el héroe, la declaración, THE
+   FOUNDATION y las actividades.
+
+   Están aparte porque este CSS bloquea el primer paint, y cobrárselo a la
+   ficha, al carrito y a la colección sería cobrarles 1,5 KB que no usan. Si
+   alguien coloca una de estas secciones en otra plantilla, la comprobación
+   «cada plantilla carga el CSS de las clases que usa» lo dice: el troceado es
+   seguro porque hay un guardián que lo vigila.
+   --------------------------------------------------------------------------- */
+/* === Portada editorial =========================================== */
+/*
+   EL OBJETO LLEGA.
+
+   El héroe no vende: presenta. Una fotografía grande, una línea, y espacio.
+   Nada encima de la foto —ni etiquetas, ni contadores, ni descuentos—, porque
+   lo único que tiene que ganar la primera pantalla es el zapato.
+*/
+  .ne-hero {
+    background: var(--ne-paper);
+    color: var(--ne-text);
+    overflow: clip;
+  }
+
+  .ne-hero__grid {
+    align-items: end;
+    row-gap: var(--ne-space-l);
+  }
+
+  .ne-hero__copy { grid-column: 1 / -1; }
+  .ne-hero__figure { grid-column: 1 / -1; margin: 0; }
+
+  @media (min-width: 48em) {
+    .ne-hero__copy {
+      grid-column: 1 / span 7;
+      /* El texto baja respecto a la imagen para que la lectura empiece abajo a la
+         izquierda, no en el centro óptico. Es composición, no decoración. */
+      padding-bottom: var(--ne-space-l);
+    }
+    .ne-hero__figure { grid-column: 8 / span 5; }
+
+    /* Variante desplazada: el titular rompe hacia el margen izquierdo y la
+       imagen se adentra una columna. Da la tensión editorial sin ningún efecto. */
+    .ne-hero--offset .ne-hero__copy { grid-column: 1 / span 6; }
+    .ne-hero--offset .ne-hero__figure {
+      grid-column: 7 / span 6;
+      margin-bottom: calc(var(--ne-space-2xl) * -1);
+    }
+  }
+
+  .ne-hero__eyebrow { margin-bottom: var(--ne-space-m); }
+
+  .ne-hero__heading { margin-bottom: var(--ne-space-m); }
+
+  /* EL TITULAR SE SALE DE LA COLUMNA, a propósito, cuando hay sitio. Un display
+     que respeta la retícula se lee como una interfaz; uno que la rompe por un
+     lado se lee como una portada. Solo a partir de 64em: por debajo, salirse
+     significa recortarse. */
+  @media (min-width: 64em) {
+    .ne-hero--offset .ne-hero__heading {
+      margin-left: calc(var(--ne-gutter) * -0.5);
+    }
+  }
+
+  .ne-hero__body { margin-bottom: var(--ne-space-l); }
+
+  .ne-hero__image { width: 100%; object-fit: cover; }
+
+  .ne-hero__caption { margin-top: var(--ne-space-2xs); }
+
+/*
+   LA ENTRADA DEL HÉROE. Un gesto, al cargar, y se acabó.
+
+   La fotografía ASIENTA: baja desde dieciséis píxeles y frena, como un objeto
+   con masa que se posa. No rebota, no gira, no escala desde cero.
+
+   Y asienta SOLO CON `transform`, sin tocar la opacidad. No es un capricho: la
+   fotografía es el elemento de mayor despintado de la página —el LCP—, y
+   arrancarla a opacidad cero retrasa exactamente la métrica que más cuesta
+   ganar. Transformada, el navegador la pinta igual y a tiempo.
+
+   El texto sí entra con opacidad, escalonado, porque no es el LCP y porque el
+   escalonado es lo que hace que se lea como una secuencia y no como un parpadeo.
+
+   Todo dentro de `no-preference`: quien pidió menos movimiento ve la página
+   quieta y completa, sin un fotograma intermedio.
+*/
+  @media (prefers-reduced-motion: no-preference) {
+    .ne-hero__figure {
+      animation: ne-settle var(--ne-dur-slow) var(--ne-ease-out) both;
+    }
+
+    .ne-hero__eyebrow,
+    .ne-hero__heading,
+    .ne-hero__body,
+    .ne-hero__action {
+      animation: ne-rise var(--ne-dur-slow) var(--ne-ease-out) both;
+    }
+    /* El escalonado es corto: cuatro pasos de 60ms caben en el tiempo que tarda
+       el ojo en recorrer la composición. Más largo se siente lento. */
+    .ne-hero__eyebrow { animation-delay: 0ms; }
+    .ne-hero__heading { animation-delay: 60ms; }
+    .ne-hero__body    { animation-delay: 120ms; }
+    .ne-hero__action  { animation-delay: 180ms; }
+  }
+
+  @keyframes ne-settle {
+    from { transform: translateY(-16px); }
+    to   { transform: none; }
+  }
+
+  @keyframes ne-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+/* === Declaración ================================================= */
+  .ne-statement { background: var(--ne-paper); color: var(--ne-text); }
+
+  .ne-statement__body { grid-column: 1 / -1; }
+
+  @media (min-width: 48em) {
+    /* Desplazado dos columnas: el aire a la izquierda es lo que hace que una
+       declaración se lea como una declaración y no como un párrafo más. */
+    .ne-statement__body { grid-column: 3 / span 8; }
+  }
+
+  .ne-statement__text { margin-top: var(--ne-space-m); }
+
+/* === Entrada en escena =========================================== */
+/*
+   UN SOLO GESTO, Y CERO BYTES DE JAVASCRIPT.
+
+   Las piezas editoriales suben doce píxeles y aparecen al entrar en la pantalla.
+   Es lo único que se mueve en todo el sitio, y por eso se nota: veinte cosas
+   animándose es ruido; una, es intención.
+
+   Está escrito con `animation-timeline: view()`, que es la línea de tiempo del
+   propio scroll. El navegador la resuelve en el compositor, así que NO hay
+   observador, ni listener de scroll, ni trabajo en el hilo principal, ni un solo
+   KB de script.
+
+   TRES GUARDAS, Y LAS TRES IMPORTAN:
+
+   1. `@supports`. Donde no existe —Safari todavía, entre otros— no se aplica
+      NADA: el contenido se pinta en su sitio, completo y quieto. El estado
+      inicial vive DENTRO del bloque, nunca fuera; si viviera fuera, un navegador
+      sin soporte dejaría media portada invisible para siempre.
+
+   2. `prefers-reduced-motion: no-preference`. El bloque global de movimiento
+      reducido aplasta `animation-duration`, y eso NO desactiva una animación
+      guiada por scroll: su duración la marca la línea de tiempo, no el reloj.
+      Así que aquí se exige explícitamente la ausencia de preferencia.
+
+   3. La portada NO entra. El titular y la fotografía del héroe son el elemento
+      de mayor despintado —el LCP—, y arrancarlos a opacidad cero es la forma más
+      fácil de empeorar la métrica que más cuesta ganar.
+
+   Y solo mueve `opacity` y `transform`, que no tocan la maquetación: el
+   desplazamiento acumulado sigue en cero, medido.
+*/
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ne-statement__body,
+    .ne-grid-head,
+    .ne-product-grid__cell,
+    .ne-foundation__stage,
+    .ne-foundation__copy {
+      animation: ne-enter linear both;
+      animation-timeline: view();
+      /* Empieza a revelarse en cuanto asoma y termina mucho antes de llegar al
+         centro: el contenido está entero bastante antes de que se lea. */
+      animation-range: entry 8% entry 46%;
+    }
+
+    @keyframes ne-enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+}
+
+/* === THE FOUNDATION ============================================== */
+/* La suela y la construcción, con escenario propio. El objeto manda: superficie
+   de tinta, mucho aire, y la lista de capas compuesta como un pliego técnico
+   —cifras tabulares, filetes finos, nada de iconos. */
+  .ne-foundation { overflow: clip; }
+
+  .ne-foundation__grid { row-gap: var(--ne-space-xl); align-items: start; }
+
+  .ne-foundation__stage { grid-column: 1 / -1; }
+  .ne-foundation__copy { grid-column: 1 / -1; }
+
+  @media (min-width: 48em) {
+    /* La foto ocupa seis columnas y el texto cinco, con una de aire entre
+       ambos: el objeto gana por tamaño, no por centrado. */
+    .ne-foundation__stage { grid-column: 1 / span 6; }
+    .ne-foundation__copy {
+      grid-column: 8 / span 5;
+      /* Baja respecto a la foto para que la lectura empiece por el objeto. */
+      padding-top: var(--ne-space-l);
+    }
+  }
+
+  .ne-foundation__image { width: 100%; }
+
+  .ne-foundation__eyebrow { margin-bottom: var(--ne-space-s); }
+  .ne-foundation__heading { margin-bottom: var(--ne-space-m); }
+  .ne-foundation__body { margin-bottom: var(--ne-space-l); }
+
+  .ne-foundation__layers { display: grid; }
+
+  /* Cada capa: número, término y nota. Se numeran de abajo arriba porque así se
+     construye un zapato; el número dice algo verdadero, no decora. */
+  .ne-foundation__layer {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--ne-space-s);
+    row-gap: var(--ne-space-3xs);
+    padding-block: var(--ne-space-s);
+    border-top: var(--ne-hairline) solid var(--ne-rule);
+  }
+  .ne-foundation__layer:last-child { border-bottom: var(--ne-hairline) solid var(--ne-rule); }
+
+  .ne-foundation__index {
+    grid-row: 1 / span 2;
+    font-size: var(--ne-size-caption);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--ne-tracking-caption);
+    color: var(--ne-text-soft);
+    padding-top: 0.2em;
+  }
+
+  .ne-foundation__term {
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+  }
+
+  .ne-foundation__note {
+    margin: 0;
+    color: var(--ne-text-soft);
+    max-width: var(--ne-measure-narrow);
+    text-wrap: pretty;
+  }
+
+/* === Rejilla de producto (sección) =============================== */
+  .ne-grid-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ne-space-m);
+    margin-bottom: var(--ne-space-l);
+  }
+
+  /* `.ne-product-grid` vive en ne-base.css: la comparten la colección, la
+     búsqueda y esta sección, y definirla aquí la dejaría sin estilos en las
+     páginas donde esta sección no esté presente. */
+
+
+/* === Actividades ================================================= */
+/*
+   El mismo zapato, seis vidas. La elegida es tinta; las demás, gris. La
+   distinción es tipográfica, como en todo el resto del sitio: ni anillos, ni
+   neón, ni marcador deportivo.
+
+   Todo el mecanismo es `:checked ~`. No hay una línea de script.
+*/
+  .ne-activities__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-s); }
+
+  .ne-activities__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ne-space-m);
+    margin: 0 0 var(--ne-space-xl);
+    padding: 0 0 var(--ne-space-s);
+    border: 0;
+    border-bottom: var(--ne-hairline) solid var(--ne-rule);
+  }
+
+  .ne-activities__name {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--ne-touch);
+    font-size: var(--ne-size-caption);
+    letter-spacing: var(--ne-tracking-caption);
+    text-transform: uppercase;
+    color: var(--ne-text-soft);
+    cursor: pointer;
+    transition: color var(--ne-dur-fast) var(--ne-ease);
+  }
+  .ne-activities__name:hover { color: var(--ne-text); }
+
+  /* Los paneles se apilan en la misma celda: ninguno reserva altura por su
+     cuenta, así que cambiar de actividad no desplaza nada de lo que hay debajo.
+     El desplazamiento acumulado sigue en cero, medido. */
+  .ne-activities__switch { display: grid; }
+  .ne-activities__panel {
+    grid-area: 1 / 1;
+    grid-row: 3;
+    visibility: hidden;
+    opacity: 0;
+  }
+  .ne-activities__list { grid-row: 2; }
+  .ne-activities__radio { grid-row: 1; }
+
+  /* La actividad elegida: su nombre en tinta y su panel a la vista. El
+     `nth-of-type` empareja cada radio con su etiqueta y con su panel por
+     posición, que es el orden en que Liquid los emite. */
+  .ne-activities__radio:nth-of-type(1):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(1),
+  .ne-activities__radio:nth-of-type(2):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(2),
+  .ne-activities__radio:nth-of-type(3):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(3),
+  .ne-activities__radio:nth-of-type(4):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(4),
+  .ne-activities__radio:nth-of-type(5):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(5),
+  .ne-activities__radio:nth-of-type(6):checked ~ .ne-activities__list .ne-activities__name:nth-of-type(6) {
+    color: var(--ne-text);
+  }
+
+  .ne-activities__radio:nth-of-type(1):checked ~ .ne-activities__panel:nth-of-type(1),
+  .ne-activities__radio:nth-of-type(2):checked ~ .ne-activities__panel:nth-of-type(2),
+  .ne-activities__radio:nth-of-type(3):checked ~ .ne-activities__panel:nth-of-type(3),
+  .ne-activities__radio:nth-of-type(4):checked ~ .ne-activities__panel:nth-of-type(4),
+  .ne-activities__radio:nth-of-type(5):checked ~ .ne-activities__panel:nth-of-type(5),
+  .ne-activities__radio:nth-of-type(6):checked ~ .ne-activities__panel:nth-of-type(6) {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* El foco del teclado se ve en el NOMBRE, porque el radio está oculto. */
+  .ne-activities__radio:focus-visible ~ .ne-activities__list .ne-activities__name {
+    outline: 2px solid var(--ne-accent);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ne-activities__panel { transition: opacity var(--ne-dur) var(--ne-ease); }
+  }
+
+  .ne-activities__grid { row-gap: var(--ne-space-m); align-items: end; }
+  .ne-activities__media { grid-column: 1 / -1; }
+  .ne-activities__copy { grid-column: 1 / -1; }
+
+  @media (min-width: 48em) {
+    .ne-activities__media { grid-column: 1 / span 8; }
+    .ne-activities__copy { grid-column: 10 / span 3; }
+  }
+
+  .ne-activities__image { width: 100%; }

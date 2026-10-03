@@ -81,6 +81,7 @@ const CSS_BUNDLES = Object.freeze({
   'ne-product.css': ['product.css'],
   'ne-cart.css': ['cart.css'],
   'ne-collection.css': ['collection.css'],
+  'ne-home.css': ['home.css'],
 });
 
 /**

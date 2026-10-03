@@ -1,0 +1,169 @@
+{%- comment -%}
+  ACTIVIDADES — el mismo zapato, seis vidas.
+
+  POR QUÉ EXISTE
+
+  Un zapato de diseño no se explica por su ficha técnica: se explica por dónde
+  va. Esta sección deja que el comprador elija el contexto y ve el producto en
+  él, que es la pregunta que de verdad se hace antes de comprar.
+
+  CÓMO FUNCIONA, Y POR QUÉ ASÍ
+
+  CERO JAVASCRIPT. Es un grupo de botones de radio con sus etiquetas, y el panel
+  que se ve lo decide el selector `:checked ~`. Eso significa:
+
+    · funciona con el script desactivado y antes de que cargue nada;
+    · las flechas del teclado recorren las actividades, porque es lo que hace un
+      grupo de radio de verdad;
+    · un lector de pantalla lo anuncia como lo que es —un grupo de opciones—,
+      sin un solo atributo `aria` inventado;
+    · no hay estado que sincronizar, así que no hay estado que se desincronice.
+
+  Una pestaña simulada con `div` y `aria-selected` necesitaría script para el
+  teclado y para el foco. Esto no necesita nada.
+
+  LO QUE NO LLEVA
+
+  Ni anillos, ni neón, ni HUD, ni marcador deportivo. La distinción entre
+  actividades es tipográfica: la elegida es tinta, las demás son gris. Es la
+  misma mecánica que usa el resto del sitio para los estados.
+{%- endcomment -%}
+
+{%- liquid
+  assign surface = ''
+  if section.settings.inverse
+    assign surface = 'ne-inverse'
+  endif
+-%}
+
+{%- if section.blocks.size > 0 -%}
+  <section class="ne-activities ne-section--vast {{ surface }}" aria-labelledby="ne-activities-{{ section.id }}">
+    <div class="ne-shell">
+      <header class="ne-activities__head">
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="ne-caption">{{ section.settings.eyebrow }}</p>
+        {%- else -%}
+          <p class="ne-caption"><span class="ne-placeholder">{{ 'general.placeholder.label' | t }}</span></p>
+        {%- endif -%}
+        <h2 class="ne-display" id="ne-activities-{{ section.id }}">
+          {%- if section.settings.heading != blank -%}
+            {{ section.settings.heading }}
+          {%- else -%}
+            <span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span>
+          {%- endif -%}
+        </h2>
+      </header>
+
+      {%- comment -%}
+        Los radios van ANTES que los paneles y son hermanos suyos: es la única
+        forma de que `:checked ~ .panel` alcance al panel correcto sin script.
+      {%- endcomment -%}
+      <div class="ne-activities__switch">
+        {%- for block in section.blocks -%}
+          <input
+            class="ne-activities__radio ne-visually-hidden"
+            type="radio"
+            name="ne-activity-{{ section.id }}"
+            id="ne-activity-{{ section.id }}-{{ forloop.index0 }}"
+            {% if forloop.first %}checked{% endif %}
+            {{ block.shopify_attributes }}
+          >
+        {%- endfor -%}
+
+        <fieldset class="ne-activities__list">
+          <legend class="ne-visually-hidden">{{ 'sections.activities.legend' | t }}</legend>
+          {%- for block in section.blocks -%}
+            <label class="ne-activities__name" for="ne-activity-{{ section.id }}-{{ forloop.index0 }}">
+              {%- if block.settings.name != blank -%}
+                {{ block.settings.name }}
+              {%- else -%}
+                <span class="ne-placeholder">{{ 'general.placeholder.label' | t }}</span>
+              {%- endif -%}
+            </label>
+          {%- endfor -%}
+        </fieldset>
+
+        {%- for block in section.blocks -%}
+          <div class="ne-activities__panel">
+            <div class="ne-grid ne-activities__grid">
+              <div class="ne-activities__media">
+                {%- if block.settings.image != blank -%}
+                  {% render 'ne-image',
+                    image: block.settings.image,
+                    role: 'below_fold',
+                    sizes: '(max-width: 47.99em) 100vw, 58vw',
+                    widths: '480, 768, 960, 1280, 1600',
+                    max: 1600,
+                    ratio: '3 / 2',
+                    class: 'ne-activities__image',
+                    alt: block.settings.image_alt
+                  %}
+                {%- else -%}
+                  <div class="ne-media-placeholder" style="--ne-media-ratio: 3 / 2" role="img" aria-label="{{ 'general.placeholder.image' | t }}">
+                    <span class="ne-placeholder">{{ 'general.placeholder.image' | t }}</span>
+                  </div>
+                {%- endif -%}
+              </div>
+              <div class="ne-activities__copy">
+                {%- if block.settings.note != blank -%}
+                  <p class="ne-lead">{{ block.settings.note }}</p>
+                {%- else -%}
+                  <p class="ne-lead"><span class="ne-placeholder">{{ 'general.placeholder.copy' | t }}</span></p>
+                {%- endif -%}
+              </div>
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </section>
+{%- endif -%}
+
+{%- comment -%}
+  Los estilos de esta pieza viven en `src/theme/css/home.css`.
+
+  Razón única y verificable: la auditoría de accesibilidad y las pruebas en
+  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
+  copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
+{%- endcomment -%}
+
+
+{% schema %}
+{
+  "name": "t:sections.activities.name",
+  "tag": "section",
+  "settings": [
+    { "type": "paragraph", "content": "t:sections.activities.info" },
+    { "type": "text", "id": "eyebrow", "label": "t:sections.activities.eyebrow" },
+    { "type": "text", "id": "heading", "label": "t:sections.activities.heading" },
+    { "type": "checkbox", "id": "inverse", "label": "t:sections.activities.inverse", "default": false }
+  ],
+  "blocks": [
+    {
+      "type": "activity",
+      "name": "t:sections.activities.activity",
+      "limit": 6,
+      "settings": [
+        { "type": "text", "id": "name", "label": "t:sections.activities.activity_name" },
+        { "type": "textarea", "id": "note", "label": "t:sections.activities.activity_note" },
+        { "type": "image_picker", "id": "image", "label": "t:sections.activities.activity_image" },
+        { "type": "text", "id": "image_alt", "label": "t:sections.activities.activity_alt" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.activities.name",
+      "blocks": [
+        { "type": "activity", "settings": { "name": "RUN" } },
+        { "type": "activity", "settings": { "name": "GYM" } },
+        { "type": "activity", "settings": { "name": "WALK" } },
+        { "type": "activity", "settings": { "name": "VOLLEYBALL" } },
+        { "type": "activity", "settings": { "name": "TRAIN" } },
+        { "type": "activity", "settings": { "name": "EVERYDAY" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -128,6 +128,30 @@ async function open(url) {
   });
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForTimeout(250);
+
+  // SE ESPERA A QUE LAS ANIMACIONES DE ENTRADA TERMINEN, y hay un motivo
+  // concreto: la auditoría empezó a fallar diciendo que el botón del héroe daba
+  // 3.61:1 «con opacidad 0.50». Era cierto y no era un defecto: lo estaba
+  // midiendo A MITAD de su entrada, medio fotograma antes de llegar a opacidad
+  // 1. Lo que WCAG gobierna es el estado en REPOSO, así que medir un fotograma
+  // intermedio es medir algo que no existe para nadie.
+  //
+  // Se filtran las animaciones guiadas por scroll: su línea de tiempo es el
+  // propio desplazamiento, nunca «terminan», y esperarlas colgaría la prueba.
+  // Y hay un tope, porque una animación infinita tampoco debe colgarla.
+  await page
+    .evaluate(() =>
+      Promise.race([
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((a) => !a.timeline || a.timeline === document.timeline)
+            .map((a) => a.finished.catch(() => {})),
+        ),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]),
+    )
+    .catch(() => {});
   // El módulo se importa POR SU URL, no por el especificador del import map.
   //
   // Así la auditoría no depende de que la página tenga un import map, y el

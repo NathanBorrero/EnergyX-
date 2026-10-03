@@ -1065,6 +1065,75 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
 });
 
 // ---------------------------------------------------------------------------
+// 8ab · Las actividades cambian SIN JAVASCRIPT, y sin mover la página.
+//
+//   La sección de actividades es un grupo de botones de radio y `:checked ~`.
+//   Ni una línea de script. Esta comprobación existe por dos motivos:
+//
+//   1. Que siga siendo verdad. El día que alguien lo «arregle» con un listener,
+//      la portada deja de servir 0 KB de JavaScript y deja de funcionar antes de
+//      que el script cargue.
+//   2. Que no empuje la página. Los paneles se apilan en la misma celda de la
+//      retícula justamente para que cambiar de actividad no cambie la altura.
+//      Si alguien los pone en flujo, el desplazamiento acumulado se dispara y la
+//      portada pierde su cero.
+//
+//   Se mide con el script DESACTIVADO además de con él: es la única prueba de
+//   que el mecanismo es del navegador y no nuestro.
+// ---------------------------------------------------------------------------
+await check('las actividades cambian sin JavaScript y sin mover la página', async () => {
+  const problems = [];
+
+  for (const [etiqueta, javaScriptEnabled] of [['con JavaScript', true], ['sin JavaScript', false]]) {
+    const context = await browser.newContext({ ...contextOptions(), javaScriptEnabled });
+    const page = await context.newPage();
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/home-harness.html`, { waitUntil: 'load' });
+
+    const estado = () =>
+      page.evaluate(() => {
+        const paneles = [...document.querySelectorAll('.ne-activities__panel')];
+        return {
+          visible: paneles.findIndex((p) => getComputedStyle(p).visibility === 'visible'),
+          cuantosVisibles: paneles.filter((p) => getComputedStyle(p).visibility === 'visible').length,
+          alto: Math.round(paneles[0]?.getBoundingClientRect().height ?? 0),
+        };
+      });
+
+    const nombres = page.locator('.ne-activities__name');
+    const cuantas = await nombres.count();
+    if (cuantas < 2) {
+      problems.push(`${etiqueta}: la sección de actividades tiene ${cuantas} actividad(es); no hay nada que cambiar`);
+      await page.close();
+      await context.close();
+      continue;
+    }
+
+    const antes = await estado();
+    if (antes.visible !== 0) problems.push(`${etiqueta}: al cargar debería verse la primera actividad y se ve la ${antes.visible}`);
+    if (antes.cuantosVisibles !== 1) problems.push(`${etiqueta}: hay ${antes.cuantosVisibles} paneles visibles a la vez`);
+
+    await nombres.nth(cuantas - 1).click();
+    await page.waitForTimeout(300);
+    const despues = await estado();
+
+    if (despues.visible !== cuantas - 1) {
+      problems.push(`${etiqueta}: al pulsar la última actividad debería verse su panel y se ve el ${despues.visible}`);
+    }
+    if (despues.cuantosVisibles !== 1) {
+      problems.push(`${etiqueta}: tras cambiar hay ${despues.cuantosVisibles} paneles visibles`);
+    }
+    if (antes.alto !== despues.alto) {
+      problems.push(`${etiqueta}: cambiar de actividad movió la página (${antes.alto}px → ${despues.alto}px)`);
+    }
+
+    await page.close();
+    await context.close();
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 8ante · NI HABLA CON NADIE MÁS, NI GUARDA NADA EN EL DISPOSITIVO.
 //
 //   Hay una comprobación estática que busca dominios de terceros en el Liquid.
