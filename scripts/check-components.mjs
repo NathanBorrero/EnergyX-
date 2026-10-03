@@ -643,6 +643,113 @@ await check('el 3D respeta el ajuste del theme y degrada a la fotografía', asyn
 });
 
 // ---------------------------------------------------------------------------
+// 7bis · «Menos movimiento» se obedece. En el CSS Y en el 3D.
+//
+//   Esto estaba escrito y NO estaba comprobado en ejecución. El CSS tiene su
+//   media query y el script consulta `matchMedia`, pero nada verificaba que el
+//   navegador acabara haciendo lo que se pretende. Una media query mal escrita
+//   —o un token que alguien mueva fuera del bloque— no rompe nada visible: solo
+//   deja de obedecer a quien pidió menos movimiento, que es justo la persona que
+//   no va a reportarlo.
+//
+//   Se comprueban las dos mitades del contrato:
+//
+//     · el CSS: las duraciones se colapsan y el desplazamiento suave se apaga;
+//     · el 3D: con `eager` pedido en el theme, el visor NO se abre solo. Un
+//       contexto WebGL arrancando sin que nadie lo pida es exactamente el
+//       movimiento que se está rechazando.
+//
+//   La mitad del 3D se mide en ESCRITORIO a propósito: en un teléfono `eager`
+//   no se honra nunca, así que ahí la rama de «menos movimiento» quedaría tapada
+//   por la del dispositivo y la prueba pasaría sin probar nada.
+// ---------------------------------------------------------------------------
+await check('«menos movimiento» se obedece en el CSS y en el 3D', async () => {
+  const problems = [];
+
+  // 7bis-a · el CSS, en el banco real y con el CSS real.
+  for (const [motion, shouldAnimate] of [['reduce', false], ['no-preference', true]]) {
+    const context = await browser.newContext({ ...contextOptions(), reducedMotion: motion });
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      globalThis.Shopify = { analytics: { publish() {} } };
+    });
+    await page.goto(HARNESS, { waitUntil: 'load' });
+
+    const css = await page.evaluate(() => {
+      const button = document.querySelector('.ne-button');
+      const root = document.documentElement;
+      const styles = getComputedStyle(button);
+      /** Suma de las duraciones declaradas, en milisegundos. */
+      const total = styles.transitionDuration
+        .split(',')
+        .map((d) => (d.trim().endsWith('ms') ? parseFloat(d) : parseFloat(d) * 1000))
+        .reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+      return {
+        transitionMs: total,
+        scrollBehavior: getComputedStyle(root).scrollBehavior,
+        token: getComputedStyle(root).getPropertyValue('--ne-dur').trim(),
+      };
+    });
+    await page.close();
+    await context.close();
+
+    if (shouldAnimate) {
+      if (css.transitionMs <= 1) {
+        problems.push(`sin preferencia las transiciones deberían durar algo y duran ${css.transitionMs} ms`);
+      }
+      if (css.scrollBehavior !== 'smooth') {
+        problems.push(`sin preferencia el desplazamiento debería ser suave y es "${css.scrollBehavior}"`);
+      }
+    } else {
+      if (css.transitionMs > 1) {
+        problems.push(`con «menos movimiento» las transiciones todavía duran ${css.transitionMs} ms`);
+      }
+      if (css.scrollBehavior !== 'auto') {
+        problems.push(`con «menos movimiento» el desplazamiento suave sigue activo: "${css.scrollBehavior}"`);
+      }
+      if (css.token !== '0ms') {
+        problems.push(`con «menos movimiento» el token de duración vale "${css.token}" en lugar de 0ms`);
+      }
+    }
+  }
+
+  // 7bis-b · el 3D con `eager` pedido: en escritorio, para que la rama que se
+  //          mide sea la de «menos movimiento» y no la del dispositivo.
+  for (const [motion, shouldOpen] of [['reduce', false], ['no-preference', true]]) {
+    const context = await browser.newContext({ ...contextOptions({ desktop: true }), reducedMotion: motion });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.addInitScript(() => {
+      globalThis.Shopify = { analytics: { publish() {} } };
+    });
+    await page.goto(`${HARNESS}?model_mode=eager`, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+
+    const state = await page.evaluate(() => ({
+      slotHidden: document.querySelector('[data-ne-model-slot]').hidden,
+      expanded: document.querySelector('[data-ne-model-trigger]').getAttribute('aria-expanded'),
+    }));
+    await page.close();
+    await context.close();
+
+    if (errors.length > 0) problems.push(`errores con reducedMotion=${motion}: ${errors.join(' | ')}`);
+
+    if (shouldOpen && state.slotHidden) {
+      problems.push('con `eager` y sin preferencia de movimiento el visor debería abrirse solo, y no se abre');
+    }
+    if (!shouldOpen && !state.slotHidden) {
+      problems.push('con «menos movimiento» el visor 3D se abrió solo: arranca un contexto WebGL que nadie pidió');
+    }
+    if (!shouldOpen && state.expanded === 'true') {
+      problems.push('con «menos movimiento» el botón de 3D se anuncia como expandido sin que nadie lo pidiera');
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 8 · SE COMPRA SIN JAVASCRIPT. Es el requisito que sostiene todo lo demás.
 // ---------------------------------------------------------------------------
 await check('la ficha se compra con JavaScript desactivado', async () => {
@@ -951,6 +1058,87 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
     }
     if (defined.length > 0) {
       problems.push(`${file} definió componentes que no tiene: ${defined.join(', ')}`);
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 8pre · LA NAVEGACIÓN EXISTE EN EL TELÉFONO.
+//
+//   Esto parece una obviedad y fue un defecto real de este theme durante todo
+//   el proyecto: `.ne-header__nav { display: none }` por debajo de 48em, sin
+//   cajón, sin botón y sin nada que lo sustituyera. En un teléfono —el
+//   dispositivo que esta tienda sirve primero— la tienda NO TENÍA NAVEGACIÓN.
+//
+//   Y estuvo invisible precisamente porque todas las comprobaciones corrían a
+//   980px de ancho, donde la media query de escritorio sí se aplica. Las dos
+//   cosas se arreglaron juntas, y esta comprobación es la que impide que la
+//   primera vuelva.
+//
+//   Se mide en los DOS anchos: que exista en el teléfono, y que la maqueta de
+//   escritorio siga siendo de una sola fila.
+// ---------------------------------------------------------------------------
+await check('la navegación existe en el teléfono', async () => {
+  const problems = [];
+
+  for (const [label, opts, expectRows] of [
+    ['teléfono 390', contextOptions(), 2],
+    ['escritorio 1280', { viewport: { width: 1280, height: 900 } }, 1],
+  ]) {
+    const context = await browser.newContext(opts);
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      globalThis.Shopify = { analytics: { publish() {} } };
+    });
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`, { waitUntil: 'load' });
+
+    const header = await page.evaluate(() => {
+      const nav = document.querySelector('.ne-header__nav');
+      const links = [...document.querySelectorAll('.ne-header__link')];
+      const brand = document.querySelector('.ne-header__brand');
+      const box = (el) => (el ? el.getBoundingClientRect() : null);
+      const navBox = box(nav);
+      const brandBox = box(brand);
+      return {
+        navExists: !!nav,
+        navDisplay: nav ? getComputedStyle(nav).display : null,
+        navHeight: navBox ? Math.round(navBox.height) : 0,
+        // Dos filas = el menú empieza por debajo del logotipo.
+        rows: navBox && brandBox && navBox.top >= brandBox.bottom - 1 ? 2 : 1,
+        links: links.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { text: el.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height) };
+        }),
+        pageScrollsSideways: document.documentElement.scrollWidth > globalThis.innerWidth + 1,
+      };
+    });
+    await page.close();
+    await context.close();
+
+    if (!header.navExists) {
+      problems.push(`${label}: no hay cabecera con navegación en el marcado`);
+      continue;
+    }
+    if (header.navDisplay === 'none' || header.navHeight === 0) {
+      problems.push(`${label}: la navegación está OCULTA (display: ${header.navDisplay}, alto ${header.navHeight})`);
+    }
+    if (header.links.length === 0) {
+      problems.push(`${label}: la navegación no tiene ni un enlace`);
+    }
+    for (const link of header.links) {
+      if (link.h < 24 || link.w < 24) {
+        problems.push(`${label}: el enlace «${link.text}» mide ${link.w}×${link.h}, por debajo de 24×24`);
+      }
+    }
+    if (header.rows !== expectRows) {
+      problems.push(
+        `${label}: la cabecera se maqueta en ${header.rows} fila(s) y se esperaban ${expectRows}`,
+      );
+    }
+    if (header.pageScrollsSideways) {
+      problems.push(`${label}: la página se desplaza en horizontal, así que algo no cabe`);
     }
   }
 

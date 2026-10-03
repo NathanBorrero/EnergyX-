@@ -1,7 +1,7 @@
 {
   "theme": "NATHAN & ESTEBAN — ACTUAL (no publicar)",
   "themeId": "gid://shopify/OnlineStoreTheme/213916090621",
-  "takenAt": "2026-10-03T00:35:00Z",
+  "takenAt": "2026-10-03T01:16:00Z",
   "note": "Retrato del theme en Shopify. `md5` es el checksum tal cual; `canonicalMd5` es la huella de la plantilla JSON tras deshacer el reformateo de Shopify, porque su checksum no se puede reproducir en local.",
   "files": {
     "assets/ne-a11y-contrast.js": {
@@ -26,7 +26,7 @@
       "md5": "69ca7ee369dbee3c445e118deb69a045"
     },
     "assets/ne-core.css": {
-      "md5": "93eca4b101c91467e414e082b989136a"
+      "md5": "e188fcb268fe83c3be63a8ddb62a42ba"
     },
     "assets/ne-product-contract.js": {
       "md5": "07e79a987f52f524d46d6e982f35401f"

@@ -1563,3 +1563,118 @@ un meta distinto.
 **18/18. Ninguna `NO EJECUTADA`.** Y los nueve archivos del panel de filtros están en
 `NATHAN & ESTEBAN — ACTUAL (no publicar)`, verificados byte a byte: el `ETag` de Google y el
 `checksumMd5` de Shopify coinciden los dos con el md5 local.
+
+---
+
+## 23. La tienda no tenía navegación en el teléfono
+
+Arreglar el viewport (§22) sirvió inmediatamente para lo que tenía que servir: enseñó un defecto
+que llevaba todo el proyecto escondido.
+
+### 23.1 El defecto
+
+```css
+.ne-header__nav { display: none; }
+@media (min-width: 48em) { .ne-header__nav { display: block; } }
+```
+
+Por debajo de 48em el menú estaba **oculto, y no había nada que lo sustituyera**. Ni cajón, ni botón
+de hamburguesa, ni enlace alternativo. En un teléfono —el dispositivo que esta tienda sirve primero,
+y sobre el que se escribió «mobile-first» en todas las notas— **el storefront no tenía navegación**:
+solo el logotipo y el carrito.
+
+Estuvo invisible porque **todas** las comprobaciones corrían a 980px de ancho, donde la media query
+de escritorio sí se aplica. El theme se auditaba a sí mismo en el único ancho donde el defecto no
+existe.
+
+### 23.2 La solución es la más simple que hay
+
+Una **segunda fila en la cabecera**, con los enlaces a la vista.
+
+Sin cajón, sin botón, sin estado que mantener y **sin una línea de JavaScript**. Un menú escondido
+detrás de un botón añade una interacción, un estado y bytes; una fila de enlaces no añade ninguna de
+las tres cosas. La portada y la colección siguen sirviendo **0 KB de JavaScript**.
+
+Como red de seguridad, la lista se desplaza en horizontal si el menú fuera largo, en lugar de romper
+la maqueta. Con tres o cuatro enlaces cortos no se activa: medido con un menú de tres enlaces en
+390px, no hay desplazamiento horizontal de página.
+
+En escritorio la maqueta de una sola fila se conserva **exactamente** igual que antes.
+
+### 23.3 Y una segunda decisión, tomada con el número
+
+Con el menú en su fila, la cabecera mide **109px en un iPhone: el 12,9% de la pantalla**. Estaba
+`position: sticky`, así que ese 12,9% se perdía **de forma permanente** a cambio de una navegación
+que el comprador usa una vez por visita. En una ficha de calzado son 109px de fotografía del
+producto que no se ven nunca.
+
+**Fija solo en escritorio**, donde mide 77px sobre 900 —el 8,6%— y el espacio sobra.
+
+### 23.4 Medición antes y después
+
+Mediana de cinco, CPU 4× + 4G lento, iPhone 390×844@3×, comprimido:
+
+| | Portada | Ficha | Carrito | Colección |
+| --- | --- | --- | --- | --- |
+| LCP antes | 448 ms | 504 ms | 460 ms | 464 ms |
+| **LCP después** | **444 ms** | **484 ms** | 480 ms | **464 ms** |
+| TBT antes | 2 ms | 6 ms | 0 ms | 15 ms |
+| **TBT después** | 3 ms | **0 ms** | 0 ms | **8 ms** |
+| CLS | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| Transferido | 6,4 KB | 24,2 KB | 22,3 KB | 8,0 KB |
+
+**Coste: ~100 B de CSS comprimido.** Nada se degradó por encima del ruido de medición, el CLS sigue
+en cero en las cuatro páginas, y la tienda ahora tiene navegación en el teléfono.
+
+### 23.5 La comprobación que lo impide
+
+Componentes 20: **la navegación existe en el teléfono.** Mide en los dos anchos y exige que el menú
+esté visible, que tenga al menos un enlace, que cada enlace cumpla 24×24, que la cabecera se maquete
+en dos filas en móvil y en una en escritorio, y que la página no se desplace en horizontal.
+
+Validada inyectando los dos fallos que debe detectar:
+
+| Inyección | Detectado |
+| --- | --- |
+| volver a `display: none` en móvil (el defecto original) | ✅ nombra el ancho, el display y el alto |
+| los enlaces dejan de respetar el alto mínimo | ✅ «mide 84×14, por debajo de 24×24» |
+
+### 23.6 Y los bancos ahora llevan un menú representativo
+
+Tenían **un** enlace. Un menú de un solo enlace no mide la segunda fila ni su separación, así que
+los cinco llevan tres: medir una cabecera que no existe es la deriva de banco otra vez, con otro
+traje.
+
+---
+
+## 24. «Menos movimiento», por fin comprobado en ejecución
+
+De la lista de la experiencia real que pide el estándar, trece puntos estaban cubiertos por las
+comprobaciones de navegador. **Uno no: `prefers-reduced-motion`.**
+
+Estaba escrito —la media query en el CSS, `matchMedia` en el script— y **nada verificaba que el
+navegador acabara haciendo lo que se pretende**. Una media query mal escrita, o un token que alguien
+mueva fuera del bloque, no rompe nada visible: solo deja de obedecer a quien pidió menos movimiento,
+que es justo la persona que no va a reportarlo.
+
+Componentes 7bis comprueba las dos mitades del contrato:
+
+- **el CSS**: con `reducedMotion: reduce` las duraciones se colapsan, el token `--ne-dur` vale
+  `0ms` y `scroll-behavior` es `auto`; y sin la preferencia, las tres cosas siguen activas;
+- **el 3D**: con `eager` pedido en el theme, el visor **no se abre solo**. Un contexto WebGL
+  arrancando sin que nadie lo pida es exactamente el movimiento que se está rechazando.
+
+La mitad del 3D se mide en **escritorio** a propósito: en un teléfono `eager` no se honra nunca, así
+que ahí la rama de «menos movimiento» quedaría tapada por la del dispositivo y la prueba pasaría sin
+probar nada.
+
+Validada inyectando los tres fallos posibles, uno por cada mitad del contrato:
+
+| Inyección | Detectado |
+| --- | --- |
+| se quitan los tokens de duración a cero | ✅ «el token vale "260ms" en lugar de 0ms» |
+| se quita el apagado del desplazamiento suave | ✅ «sigue activo: "smooth"» |
+| el 3D deja de consultar la preferencia | ✅ «arranca un contexto WebGL que nadie pidió» |
+
+**Estado: 20 comprobaciones de componentes, 17 contratos de theme, 18/18 en total, ninguna sin
+ejecutar.** Y los 64 archivos coinciden con `NATHAN & ESTEBAN — ACTUAL (no publicar)`.
