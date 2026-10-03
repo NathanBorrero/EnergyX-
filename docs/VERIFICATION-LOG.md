@@ -1908,3 +1908,73 @@ que sí.
 | el theme coincide con Shopify — 64 de 64 | OK |
 
 **18/18. Ninguna `NO EJECUTADA`.**
+
+---
+
+## §28 · Estudio 3D fuera de la página · zapatilla de cancha N&E
+
+**Fecha:** 2026-10-03 · **Estado:** VERIFICADO POR RENDER
+
+Petición: un modelo 3D de la zapatilla de las fotos, **fuera** de la tienda.
+No toca el theme, no toca el rendimiento, no es una sección de Shopify.
+
+### Lo que se entregó
+
+- `3d/make_sneaker.py` — generador sin dependencias. `python3 make_sneaker.py`
+  reproduce `MODEL.glb` byte a byte.
+- `3d/MODEL.glb` — 50.624 triángulos, 28.059 vértices, 962 KB, 9 materiales.
+- `3d/visor/` — visor WebGL2 propio, sin librerías ni CDN de terceros.
+- Publicado en https://claude.ai/artifact/3gqeJhQjALR1hbsKkmcojP
+
+### Qué se verificó, y cómo
+
+Render real con Playwright + SwiftShader en seis vistas, más medición de tono
+por lectura de píxel. **Ningún modelo se publicó sin haberlo mirado antes.**
+
+| # | Hallazgo | Cómo se detectó | Corrección |
+|---|---|---|---|
+| 1 | El primer modelo **no era un zapato**: cúpula cerrada, sin boca, lengüeta flotando | render 3/4 | se rehízo la topología: `th_borde(t)` abre el agujero |
+| 2 | Contorno de la planta festoneado | render de planta | `interp` pasó de smoothstep por tramos a spline cúbico monótono |
+| 3 | El cuello salía con pliegues | render 3/4 | marcos por transporte paralelo en vez de un "arriba" fijo |
+| 4 | Costura falsa en el centro de la punta y del talón | vista de punta | `soldar()` por posición con umbral de ángulo |
+| 5 | La vista de suela salía vacía | render de suela | el suelo sólo se dibuja con la cámara por encima |
+| 6 | **BLACK se veía gris medio** (tono 114/255) | lectura de píxel | anclajes recalculados en luz lineal; ahora 52/255 |
+| 7 | GREY casi no se distinguía de WHITE (195 vs 219) | lectura de píxel | el reparto tonal se mide dentro del propio modelo |
+| 8 | Objetivos táctiles de 20 px en móvil | auditoría a 390 px | campo de archivo envuelto en etiqueta de 44 px |
+| 9 | El horizonte del suelo cortaba la imagen | render | el plano se funde con el fondo en su borde |
+
+### La corrección del usuario, y lo que estaba mal
+
+El usuario señaló que el modelo era **muy distinto** de la referencia. Lo era,
+y en cosas concretas:
+
+| Lo que tenía | Lo que es en la referencia |
+|---|---|
+| entresuela nervada de plataforma | **cupsole de cancha en cuña**, lisa, con una ranura |
+| cordones redondos | **cordones planos** (cinta) |
+| sin perforaciones ni pespunte | paneles de piel **cosidos y perforados** |
+| herraje plateado | **herraje dorado** |
+| rodadura de círculos de 29 mm de paso | **onda fina transversal** con pivote circular |
+| caña de 9,9 cm | ~8,5 cm |
+
+Segunda corrección del usuario: **las dos bandas son marca suya**, no de otra
+empresa. Se modelaron. La foto de referencia sí lleva un nombre grabado en la
+talonera que es de un tercero: eso no se reproduce.
+
+Las bandas fallaron dos veces antes de leerse:
+1. Con 1,9 mm de relieve sólo se veía el pespunte de los cantos: cuatro rayas.
+2. Con 3,8 mm pero tumbadas a ~25°, su ancho **perpendicular** real era de 5 mm
+   aunque ocuparan 13 mm medidos en `t`. Se enderezaron a ~56° y se ensancharon
+   a 12 mm reales.
+
+### Lección
+
+Las perforaciones y el pespunte por **desplazamiento de superficie** daban
+papilla: a 152×22 de rejilla, un punto de 1,5 mm no cabe. Pasaron a ser
+**geometría aparte** (discos, aros y un hilo de radio modulado). Un detalle de
+pocos milímetros se modela, no se empuja.
+
+### Lo que sigue siendo PLACEHOLDER
+
+Medidas, color del herraje, acabados y la tipografía del visor. Nada de esto
+está decidido, y el visor lo dice en su propia página.

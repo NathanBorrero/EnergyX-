@@ -1,0 +1,1009 @@
+<title>Estudio de Tipología</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&display=swap">
+<style>
+/* Papel y tinta: el objeto pone la forma, la página no pone color.
+   Una escena a sangre, los mandos debajo en una retícula de dos columnas. */
+:root {
+    --paper: #faf9f7;
+    --paper-deep: #efeeea;
+    --ink: #0e0e0c;
+    --soft: #56554f;
+    --rule: #dddcd6;
+    --border: #84837c;
+    --touch: 44px;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    /* La tipografía definitiva de la marca aún no está decidida: ésta es
+       PLACEHOLDER, elegida para que el estudio se lea como estudio. */
+    --display: "Archivo", ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121210; --paper-deep: #1b1b18; --ink: #f3f2ee;
+      --soft: #a9a7a0; --rule: #2d2d29; --border: #6b6a64;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121210; --paper-deep: #1b1b18; --ink: #f3f2ee;
+    --soft: #a9a7a0; --rule: #2d2d29; --border: #6b6a64;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+  .brand { font-family: var(--display); font-size: 14px; letter-spacing: 0.30em;
+           text-transform: uppercase; font-weight: 600; margin: 0; }
+  .kicker { font-family: var(--display); font-size: 11px; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--soft); margin: 0; }
+
+  .stage {
+    position: relative; margin: 20px 0 0; background: var(--paper-deep);
+    border: 1px solid var(--rule); aspect-ratio: 4 / 3; overflow: hidden;
+    touch-action: none; cursor: grab;
+  }
+  .stage.arrastrando { cursor: grabbing; }
+  .stage canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .stage.soltar::after {
+    content: "SUELTA EL .GLB"; position: absolute; inset: 10px;
+    border: 1px dashed var(--border); display: grid; place-items: center;
+    font-size: 11px; letter-spacing: 0.22em; background: color-mix(in srgb, var(--paper) 70%, transparent);
+  }
+  @media (max-width: 640px) { .stage { aspect-ratio: 1 / 1; } }
+
+  .estado {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft);
+    background: linear-gradient(to top, color-mix(in srgb, var(--paper-deep) 92%, transparent), transparent);
+    pointer-events: none;
+  }
+  .error {
+    position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+    background: var(--paper); text-align: center; font-size: 14px; line-height: 1.6;
+  }
+  .error[hidden] { display: none; }
+
+  .mandos { display: grid; gap: 18px; margin-top: 18px; }
+  @media (min-width: 720px) { .mandos { grid-template-columns: 1fr 1fr; gap: 18px 32px; } }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  legend { font-family: var(--display); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--soft); padding: 0 0 8px; }
+  .fila { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    min-height: var(--touch); min-width: var(--touch); padding: 0 14px;
+    border: 1px solid var(--border); background: transparent; color: var(--ink);
+    font: inherit; font-family: var(--display); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background 220ms ease, color 220ms ease, border-color 220ms ease;
+  }
+  .chip:hover { border-color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .chip { transition: none; } }
+  .chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .muestra { width: 13px; height: 13px; border: 1px solid var(--border); margin-right: 9px; flex: none; }
+
+  .ficha { margin-top: 26px; border-top: 1px solid var(--rule); padding-top: 18px; display: grid; gap: 22px; }
+  @media (min-width: 720px) { .ficha { grid-template-columns: 1fr 1fr; gap: 22px 32px; } }
+  .ficha h2 { font-family: var(--display); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--soft); font-weight: 600; margin: 0 0 10px; }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 13px; }
+  dt { color: var(--soft); }
+  dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .nota { font-size: 13px; color: var(--soft); margin: 0 0 10px; max-width: 54ch; }
+  .nota strong { color: var(--ink); font-weight: 600; }
+  /* El control nativo mide 20 px de alto: se envuelve para llegar al mínimo
+     táctil sin perder el campo, que sigue siendo el que recibe el foco. */
+  .archivo { position: relative; display: inline-flex; align-items: center; justify-content: center;
+             min-height: var(--touch); padding: 0 16px; border: 1px solid var(--border);
+             font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; }
+  .archivo:hover { border-color: var(--ink); }
+  .archivo:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .archivo input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .elegido { font-size: 12px; color: var(--soft); margin: 8px 0 0; letter-spacing: 0; text-transform: none; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 8px; top: 8px; z-index: 9; background: var(--ink); color: var(--paper);
+                min-height: var(--touch); display: inline-flex; align-items: center; padding: 0 16px; }
+</style>
+<a class="skip" href="#mandos">Ir a los controles</a>
+<div class="wrap">
+
+  <header>
+    <p class="brand">Nathan &amp; Esteban</p>
+    <p class="kicker">Estudio de tipología · modelo 3D</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="lienzo" aria-label="Modelo 3D de la zapatilla. Arrastra para girarlo."></canvas>
+    <p class="estado" id="estado">Cargando…</p>
+    <div class="error" id="error" hidden></div>
+  </div>
+
+  <div class="mandos" id="mandos">
+    <fieldset>
+      <legend>Vista</legend>
+      <div class="fila" id="vistas" role="radiogroup" aria-label="Vista"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Acabado</legend>
+      <div class="fila" id="acabados" role="radiogroup" aria-label="Acabado"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Lectura</legend>
+      <div class="fila">
+        <button type="button" class="chip" id="giro" aria-pressed="false">Giro</button>
+        <button type="button" class="chip" id="malla" aria-pressed="false">Estructura</button>
+        <button type="button" class="chip" id="suelo" aria-pressed="true">Suelo</button>
+        <button type="button" class="chip" id="tema" aria-pressed="false">Fondo</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Sustituir el modelo</legend>
+      <p class="nota">Arrastra un <strong>.glb</strong> sobre la escena, o elígelo aquí. No se sube a ningún sitio: se lee en tu navegador.</p>
+      <label class="archivo">Elegir .glb<input type="file" id="file" accept=".glb,model/gltf-binary"></label>
+      <p class="elegido" id="elegido"></p>
+    </fieldset>
+  </div>
+
+  <div class="ficha">
+    <div>
+      <h2>El archivo</h2>
+      <dl id="datos"></dl>
+    </div>
+    <div>
+      <h2>Qué es esto</h2>
+      <p class="nota">Una <strong>zapatilla baja de cancha modelada por código</strong>: cupsole en cuña, tope de puntera, paneles cosidos, perforaciones, ojales metálicos, cordones planos y las <strong>dos bandas</strong> de Nathan &amp; Esteban en relieve sobre el cuarto.</p>
+      <p class="nota">Es un <strong>estudio de forma</strong>, no el producto final. No reproduce nombres grabados ni marcas de terceros. El modelo real se sustituye por tu propio <strong>MODEL.glb</strong> con el control de arriba.</p>
+      <p class="nota">Medidas, color del herraje y acabados son <strong>PLACEHOLDER</strong> hasta que exista el zapato real.</p>
+    </div>
+  </div>
+
+</div>
+<script type="module">
+/*
+  Lector GLB mínimo y honesto.
+
+  QUÉ LEE
+  Mallas (POSITION, NORMAL, TEXCOORD_0, índices), jerarquía de nodos con matrix
+  o TRS, materiales PBR (baseColorFactor, baseColorTexture, metallic, roughness)
+  e imágenes embebidas o por URI.
+
+  QUÉ NO LEE
+  Draco, skins, animaciones y morph targets. Si un archivo los necesita, lo dice
+  en voz alta en vez de dibujar algo incompleto y llamarlo bien.
+*/
+const COMP = {
+  5120: { array: Int8Array, size: 1 },
+  5121: { array: Uint8Array, size: 1 },
+  5122: { array: Int16Array, size: 2 },
+  5123: { array: Uint16Array, size: 2 },
+  5125: { array: Uint32Array, size: 4 },
+  5126: { array: Float32Array, size: 4 },
+};
+const NUM = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
+
+function parseGLB(buffer) {
+  const dv = new DataView(buffer);
+  if (dv.getUint32(0, true) !== 0x46546c67) throw new Error('No es un archivo GLB (falta la firma glTF).');
+  const version = dv.getUint32(4, true);
+  if (version !== 2) throw new Error(`GLB versión ${version}: este lector sólo entiende la 2.`);
+  const total = dv.getUint32(8, true);
+  if (total > buffer.byteLength) throw new Error('El GLB declara más bytes de los que tiene: está truncado.');
+
+  let json = null, bin = null, off = 12;
+  while (off + 8 <= total) {
+    const len = dv.getUint32(off, true);
+    const type = dv.getUint32(off + 4, true);
+    const start = off + 8;
+    if (start + len > buffer.byteLength) throw new Error('Un chunk del GLB se sale del archivo.');
+    if (type === 0x4e4f534a) json = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, start, len)));
+    else if (type === 0x004e4942) bin = new Uint8Array(buffer, start, len);
+    off = start + len + ((4 - (len % 4)) % 4);
+  }
+  if (!json) throw new Error('El GLB no trae chunk JSON.');
+  return build(json, bin, buffer);
+}
+
+
+function build(g, bin) {
+  const needed = (g.extensionsRequired || []).filter((e) => e !== 'KHR_materials_unlit');
+  if (needed.length) throw new Error(`Este modelo exige extensiones que no leo: ${needed.join(', ')}.`);
+
+  const buffers = (g.buffers || []).map((b, i) => {
+    if (b.uri === undefined) {
+      if (!bin) throw new Error('El modelo apunta al buffer binario y no hay chunk BIN.');
+      return bin;
+    }
+    if (b.uri.startsWith('data:')) return b64(b.uri);
+    throw new Error(`El buffer ${i} está en un archivo aparte (${b.uri}); sólo leo GLB autocontenido.`);
+  });
+
+  const view = (i) => {
+    const v = g.bufferViews[i];
+    const base = buffers[v.buffer || 0];
+    return { base, byteOffset: (base.byteOffset || 0) + (v.byteOffset || 0), byteLength: v.byteLength, byteStride: v.byteStride || 0 };
+  };
+
+  function read(ai) {
+    const a = g.accessors[ai];
+    const n = NUM[a.type], c = COMP[a.componentType];
+    if (!n || !c) throw new Error(`Accessor ${ai} con tipo que no entiendo.`);
+    const out = new (a.componentType === 5126 ? Float32Array : c.array)(a.count * n);
+    if (a.bufferView === undefined) return out; // ceros, como manda la especificación
+    const v = view(a.bufferView);
+    const stride = v.byteStride || n * c.size;
+    const src = new DataView(v.base.buffer, v.byteOffset + (a.byteOffset || 0), v.byteLength - (a.byteOffset || 0));
+    const get = {
+      5120: (o) => src.getInt8(o), 5121: (o) => src.getUint8(o),
+      5122: (o) => src.getInt16(o, true), 5123: (o) => src.getUint16(o, true),
+      5125: (o) => src.getUint32(o, true), 5126: (o) => src.getFloat32(o, true),
+    }[a.componentType];
+    for (let i = 0; i < a.count; i++) for (let k = 0; k < n; k++) out[i * n + k] = get(i * stride + k * c.size);
+    return out;
+  }
+
+  const images = (g.images || []).map((im) => {
+    if (im.uri && im.uri.startsWith('data:')) return im.uri;
+    if (im.bufferView !== undefined) {
+      const v = view(im.bufferView);
+      const blob = new Blob([new Uint8Array(v.base.buffer, v.byteOffset, v.byteLength)], { type: im.mimeType || 'image/png' });
+      return URL.createObjectURL(blob);
+    }
+    return null; // imagen externa: el material cae a su color plano
+  });
+
+  const materials = (g.materials || []).map((m, i) => {
+    const p = m.pbrMetallicRoughness || {};
+    const texIdx = p.baseColorTexture ? p.baseColorTexture.index : -1;
+    const src = texIdx >= 0 && g.textures && g.textures[texIdx] ? g.textures[texIdx].source : undefined;
+    return {
+      name: m.name || `material_${i}`,
+      baseColor: p.baseColorFactor || [1, 1, 1, 1],
+      metallic: p.metallicFactor !== undefined ? p.metallicFactor : 1,
+      roughness: p.roughnessFactor !== undefined ? p.roughnessFactor : 1,
+      image: src !== undefined ? images[src] : null,
+      doubleSided: !!m.doubleSided,
+      alphaMode: m.alphaMode || 'OPAQUE',
+    };
+  });
+  materials.push({ name: 'por_defecto', baseColor: [0.86, 0.85, 0.83, 1], metallic: 0, roughness: 0.6, image: null, doubleSided: true, alphaMode: 'OPAQUE' });
+  const DEF = materials.length - 1;
+
+  // ───────────────────────────────────────────────────── nodos → matrices mundo
+  const parts = [];
+  const walk = (ni, parent) => {
+    const nd = g.nodes[ni];
+    const local = nd.matrix ? nd.matrix.slice() : trs(nd.translation, nd.rotation, nd.scale);
+    const world = mul(parent, local);
+    if (nd.mesh !== undefined) {
+      for (const pr of g.meshes[nd.mesh].primitives) {
+        if (pr.mode !== undefined && pr.mode !== 4) continue; // sólo triángulos
+        const pos = pr.attributes.POSITION;
+        if (pos === undefined) continue;
+        parts.push({
+          name: nd.name || g.meshes[nd.mesh].name || `malla_${ni}`,
+          position: read(pos),
+          normal: pr.attributes.NORMAL !== undefined ? read(pr.attributes.NORMAL) : null,
+          uv: pr.attributes.TEXCOORD_0 !== undefined ? read(pr.attributes.TEXCOORD_0) : null,
+          index: pr.indices !== undefined ? read(pr.indices) : null,
+          material: pr.material !== undefined ? pr.material : DEF,
+          world,
+        });
+      }
+    }
+    for (const ch of nd.children || []) walk(ch, world);
+  };
+  const scene = g.scenes && g.scenes[g.scene || 0];
+  const roots = scene && scene.nodes ? scene.nodes : (g.nodes || []).map((_, i) => i);
+  for (const r of roots) walk(r, IDENT);
+  if (!parts.length) throw new Error('El modelo no trae ninguna malla de triángulos.');
+
+  for (const p of parts) {
+    if (!p.normal) p.normal = normalesDeCara(p);
+    applyWorld(p);
+  }
+  const bounds = caja(parts);
+  const tris = parts.reduce((s, p) => s + (p.index ? p.index.length : p.position.length / 3) / 3, 0);
+  const verts = parts.reduce((s, p) => s + p.position.length / 3, 0);
+  return { parts, materials, bounds, tris, verts, generator: (g.asset && g.asset.generator) || '' };
+}
+
+const IDENT = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+function trs(t, r, s) {
+  const [x,y,z,w] = r || [0,0,0,1], [sx,sy,sz] = s || [1,1,1], [tx,ty,tz] = t || [0,0,0];
+  const x2=x+x, y2=y+y, z2=z+z;
+  const xx=x*x2, xy=x*y2, xz=x*z2, yy=y*y2, yz=y*z2, zz=z*z2, wx=w*x2, wy=w*y2, wz=w*z2;
+  return [
+    (1-(yy+zz))*sx, (xy+wz)*sx, (xz-wy)*sx, 0,
+    (xy-wz)*sy, (1-(xx+zz))*sy, (yz+wx)*sy, 0,
+    (xz+wy)*sz, (yz-wx)*sz, (1-(xx+yy))*sz, 0,
+    tx, ty, tz, 1,
+  ];
+}
+function mul(a, b) { // column-major, a·b
+  const o = new Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3];
+  }
+  return o;
+}
+function applyWorld(p) {
+  const m = p.world;
+  if (m.every((v, i) => v === IDENT[i])) return;
+  const P = p.position, N = p.normal;
+  for (let i = 0; i < P.length; i += 3) {
+    const x = P[i], y = P[i+1], z = P[i+2];
+    P[i]   = m[0]*x + m[4]*y + m[8]*z  + m[12];
+    P[i+1] = m[1]*x + m[5]*y + m[9]*z  + m[13];
+    P[i+2] = m[2]*x + m[6]*y + m[10]*z + m[14];
+    const nx = N[i], ny = N[i+1], nz = N[i+2];
+    let a = m[0]*nx + m[4]*ny + m[8]*nz, b = m[1]*nx + m[5]*ny + m[9]*nz, c = m[2]*nx + m[6]*ny + m[10]*nz;
+    const L = Math.hypot(a, b, c) || 1;
+    N[i] = a/L; N[i+1] = b/L; N[i+2] = c/L;
+  }
+  p.world = IDENT;
+}
+function normalesDeCara(p) {
+  const P = p.position, N = new Float32Array(P.length);
+  const n = p.index ? p.index.length : P.length / 3;
+  for (let i = 0; i + 2 < n; i += 3) {
+    const a = (p.index ? p.index[i] : i) * 3, b = (p.index ? p.index[i+1] : i+1) * 3, c = (p.index ? p.index[i+2] : i+2) * 3;
+    const ux = P[b]-P[a], uy = P[b+1]-P[a+1], uz = P[b+2]-P[a+2];
+    const wx = P[c]-P[a], wy = P[c+1]-P[a+1], wz = P[c+2]-P[a+2];
+    const nx = uy*wz-uz*wy, ny = uz*wx-ux*wz, nz = ux*wy-uy*wx;
+    for (const o of [a, b, c]) { N[o]+=nx; N[o+1]+=ny; N[o+2]+=nz; }
+  }
+  for (let i = 0; i < N.length; i += 3) {
+    const L = Math.hypot(N[i], N[i+1], N[i+2]) || 1;
+    N[i]/=L; N[i+1]/=L; N[i+2]/=L;
+  }
+  return N;
+}
+function caja(parts) {
+  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+  for (const p of parts) for (let i = 0; i < p.position.length; i += 3) for (let k = 0; k < 3; k++) {
+    const v = p.position[i + k];
+    if (v < min[k]) min[k] = v;
+    if (v > max[k]) max[k] = v;
+  }
+  return { min, max, size: max.map((v, i) => v - min[i]), center: max.map((v, i) => (v + min[i]) / 2) };
+}
+function b64(uri) {
+  const s = atob(uri.slice(uri.indexOf(',') + 1));
+  const u = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+  return u;
+}
+
+/*
+  Render de estudio: luz de tres puntos, sombra proyectada y suelo de papel.
+  Sin librerías. WebGL2 directo.
+*/
+const VS = `#version 300 es
+in vec3 aPos; in vec3 aNor; in vec2 aUv;
+uniform mat4 uViewProj; uniform vec3 uCenter; uniform float uSpin;
+out vec3 vPos; out vec3 vNor; out vec2 vUv;
+void main() {
+  float c = cos(uSpin), s = sin(uSpin);
+  vec3 q = aPos - uCenter;
+  vec3 p = vec3(c * q.x + s * q.z, q.y, -s * q.x + c * q.z) + uCenter;
+  vec3 n = vec3(c * aNor.x + s * aNor.z, aNor.y, -s * aNor.x + c * aNor.z);
+  vPos = p; vNor = n; vUv = aUv;
+  gl_Position = uViewProj * vec4(p, 1.0);
+}`;
+
+const FS = `#version 300 es
+precision highp float;
+in vec3 vPos; in vec3 vNor; in vec2 vUv;
+uniform vec3 uEye; uniform vec4 uBase; uniform float uRough; uniform float uMetal;
+uniform sampler2D uTex; uniform float uHasTex;
+uniform float uFloorY; uniform float uBackface;
+out vec4 frag;
+
+vec3 luz(vec3 N, vec3 V, vec3 L, vec3 col, float rough, vec3 base, float metal) {
+  float nl = max(dot(N, L), 0.0);
+  vec3 H = normalize(L + V);
+  float a = max(rough * rough, 0.0025);
+  float nh = max(dot(N, H), 0.0);
+  float d = (nh * nh * (a * a - 1.0) + 1.0);
+  float ggx = (a * a) / (3.14159265 * d * d);
+  float f0 = mix(0.045, 1.0, metal);
+  vec3 spec = col * ggx * f0 * nl;
+  vec3 diff = base * col * nl * (1.0 - metal) / 3.14159265;
+  return diff + spec;
+}
+
+void main() {
+  vec3 N = normalize(vNor);
+  if (!gl_FrontFacing) N = -N;
+  vec3 V = normalize(uEye - vPos);
+  vec4 base = uBase;
+  if (uHasTex > 0.5) base *= texture(uTex, vUv);
+  if (uBackface > 0.5 && !gl_FrontFacing) { frag = vec4(0.78, 0.12, 0.45, 1.0); return; }
+
+  // ambiente hemisférico: cielo arriba, rebote del papel abajo
+  float sky = 0.5 + 0.5 * N.y;
+  vec3 amb = mix(vec3(0.46, 0.45, 0.43), vec3(0.92, 0.92, 0.94), sky) * base.rgb;
+  // oclusión de contacto con el suelo
+  float h = clamp((vPos.y - uFloorY) / 0.035, 0.0, 1.0);
+  amb *= mix(0.46, 1.0, pow(h, 0.65));
+
+  vec3 c = amb * 0.74;
+  c += luz(N, V, normalize(vec3(-0.55, 0.78, 0.62)), vec3(2.55, 2.52, 2.46), uRough, base.rgb, uMetal);
+  c += luz(N, V, normalize(vec3( 0.86, 0.26, 0.34)), vec3(0.66, 0.66, 0.70), uRough, base.rgb, uMetal);
+  c += luz(N, V, normalize(vec3( 0.10, 0.42,-0.92)), vec3(0.74, 0.73, 0.70), uRough, base.rgb, uMetal);
+
+  c = c / (c + vec3(0.92));                  // compresión de altas luces
+  c = pow(c * 1.42, vec3(1.0 / 2.2));
+  frag = vec4(min(c, vec3(1.0)), base.a);
+}`;
+
+const SUELO_VS = `#version 300 es
+in vec2 aXz;
+uniform mat4 uViewProj; uniform float uFloorY; uniform float uExtent; uniform vec3 uCenter;
+out vec2 vXz;
+void main() { vXz = aXz * uExtent; gl_Position = uViewProj * vec4(vXz.x + uCenter.x, uFloorY, vXz.y + uCenter.z, 1.0); }`;
+
+const SUELO_FS = `#version 300 es
+precision highp float;
+in vec2 vXz;
+uniform vec2 uHuella; uniform vec3 uPaper; uniform float uExtent;
+out vec4 frag;
+void main() {
+  // sombra de contacto: elipse de la huella, borde suave
+  float d = length(vec2(vXz.x / uHuella.x, vXz.y / uHuella.y));
+  float s = 1.0 - smoothstep(0.55, 2.05, d);
+  // el plano se funde con el fondo en su borde: si no, se ve el horizonte
+  float borde = smoothstep(0.30, 0.88, length(vXz) / uExtent);
+  vec3 c = uPaper * mix(1.0, 0.80, s * 0.92);
+  frag = vec4(mix(c, uPaper, borde), 1.0);
+}`;
+
+const SOMBRA_VS = `#version 300 es
+in vec3 aPos;
+uniform mat4 uViewProj; uniform float uFloorY; uniform vec3 uLuz; uniform vec3 uCenter; uniform float uSpin;
+void main() {
+  float c = cos(uSpin), s = sin(uSpin);
+  vec3 q = aPos - uCenter;
+  vec3 p = vec3(c * q.x + s * q.z, q.y, -s * q.x + c * q.z) + uCenter;
+  float k = (p.y - uFloorY) / max(uLuz.y, 0.001);
+  vec3 g = vec3(p.x - uLuz.x * k, uFloorY + 0.0004, p.z - uLuz.z * k);
+  gl_Position = uViewProj * vec4(g, 1.0);
+}`;
+
+const SOMBRA_FS = `#version 300 es
+precision highp float; out vec4 frag;
+void main() { frag = vec4(0.0, 0.0, 0.0, 1.0); }`;
+
+function crearRender(canvas) {
+  const gl = canvas.getContext('webgl2', { antialias: true, stencil: true, alpha: false, preserveDrawingBuffer: true });
+  if (!gl) throw new Error('Este navegador no da WebGL2.');
+
+  const malla = prog(gl, VS, FS);
+  const suelo = prog(gl, SUELO_VS, SUELO_FS);
+  const sombra = prog(gl, SOMBRA_VS, SOMBRA_FS);
+
+  const quad = gl.createVertexArray();
+  gl.bindVertexArray(quad);
+  const qb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, qb);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, 1,1, -1,-1, 1,1, -1,1]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+
+  let modelo = null, lotes = [], blanca = null;
+
+  function subir(m) {
+    for (const l of lotes) { gl.deleteVertexArray(l.vao); l.bufs.forEach((b) => gl.deleteBuffer(b)); if (l.lineas) gl.deleteBuffer(l.lineas); }
+    lotes = [];
+    modelo = m;
+    for (const p of m.parts) {
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      const bufs = [];
+      bufs.push(atrib(gl, 0, p.position, 3));
+      bufs.push(atrib(gl, 1, p.normal, 3));
+      bufs.push(atrib(gl, 2, p.uv || new Float32Array((p.position.length / 3) * 2), 2));
+      let ebo = null, count;
+      if (p.index) {
+        ebo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+        const u32 = p.index instanceof Uint32Array ? p.index : new Uint32Array(p.index);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, u32, gl.STATIC_DRAW);
+        bufs.push(ebo);
+        count = u32.length;
+      } else count = p.position.length / 3;
+      gl.bindVertexArray(null);
+      const mat = m.materials[p.material] || m.materials[m.materials.length - 1];
+      lotes.push({ vao, bufs, count, indexado: !!p.index, mat, tex: mat.image ? textura(gl, mat.image) : null, nombre: p.name, lineas: null, nLineas: 0, p });
+    }
+  }
+
+  function lineasDe(l) {
+    if (l.lineas) return l;
+    const p = l.p, set = new Set(), arr = [];
+    const n = p.index ? p.index.length : p.position.length / 3;
+    const push = (a, b) => {
+      const k = a < b ? a * 4294967296 + b : b * 4294967296 + a;
+      if (set.has(k)) return;
+      set.add(k); arr.push(a, b);
+    };
+    for (let i = 0; i + 2 < n; i += 3) {
+      const a = p.index ? p.index[i] : i, b = p.index ? p.index[i+1] : i+1, c = p.index ? p.index[i+2] : i+2;
+      push(a, b); push(b, c); push(c, a);
+    }
+    gl.bindVertexArray(l.vao);
+    l.lineas = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, l.lineas);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(arr), gl.STATIC_DRAW);
+    l.nLineas = arr.length;
+    gl.bindVertexArray(null);
+    return l;
+  }
+
+  function dibujar(o) {
+    const { ancho, alto, viewProj, eye, paper, color, estructura, backface, spin, floorY, huella, extent, center, conSuelo } = o;
+    gl.viewport(0, 0, ancho, alto);
+    gl.clearColor(paper[0], paper[1], paper[2], 1);
+    gl.clearDepth(1);
+    gl.clearStencil(0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.CULL_FACE);
+
+    if (conSuelo) {
+      gl.useProgram(suelo);
+      gl.bindVertexArray(quad);
+      u3(gl, suelo, 'uPaper', paper);
+      gl.uniformMatrix4fv(loc(gl, suelo, 'uViewProj'), false, viewProj);
+      gl.uniform1f(loc(gl, suelo, 'uFloorY'), floorY);
+      gl.uniform1f(loc(gl, suelo, 'uExtent'), extent);
+      gl.uniform2f(loc(gl, suelo, 'uHuella'), huella[0], huella[1]);
+      u3(gl, suelo, 'uCenter', center);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.bindVertexArray(null);
+
+      // sombra proyectada, marcada una vez en el stencil para que no se acumule
+      gl.enable(gl.STENCIL_TEST);
+      gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+      gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+      gl.colorMask(false, false, false, false);
+      gl.depthMask(false);
+      gl.useProgram(sombra);
+      gl.uniformMatrix4fv(loc(gl, sombra, 'uViewProj'), false, viewProj);
+      gl.uniform1f(loc(gl, sombra, 'uFloorY'), floorY);
+      u3(gl, sombra, 'uLuz', [-0.55, 0.78, 0.62]);
+      u3(gl, sombra, 'uCenter', center);
+      gl.uniform1f(loc(gl, sombra, 'uSpin'), spin);
+      for (const l of lotes) {
+        gl.bindVertexArray(l.vao);
+        if (l.indexado) { gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, l.bufs[l.bufs.length - 1]); gl.drawElements(gl.TRIANGLES, l.count, gl.UNSIGNED_INT, 0); }
+        else gl.drawArrays(gl.TRIANGLES, 0, l.count);
+      }
+      gl.bindVertexArray(null);
+      gl.colorMask(true, true, true, true);
+      gl.depthMask(true);
+      gl.stencilFunc(gl.EQUAL, 1, 0xff);
+      gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.useProgram(suelo);
+      gl.bindVertexArray(quad);
+      u3(gl, suelo, 'uPaper', [paper[0] * 0.30, paper[1] * 0.30, paper[2] * 0.31]);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.bindVertexArray(null);
+      gl.disable(gl.BLEND);
+      gl.disable(gl.STENCIL_TEST);
+    }
+
+    gl.useProgram(malla);
+    gl.uniformMatrix4fv(loc(gl, malla, 'uViewProj'), false, viewProj);
+    u3(gl, malla, 'uEye', eye);
+    u3(gl, malla, 'uCenter', center);
+    gl.uniform1f(loc(gl, malla, 'uSpin'), spin);
+    gl.uniform1f(loc(gl, malla, 'uFloorY'), floorY);
+    gl.uniform1f(loc(gl, malla, 'uBackface'), backface ? 1 : 0);
+    gl.uniform1i(loc(gl, malla, 'uTex'), 0);
+
+    for (const l of lotes) {
+      const tono = color ? color(l.mat) : null;
+      const base = tono ? tono.base : l.mat.baseColor;
+      const rough = tono && tono.rough !== undefined ? tono.rough : l.mat.roughness;
+      gl.uniform4f(loc(gl, malla, 'uBase'), base[0], base[1], base[2], base[3] !== undefined ? base[3] : 1);
+      gl.uniform1f(loc(gl, malla, 'uRough'), Math.max(0.045, rough));
+      gl.uniform1f(loc(gl, malla, 'uMetal'), tono && tono.metal !== undefined ? tono.metal : l.mat.metallic);
+      gl.uniform1f(loc(gl, malla, 'uHasTex'), l.tex ? 1 : 0);
+      if (l.tex) { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, l.tex); }
+      gl.bindVertexArray(l.vao);
+      if (l.indexado) { gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, l.bufs[l.bufs.length - 1]); gl.drawElements(gl.TRIANGLES, l.count, gl.UNSIGNED_INT, 0); }
+      else gl.drawArrays(gl.TRIANGLES, 0, l.count);
+      gl.bindVertexArray(null);
+    }
+
+    if (estructura) {
+      gl.useProgram(malla);
+      gl.uniform1f(loc(gl, malla, 'uHasTex'), 0);
+      gl.uniform4f(loc(gl, malla, 'uBase'), 0.06, 0.06, 0.055, 1);
+      gl.uniform1f(loc(gl, malla, 'uRough'), 1);
+      gl.uniform1f(loc(gl, malla, 'uMetal'), 0);
+      gl.uniform1f(loc(gl, malla, 'uBackface'), 0);
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      for (const l of lotes) {
+        lineasDe(l);
+        gl.bindVertexArray(l.vao);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, l.lineas);
+        gl.drawElements(gl.LINES, l.nLineas, gl.UNSIGNED_INT, 0);
+        gl.bindVertexArray(null);
+      }
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+    }
+  }
+
+  return { gl, subir, dibujar, get modelo() { return modelo; } };
+}
+
+function prog(gl, vs, fs) {
+  const p = gl.createProgram();
+  for (const [t, s] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const sh = gl.createShader(t);
+    gl.shaderSource(sh, s);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error('Shader: ' + gl.getShaderInfoLog(sh));
+    gl.attachShader(p, sh);
+  }
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('Link: ' + gl.getProgramInfoLog(p));
+  p._loc = {};
+  return p;
+}
+function loc(gl, p, n) { if (!(n in p._loc)) p._loc[n] = gl.getUniformLocation(p, n); return p._loc[n]; }
+function u3(gl, p, n, v) { gl.uniform3f(loc(gl, p, n), v[0], v[1], v[2]); }
+function atrib(gl, i, data, n) {
+  const b = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, data instanceof Float32Array ? data : new Float32Array(data), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(i);
+  gl.vertexAttribPointer(i, n, gl.FLOAT, false, 0, 0);
+  return b;
+}
+function textura(gl, src) {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([200, 200, 200, 255]));
+  const im = new Image();
+  im.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, gl.RGBA, gl.UNSIGNED_BYTE, im);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  };
+  im.src = src;
+  return t;
+}
+
+// ───────────────────────────────────────────────────────────────── cámara
+function matrices(o) {
+  const { azim, elev, dist, center, aspecto, fov } = o;
+  const ce = Math.cos(elev), se = Math.sin(elev);
+  const eye = [center[0] + dist * ce * Math.sin(azim), center[1] + dist * se, center[2] + dist * ce * Math.cos(azim)];
+  const view = mirar(eye, center, [0, 1, 0]);
+  const f = 1 / Math.tan(fov / 2), near = dist * 0.02, far = dist * 12;
+  const proj = [f / aspecto,0,0,0, 0,f,0,0, 0,0,(far+near)/(near-far),-1, 0,0,2*far*near/(near-far),0];
+  return { eye, viewProj: mm(proj, view) };
+}
+function mirar(e, c, up) {
+  let z = [e[0]-c[0], e[1]-c[1], e[2]-c[2]];
+  let L = Math.hypot(...z) || 1; z = z.map((v) => v / L);
+  let x = [up[1]*z[2]-up[2]*z[1], up[2]*z[0]-up[0]*z[2], up[0]*z[1]-up[1]*z[0]];
+  L = Math.hypot(...x) || 1; x = x.map((v) => v / L);
+  const y = [z[1]*x[2]-z[2]*x[1], z[2]*x[0]-z[0]*x[2], z[0]*x[1]-z[1]*x[0]];
+  return [x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+          -(x[0]*e[0]+x[1]*e[1]+x[2]*e[2]), -(y[0]*e[0]+y[1]*e[1]+y[2]*e[2]), -(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]), 1];
+}
+function mm(a, b) {
+  const o = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3];
+  return o;
+}
+
+const stage = document.getElementById('stage');
+const lienzo = document.getElementById('lienzo');
+const estadoEl = document.getElementById('estado');
+const errorEl = document.getElementById('error');
+const datosEl = document.getElementById('datos');
+
+const VISTAS = {
+  '3/4':    { azim:  0.72, elev: 0.28 },
+  'Perfil': { azim:  1.5708, elev: 0.03 },
+  'Punta':  { azim:  0.0,    elev: 0.12 },
+  'Talón':  { azim:  3.1416, elev: 0.12 },
+  'Planta': { azim:  1.5708, elev: 1.4 },
+  'Suela':  { azim:  1.5708, elev: -1.32 },
+};
+
+// Los anclajes están en luz lineal, no en sRGB: son los valores que, pasados
+// por la exposición y la gamma del render, dan el tono que se quiere ver.
+const ACABADOS = {
+  Original: null,
+  White: { ancla: [0.952, 0.946, 0.934], ganancia: 0.110, rough: [0.44, 0.68] },
+  Grey:   { ancla: [0.112, 0.113, 0.110], ganancia: 0.075, rough: [0.48, 0.72] },
+  Black:  { ancla: [0.0105, 0.0105, 0.0100], ganancia: 0.0105, rough: [0.34, 0.60] },
+};
+
+const est = {
+  vista: '3/4', acabado: 'White', giro: false, malla: false, suelo: true, tema: false,
+  azim: VISTAS['3/4'].azim, elev: VISTAS['3/4'].elev, zoom: 1, spin: 0,
+};
+
+let R, modelo, tonos = new Map(), destino = new Map(), t0 = 0, pendiente = false;
+
+function fallo(msg) {
+  errorEl.hidden = false;
+  errorEl.textContent = msg;
+  estadoEl.textContent = '';
+}
+
+try { R = crearRender(lienzo); }
+catch (e) { fallo(e.message + ' El modelo necesita WebGL2 para dibujarse; no puedo enseñarlo de otra forma.'); }
+
+// ───────────────────────────────────────────────────────────── acabados
+function lum(c) { return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
+
+let rangoLum = [0, 1];
+function medirRango() {
+  const ls = modelo.materials.map((m) => lum(m.baseColor));
+  const lo = Math.min(...ls), hi = Math.max(...ls);
+  rangoLum = hi - lo > 0.02 ? [lo, hi] : [lo - 0.5, lo + 0.5];
+}
+
+function objetivo(mat) {
+  const a = ACABADOS[est.acabado];
+  if (!a) return { base: mat.baseColor.slice(), rough: mat.roughness, metal: mat.metallic };
+  if (mat.metallic > 0.5) {                      // el herraje sigue siendo metal
+    return { base: mat.baseColor.slice(), rough: mat.roughness, metal: mat.metallic };
+  }
+  // Se conserva la relación tonal ENTRE materiales y se recoloca el conjunto.
+  // El reparto se mide dentro del propio modelo: si todos sus materiales son
+  // casi blancos, un reparto absoluto los dejaría a todos del mismo tono.
+  const rel = Math.min(1, Math.max(0, (lum(mat.baseColor) - rangoLum[0]) / (rangoLum[1] - rangoLum[0])));
+  const k = (rel - 0.5) * a.ganancia;
+  const base = a.ancla.map((v) => Math.min(1, Math.max(0.004, v + k)));
+  const r = a.rough[0] + (a.rough[1] - a.rough[0]) * (1 - rel);
+  return { base: [...base, mat.baseColor[3] !== undefined ? mat.baseColor[3] : 1], rough: r, metal: 0 };
+}
+
+const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+
+function fijarDestino(inmediato) {
+  if (!modelo) return;
+  medirRango();
+  if (quieto.matches) inmediato = true;        // sin travesía de color
+  for (const m of modelo.materials) {
+    destino.set(m, objetivo(m));
+    if (inmediato || !tonos.has(m)) tonos.set(m, JSON.parse(JSON.stringify(destino.get(m))));
+  }
+  t0 = performance.now();
+  pintar();
+}
+
+function avanzarTono(dt) {
+  let movido = false;
+  for (const [m, d] of destino) {
+    const c = tonos.get(m);
+    const k = 1 - Math.pow(0.0025, dt / 620); // ~620 ms, salida suave
+    for (let i = 0; i < 3; i++) {
+      const delta = d.base[i] - c.base[i];
+      if (Math.abs(delta) > 0.0012) { c.base[i] += delta * k; movido = true; }
+      else c.base[i] = d.base[i];
+    }
+    const dr = d.rough - c.rough;
+    if (Math.abs(dr) > 0.002) { c.rough += dr * k; movido = true; } else c.rough = d.rough;
+    c.metal = d.metal;
+  }
+  return movido;
+}
+
+// ───────────────────────────────────────────────────────────── dibujo
+function pintar() { if (!pendiente) { pendiente = true; requestAnimationFrame(cuadro); } }
+
+let anterior = 0;
+function cuadro(ahora) {
+  pendiente = false;
+  const dt = Math.min(64, anterior ? ahora - anterior : 16);
+  anterior = ahora;
+  if (!R || !modelo) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(stage.clientWidth * dpr));
+  const h = Math.max(1, Math.round(stage.clientHeight * dpr));
+  if (lienzo.width !== w || lienzo.height !== h) { lienzo.width = w; lienzo.height = h; }
+
+  if (est.giro) est.spin += dt * 0.00042;
+  const moviendo = avanzarTono(dt);
+
+  const b = modelo.bounds;
+  const radio = Math.hypot(...b.size) / 2;
+  const centro = [b.center[0], b.min[1] + b.size[1] * 0.46, b.center[2]];
+  const dist = (radio / Math.tan(0.46 / 2)) * 0.80 * est.zoom;
+
+  const { eye, viewProj } = matrices({ azim: est.azim, elev: est.elev, dist, center: centro, aspecto: w / h, fov: 0.46 });
+  const paper = leerPaper();
+
+  R.dibujar({
+    ancho: w, alto: h, viewProj, eye, paper,
+    color: (mat) => tonos.get(mat) || null,
+    estructura: est.malla, backface: false, spin: est.spin,
+    floorY: b.min[1], huella: [Math.max(b.size[0], radio * 0.22) * 0.62, Math.max(b.size[2], radio * 0.22) * 0.52],
+    extent: radio * 9.0, center: centro, conSuelo: est.suelo && est.elev > -0.12,
+  });
+
+  if (est.giro || moviendo) pintar();
+}
+
+function leerPaper() {
+  const c = getComputedStyle(document.body).getPropertyValue('--paper-deep').trim();
+  const m = /^#?([0-9a-f]{6})$/i.exec(c);
+  if (!m) return [0.937, 0.933, 0.918];
+  const n = parseInt(m[1], 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255].map((v) => Math.pow(v, 2.2));
+}
+
+// ───────────────────────────────────────────────────────────── controles
+function grupo(host, claves, actual, onPick, muestra) {
+  host.textContent = '';
+  for (const k of claves) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(k === actual));
+    if (muestra) {
+      const s = document.createElement('span');
+      s.className = 'muestra';
+      s.style.background = muestra(k);
+      b.append(s);
+    }
+    b.append(document.createTextNode(k));
+    b.addEventListener('click', () => onPick(k));
+    host.append(b);
+  }
+}
+
+function pintarVistas() {
+  grupo(document.getElementById('vistas'), Object.keys(VISTAS), est.vista, (k) => {
+    est.vista = k; est.azim = VISTAS[k].azim; est.elev = VISTAS[k].elev; est.spin = 0; est.zoom = 1;
+    pintarVistas(); pintar();
+  });
+}
+function pintarAcabados() {
+  const sw = { Original: 'linear-gradient(135deg,#f4f2ee 50%,#b9b6ae 50%)', White: '#f4f2ee', Grey: '#6e6d68', Black: '#171715' };
+  grupo(document.getElementById('acabados'), Object.keys(ACABADOS), est.acabado, (k) => {
+    est.acabado = k; pintarAcabados(); fijarDestino(false);
+  }, (k) => sw[k]);
+}
+
+function palanca(id, campo, extra) {
+  const b = document.getElementById(id);
+  b.addEventListener('click', () => {
+    est[campo] = !est[campo];
+    b.setAttribute('aria-pressed', String(est[campo]));
+    if (extra) extra(est[campo]);
+    pintar();
+  });
+}
+palanca('giro', 'giro');
+palanca('malla', 'malla');
+palanca('suelo', 'suelo');
+palanca('tema', 'tema', (v) => document.documentElement.setAttribute('data-theme', v ? 'dark' : 'light'));
+
+// órbita
+let arrastre = null;
+stage.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('button')) return;
+  arrastre = { x: e.clientX, y: e.clientY, azim: est.azim, elev: est.elev };
+  stage.classList.add('arrastrando');
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', (e) => {
+  if (!arrastre) return;
+  est.azim = arrastre.azim - (e.clientX - arrastre.x) * 0.0085;
+  est.elev = Math.max(-1.45, Math.min(1.45, arrastre.elev + (e.clientY - arrastre.y) * 0.0065));
+  pintar();
+});
+for (const ev of ['pointerup', 'pointercancel']) stage.addEventListener(ev, () => { arrastre = null; stage.classList.remove('arrastrando'); });
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  est.zoom = Math.max(0.42, Math.min(2.6, est.zoom * (1 + Math.sign(e.deltaY) * 0.09)));
+  pintar();
+}, { passive: false });
+lienzo.tabIndex = 0;
+lienzo.addEventListener('keydown', (e) => {
+  const paso = 0.12;
+  if (e.key === 'ArrowLeft') est.azim += paso;
+  else if (e.key === 'ArrowRight') est.azim -= paso;
+  else if (e.key === 'ArrowUp') est.elev = Math.min(1.45, est.elev + paso);
+  else if (e.key === 'ArrowDown') est.elev = Math.max(-1.45, est.elev - paso);
+  else if (e.key === '+' || e.key === '=') est.zoom = Math.max(0.42, est.zoom * 0.9);
+  else if (e.key === '-') est.zoom = Math.min(2.6, est.zoom * 1.1);
+  else return;
+  e.preventDefault();
+  pintar();
+});
+addEventListener('resize', pintar);
+
+// ───────────────────────────────────────────────────────────── carga
+function cm(m) { return (m * 100).toFixed(1).replace('.', ',') + ' cm'; }
+
+function ficha(nombre, bytes) {
+  const b = modelo.bounds;
+  const filas = [
+    ['Archivo', nombre],
+    ['Peso', (bytes / 1024).toFixed(0) + ' KB'],
+    ['Triángulos', modelo.tris.toLocaleString('es')],
+    ['Vértices', modelo.verts.toLocaleString('es')],
+    ['Materiales', modelo.parts.length + (modelo.parts.length === 1 ? ' pieza' : ' piezas')],
+    ['Largo', cm(b.size[2])],
+    ['Ancho', cm(b.size[0])],
+    ['Alto', cm(b.size[1])],
+  ];
+  datosEl.textContent = '';
+  for (const [k, v] of filas) {
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = v;
+    datosEl.append(dt, dd);
+  }
+}
+
+async function cargar(buffer, nombre, acabadoPorDefecto) {
+  try {
+    const m = parseGLB(buffer);
+    modelo = m;
+    R.subir(m);
+    tonos = new Map(); destino = new Map();
+    if (acabadoPorDefecto) { est.acabado = acabadoPorDefecto; pintarAcabados(); }
+    fijarDestino(true);
+    errorEl.hidden = true;
+    ficha(nombre, buffer.byteLength);
+    const nom = m.parts.map((p) => p.name).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
+    estadoEl.textContent = `${nombre} · ${m.tris.toLocaleString('es')} triángulos${nom ? ' · ' + nom : ''}`;
+    pintar();
+  } catch (e) {
+    fallo(e.message);
+  }
+}
+
+document.getElementById('file').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) { document.getElementById('elegido').textContent = f.name; cargar(await f.arrayBuffer(), f.name, 'Original'); }
+});
+for (const ev of ['dragenter', 'dragover']) stage.addEventListener(ev, (e) => { e.preventDefault(); stage.classList.add('soltar'); });
+for (const ev of ['dragleave', 'drop']) stage.addEventListener(ev, () => stage.classList.remove('soltar'));
+stage.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) cargar(await f.arrayBuffer(), f.name, 'Original');
+});
+
+pintarVistas();
+pintarAcabados();
+
+// El .glb viaja en base64 dentro de un JSON porque esta plataforma no sirve
+// archivos .glb. El modelo que se suelte encima sí se lee como .glb directo.
+if (R) {
+  fetch('modelo.json')
+    .then((r) => { if (!r.ok) throw new Error(`No encuentro el modelo junto a esta página (${r.status}). Suelta un .glb sobre la escena.`); return r.json(); })
+    .then((d) => {
+      const bin = atob(d.glb);
+      const u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      cargar(u.buffer, d.nombre || 'MODEL.glb');
+    })
+    .catch((e) => fallo(e.message));
+}
+window.__listo = () => !!modelo && !pendiente;
+</script>
