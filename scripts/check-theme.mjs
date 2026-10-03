@@ -526,6 +526,71 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
 });
 
 // ---------------------------------------------------------------------------
+// 6nonies. La previsualización no inventa marcado.
+//
+//   `preview/index.html` existe para poder MIRAR el storefront y marcar
+//   correcciones sin entrar al admin. Solo sirve para eso si lo que enseña es
+//   el theme: usa el CSS real, y el marcado tiene que ser el real.
+//
+//   Escribiéndola a mano ya se coló dos veces: un envoltorio `.ne-cart__qty`
+//   alrededor del input cuando esa clase va EN el input —lo que desbordaba la
+//   página en escritorio y parecía un fallo del theme— y un selector de tallas
+//   entero con clases `.ne-chip` que no existen en ninguna parte.
+//
+//   Una previsualización que enseña algo que la tienda no tiene es peor que no
+//   tenerla: se corrigen cosas que no están rotas, y las que sí lo están no se
+//   ven.
+// ---------------------------------------------------------------------------
+await check('la previsualización no inventa marcado', async () => {
+  const problems = [];
+
+  let preview;
+  try {
+    preview = await readFile(path.join(ROOT, 'preview', 'index.html'), 'utf8');
+  } catch {
+    // No existe: no es un fallo, es que no se ha hecho previsualización.
+    return problems;
+  }
+
+  /** Clases `ne-*` literales de un marcado. */
+  const neClassesOf = (text) =>
+    new Set(
+      [...text.matchAll(/class="([^"]*)"/g)]
+        .flatMap((m) => m[1].split(/\s+/))
+        .filter((t) => t.startsWith('ne-') && !t.includes('{')),
+    );
+
+  /**
+   * Clases que el theme SÍ pinta pero a través de Liquid, así que no aparecen
+   * literales: `ne-product-grid--cols-{{ columns }}`, `ne-hero--{{ align }}`,
+   * el `ne_class` que recibe el snippet de precio, y la clase de superficie
+   * inversa que una condición activa.
+   */
+  const INTERPOLADAS = new Set([
+    'ne-card__price',
+    'ne-hero--offset',
+    'ne-inverse',
+    'ne-product-grid--cols-3',
+  ]);
+
+  const real = neClassesOf(allLiquid);
+  for (const klass of [...neClassesOf(preview)].sort()) {
+    if (klass.startsWith('rev')) continue;
+    if (real.has(klass) || INTERPOLADAS.has(klass)) continue;
+    problems.push(`preview/index.html usa .${klass} y el theme no la pinta en ninguna parte`);
+  }
+
+  // Y el CSS que publica tiene que ser el que el theme sirve, no una copia.
+  for (const bundle of ['ne-core.css', 'ne-product.css', 'ne-cart.css', 'ne-collection.css']) {
+    if (!preview.includes(`href="${bundle}"`)) {
+      problems.push(`preview/index.html ya no carga ${bundle}: estaría enseñando otro diseño`);
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 6octies. Ningún texto declarado y sin usar.
 //
 //   Un texto escrito en el archivo de idioma y que no lee nadie casi nunca es

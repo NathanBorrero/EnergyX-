@@ -1,0 +1,613 @@
+<title>Nathan &amp; Esteban</title>
+
+<!-- EL CSS REAL DEL THEME, sin una línea reescrita. Es el mismo archivo que
+     Shopify sirve: si algo se ve mal aquí, se ve mal en la tienda. -->
+<link rel="stylesheet" href="ne-core.css">
+<link rel="stylesheet" href="ne-product.css">
+<link rel="stylesheet" href="ne-cart.css">
+<link rel="stylesheet" href="ne-collection.css">
+
+<style>
+  /* ------------------------------------------------------------------------
+     Barra de revisión. NO es parte del theme: es el andamio para moverse entre
+     páginas. Se distingue a propósito —tinta sobre tinta, fija arriba— para que
+     nadie la confunda con la cabecera de la tienda.
+     ------------------------------------------------------------------------ */
+  .rev {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 60;
+    background: var(--ne-ink);
+    color: var(--ne-paper);
+    padding-block: 0.5rem;
+    padding-inline: 1rem;
+  }
+  .rev__inner {
+    max-width: 100rem;
+    margin-inline: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .rev__label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.72;
+    margin-right: auto;
+  }
+  .rev__tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .rev__tab {
+    font: inherit;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    min-height: 32px;
+    padding: 0 0.6rem;
+    background: transparent;
+    color: var(--ne-paper);
+    border: 1px solid rgba(242, 239, 233, 0.28);
+    border-radius: 0;
+    cursor: pointer;
+  }
+  .rev__tab[aria-current='true'] {
+    background: var(--ne-paper);
+    color: var(--ne-ink);
+    border-color: var(--ne-paper);
+  }
+  .rev__tab:focus-visible { outline: 2px solid var(--ne-paper); outline-offset: 2px; }
+
+  .rev__note {
+    max-width: 100rem;
+    margin-inline: auto;
+    padding-block: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    opacity: 0.78;
+  }
+  .rev__note code { font-size: 0.95em; }
+
+  /* El ancho de teléfono, para revisar móvil en un escritorio. */
+  .stage { transition: none; }
+  .stage[data-ancho='movil'] {
+    max-width: 390px;
+    margin-inline: auto;
+    border-inline: 1px solid var(--ne-rule);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rev__tab { transition: none; }
+  }
+</style>
+
+<div class="rev">
+  <div class="rev__inner">
+    <span class="rev__label">Previsualización · datos de ejemplo</span>
+    <div class="rev__tabs" role="group" aria-label="Página a revisar">
+      <button class="rev__tab" type="button" data-vista="portada" aria-current="true">Portada</button>
+      <button class="rev__tab" type="button" data-vista="coleccion">Colección</button>
+      <button class="rev__tab" type="button" data-vista="ficha">Ficha</button>
+      <button class="rev__tab" type="button" data-vista="carrito">Carrito</button>
+      <button class="rev__tab" type="button" data-vista="contrasena">Contraseña</button>
+    </div>
+    <div class="rev__tabs" role="group" aria-label="Ancho">
+      <button class="rev__tab" type="button" data-ancho="completo" aria-current="true">Escritorio</button>
+      <button class="rev__tab" type="button" data-ancho="movil">Móvil 390</button>
+    </div>
+  </div>
+  <p class="rev__note">
+    Las fotografías, los textos y los precios están <strong>pendientes</strong> y se marcan como tales.
+    Nada de lo que ves aquí es un dato real de la marca.
+  </p>
+</div>
+
+<div class="stage" data-ancho="completo">
+
+<!-- ====================================================== CABECERA ======= -->
+<header class="ne-header">
+  <div class="ne-shell ne-header__inner">
+    <a class="ne-header__brand" href="#" aria-label="Nathan &amp; Esteban">
+      <span class="ne-header__wordmark">NATHAN &amp; ESTEBAN</span>
+    </a>
+    <nav class="ne-header__nav" aria-label="Menú">
+      <ul class="ne-header__list">
+        <li><a class="ne-header__link" href="#" data-ir="coleccion">Colección</a></li>
+        <li><a class="ne-header__link" href="#">Historia</a></li>
+        <li><a class="ne-header__link" href="#">Contacto</a></li>
+        <li><a class="ne-header__link" href="#">Buscar</a></li>
+      </ul>
+    </nav>
+    <a class="ne-header__cart" href="#" data-ir="carrito">
+      <span>Carrito</span>
+      <span class="ne-header__count" aria-hidden="true">2</span>
+      <span class="ne-visually-hidden">2 artículos</span>
+    </a>
+  </div>
+  <hr class="ne-rule">
+</header>
+
+<main id="ne-main">
+
+<!-- ======================================================== PORTADA ====== -->
+<div data-pagina="portada">
+  <section class="ne-hero ne-section--vast ne-inverse ne-hero--offset" aria-labelledby="h-hero">
+    <div class="ne-shell">
+      <div class="ne-grid ne-hero__grid">
+        <div class="ne-hero__copy">
+          <p class="ne-caption ne-hero__eyebrow">PENDIENTE</p>
+          <h1 class="ne-colossal ne-hero__heading">NATHAN &amp; ESTEBAN</h1>
+          <p class="ne-lead ne-hero__body">Texto pendiente de definir.</p>
+          <p class="ne-hero__action">
+            <a class="ne-button ne-button--accent" href="#" data-ir="ficha">Ver el modelo</a>
+          </p>
+        </div>
+        <figure class="ne-hero__figure">
+          <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Fotografía pendiente">
+            <span class="ne-placeholder">Fotografía pendiente</span>
+          </div>
+          <figcaption class="ne-caption ne-hero__caption">MARCA PENDIENTE</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="ne-statement ne-section--vast" aria-labelledby="h-stat">
+    <div class="ne-shell">
+      <div class="ne-grid">
+        <div class="ne-statement__body">
+          <h2 class="ne-display" id="h-stat">Una declaración</h2>
+          <p class="ne-lead ne-statement__text">Texto pendiente de definir.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ne-section" aria-labelledby="h-grid">
+    <div class="ne-shell">
+      <header class="ne-grid-head">
+        <h2 class="ne-title" id="h-grid">Colección</h2>
+        <a class="ne-button--text" href="#" data-ir="coleccion">Ver todo</a>
+      </header>
+      <ul class="ne-grid ne-product-grid ne-product-grid--cols-3" role="list" data-tarjetas></ul>
+    </div>
+  </section>
+</div>
+
+<!-- ====================================================== COLECCIÓN ====== -->
+<div data-pagina="coleccion" hidden>
+  <section class="ne-section" aria-labelledby="h-col">
+    <div class="ne-shell">
+      <header class="ne-collection__head">
+        <h1 class="ne-display" id="h-col">Colección</h1>
+        <div class="ne-lead ne-collection__intro">Texto pendiente de definir.</div>
+      </header>
+
+      <form class="ne-filters" method="get" action="#" onsubmit="return false">
+        <div class="ne-controls">
+          <p class="ne-controls__count">24 productos</p>
+          <div class="ne-controls__sort">
+            <label class="ne-controls__sort-label" for="orden">Ordenar</label>
+            <select class="ne-select" id="orden" name="sort_by">
+              <option value="manual" selected>Destacados</option>
+              <option value="price-ascending">Precio: de menor a mayor</option>
+              <option value="price-descending">Precio: de mayor a menor</option>
+              <option value="created-descending">Lo más nuevo</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ne-filters__head">
+          <h2 class="ne-filters__title">Filtrar</h2>
+          <a class="ne-button--text" href="#">Quitar todo</a>
+        </div>
+
+        <details class="ne-filter" open>
+          <summary class="ne-filter__summary">
+            <span class="ne-filter__sign" aria-hidden="true"></span>
+            <span>Talla</span>
+            <span class="ne-filter__count">1</span>
+          </summary>
+          <div class="ne-filter__body">
+            <label class="ne-filter__value" for="t39" data-ne-empty="false">
+              <input class="ne-filter__box" id="t39" type="checkbox" name="talla" value="39"><span>39</span>
+              <span class="ne-filter__value-count">3</span>
+            </label>
+            <label class="ne-filter__value" for="t40" data-ne-empty="false">
+              <input class="ne-filter__box" id="t40" type="checkbox" name="talla" value="40"><span>40</span>
+              <span class="ne-filter__value-count">6</span>
+            </label>
+            <label class="ne-filter__value" for="t41" data-ne-empty="false">
+              <input class="ne-filter__box" id="t41" type="checkbox" name="talla" value="41" checked><span>41</span>
+              <span class="ne-filter__value-count">4</span>
+            </label>
+            <label class="ne-filter__value" for="t46" data-ne-empty="true">
+              <input class="ne-filter__box" id="t46" type="checkbox" name="talla" value="46"><span>46</span>
+              <span class="ne-filter__value-count">0</span>
+              <span class="ne-visually-hidden">sin resultados con los filtros actuales</span>
+            </label>
+          </div>
+        </details>
+
+        <details class="ne-filter">
+          <summary class="ne-filter__summary">
+            <span class="ne-filter__sign" aria-hidden="true"></span>
+            <span>Color</span>
+          </summary>
+          <div class="ne-filter__body">
+            <label class="ne-filter__value" for="c1" data-ne-empty="false">
+              <input class="ne-filter__box" id="c1" type="checkbox" name="color" value="negro"><span>Negro</span>
+              <span class="ne-filter__value-count">12</span>
+            </label>
+            <label class="ne-filter__value" for="c2" data-ne-empty="false">
+              <input class="ne-filter__box" id="c2" type="checkbox" name="color" value="cuero"><span>Cuero</span>
+              <span class="ne-filter__value-count">8</span>
+            </label>
+          </div>
+        </details>
+
+        <details class="ne-filter">
+          <summary class="ne-filter__summary">
+            <span class="ne-filter__sign" aria-hidden="true"></span>
+            <span>Disponibilidad</span>
+          </summary>
+          <div class="ne-filter__body">
+            <label class="ne-filter__value" for="disp">
+              <input class="ne-filter__box" id="disp" type="checkbox" name="disp" value="1"><span>En existencia</span>
+              <span class="ne-filter__value-count">18</span>
+            </label>
+          </div>
+        </details>
+
+        <div class="ne-filters__apply">
+          <button class="ne-button" type="submit">Aplicar</button>
+        </div>
+
+        <div class="ne-filters__active">
+          <a class="ne-chip-remove" href="#"><span>Talla: 41</span><span class="ne-chip-remove__x" aria-hidden="true">&times;</span></a>
+        </div>
+      </form>
+
+      <ul class="ne-grid ne-product-grid ne-product-grid--cols-3" role="list" data-tarjetas></ul>
+
+      <nav class="ne-pagination" aria-label="Paginación">
+        <a class="ne-button--text ne-pagination__previous" href="#" rel="prev">Anterior</a>
+        <p class="ne-pagination__state">Página 2 de 4</p>
+        <a class="ne-button--text ne-pagination__next" href="#" rel="next">Siguiente</a>
+      </nav>
+    </div>
+  </section>
+</div>
+
+<!-- ========================================================== FICHA ====== -->
+<div data-pagina="ficha" hidden>
+  <section class="ne-pdp ne-section--tight">
+    <div class="ne-shell">
+      <div class="ne-grid ne-pdp__grid">
+        <div class="ne-pdp__media">
+          <div class="ne-gallery">
+            <ul class="ne-gallery__list" role="list" aria-label="Fotografías del producto">
+              <li class="ne-gallery__item">
+                <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Fotografía pendiente">
+                  <span class="ne-placeholder">Fotografía pendiente</span>
+                </div>
+              </li>
+              <li class="ne-gallery__item">
+                <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Fotografía pendiente">
+                  <span class="ne-placeholder">Fotografía pendiente</span>
+                </div>
+              </li>
+            </ul>
+            <div class="ne-gallery__controls">
+              <button class="ne-button ne-button--quiet" type="button" aria-expanded="false">Ver en 3D</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ne-pdp__panel">
+          <p class="ne-caption ne-pdp__vendor">NATHAN &amp; ESTEBAN</p>
+          <h1 class="ne-title ne-pdp__title">Modelo pendiente de definir</h1>
+
+          <div class="ne-pdp__price">
+            <div class="ne-price">
+              <span class="ne-placeholder">PRECIO PENDIENTE</span>
+            </div>
+            <p class="ne-caption ne-soft">Impuestos incluidos. El envío se calcula en la caja.</p>
+          </div>
+
+          <div class="ne-picker" data-ne-picker>
+            <fieldset class="ne-picker__group">
+              <legend class="ne-caption ne-picker__legend">
+                Color
+                <span class="ne-picker__chosen" aria-live="polite">Negro</span>
+              </legend>
+              <div class="ne-picker__values">
+              <label class="ne-picker__chip" for="opt-color-0">
+                <input class="ne-visually-hidden" type="radio" id="opt-color-0" name="opt-color" value="Negro" checked>
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">Negro</span></span>
+                <span class="ne-visually-hidden"></span>
+              </label>
+              <label class="ne-picker__chip" for="opt-color-1">
+                <input class="ne-visually-hidden" type="radio" id="opt-color-1" name="opt-color" value="Cuero">
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">Cuero</span></span>
+                <span class="ne-visually-hidden"></span>
+              </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="ne-picker__group">
+              <legend class="ne-caption ne-picker__legend">
+                Talla
+                <span class="ne-picker__chosen" aria-live="polite">40</span>
+              </legend>
+              <div class="ne-picker__values">
+              <label class="ne-picker__chip" for="opt-talla-0">
+                <input class="ne-visually-hidden" type="radio" id="opt-talla-0" name="opt-talla" value="39">
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">39</span></span>
+                <span class="ne-visually-hidden"></span>
+              </label>
+              <label class="ne-picker__chip" for="opt-talla-1">
+                <input class="ne-visually-hidden" type="radio" id="opt-talla-1" name="opt-talla" value="40" checked>
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">40</span></span>
+                <span class="ne-visually-hidden"></span>
+              </label>
+              <label class="ne-picker__chip" for="opt-talla-2">
+                <input class="ne-visually-hidden" type="radio" id="opt-talla-2" name="opt-talla" value="41">
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">41</span></span>
+                <span class="ne-visually-hidden"></span>
+              </label>
+              <label class="ne-picker__chip" for="opt-talla-3" data-ne-state="unavailable">
+                <input class="ne-visually-hidden" type="radio" id="opt-talla-3" name="opt-talla" value="42">
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">42</span></span>
+                <span class="ne-visually-hidden">Agotado</span>
+              </label>
+              <label class="ne-picker__chip" for="opt-talla-4" data-ne-state="nonexistent">
+                <input class="ne-visually-hidden" type="radio" id="opt-talla-4" name="opt-talla" value="43">
+                <span class="ne-picker__chip-face"><span class="ne-picker__label">43</span></span>
+                <span class="ne-visually-hidden">No disponible en este color</span>
+              </label>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="ne-sizeguide">
+            <details class="ne-sizeguide__details">
+              <summary class="ne-sizeguide__summary">Guía de tallas</summary>
+              <div class="ne-sizeguide__recommender">
+                <p class="ne-sizeguide__intro">Mide tu pie y te decimos la talla.</p>
+                <div class="ne-sizeguide__field">
+                  <label for="pie">Tu medida en centímetros</label>
+                  <input id="pie" type="text" inputmode="decimal" maxlength="5" placeholder="26,5" autocomplete="off">
+                  <button class="ne-button ne-button--quiet" type="button">Recomendar</button>
+                </div>
+                <p class="ne-sizeguide__privacy ne-caption">Si pides una recomendación, la medida se guarda con tu pedido para saber si acertamos con la talla.</p>
+                <table class="ne-sizeguide__table">
+                  <caption class="ne-visually-hidden">Equivalencia entre talla y longitud del pie</caption>
+                  <thead>
+                    <tr><th scope="col">Talla</th><th scope="col">Pie (cm)</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row">39</th><td>24,8</td></tr>
+                    <tr><th scope="row">40</th><td>25,4</td></tr>
+                    <tr><th scope="row">41</th><td>26,1</td></tr>
+                    <tr><th scope="row">42</th><td>26,8</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+
+          <div class="ne-buy">
+            <div class="ne-buy__row">
+              <label class="ne-visually-hidden" for="qty">Cantidad</label>
+              <input class="ne-buy__qty" id="qty" type="number" min="1" value="1" inputmode="numeric">
+              <button class="ne-button ne-button--block ne-buy__submit" type="button">Añadir al carrito</button>
+            </div>
+          </div>
+
+          <div class="ne-pdp__description ne-body">
+            <p class="ne-soft">Descripción pendiente de definir.</p>
+          </div>
+
+          <dl class="ne-specs">
+            <div class="ne-specs__row"><dt>Material</dt><dd><span class="ne-placeholder">PENDIENTE</span></dd></div>
+            <div class="ne-specs__row"><dt>Suela</dt><dd><span class="ne-placeholder">PENDIENTE</span></dd></div>
+            <div class="ne-specs__row"><dt>Origen</dt><dd><span class="ne-placeholder">PENDIENTE</span></dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ======================================================== CARRITO ====== -->
+<div data-pagina="carrito" hidden>
+  <section class="ne-section" aria-labelledby="h-cart">
+    <div class="ne-shell">
+      <h1 class="ne-display" id="h-cart">Carrito</h1>
+      <p class="ne-visually-hidden" role="status" aria-live="polite"></p>
+
+      <form action="#" method="post" novalidate class="ne-cart__form" onsubmit="return false">
+        <ul class="ne-cart__list">
+          <li class="ne-cart__line">
+            <a class="ne-cart__media" href="#" tabindex="-1" aria-hidden="true">
+              <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5"><span class="ne-placeholder">Foto</span></div>
+            </a>
+            <div class="ne-cart__info">
+              <a class="ne-cart__title" href="#" data-ir="ficha">Modelo pendiente de definir</a>
+              <p class="ne-caption ne-soft">Negro / 40</p>
+              <dl class="ne-cart__props ne-caption ne-soft">
+                <dt>Talla recomendada</dt><dd>40</dd>
+              </dl>
+            </div>
+            <div class="ne-cart__controls">
+              <label class="ne-visually-hidden" for="q1">Cantidad · Modelo pendiente de definir</label>
+              <input class="ne-cart__qty" id="q1" type="number" name="updates[]" value="1" min="0" step="1" inputmode="numeric">
+              <p class="ne-cart__price"><span class="ne-placeholder">PENDIENTE</span></p>
+              <a class="ne-button--text" href="#">Quitar<span class="ne-visually-hidden"> · Modelo pendiente de definir</span></a>
+            </div>
+          </li>
+
+          <li class="ne-cart__line">
+            <a class="ne-cart__media" href="#" tabindex="-1" aria-hidden="true">
+              <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5"><span class="ne-placeholder">Foto</span></div>
+            </a>
+            <div class="ne-cart__info">
+              <a class="ne-cart__title" href="#" data-ir="ficha">Otro modelo pendiente</a>
+              <p class="ne-caption ne-soft">Cuero / 41</p>
+            </div>
+            <div class="ne-cart__controls">
+              <label class="ne-visually-hidden" for="q2">Cantidad · Otro modelo pendiente</label>
+              <input class="ne-cart__qty" id="q2" type="number" name="updates[]" value="2" min="0" step="1" inputmode="numeric">
+              <p class="ne-cart__price"><span class="ne-placeholder">PENDIENTE</span></p>
+              <a class="ne-button--text" href="#">Quitar<span class="ne-visually-hidden"> · Otro modelo pendiente</span></a>
+            </div>
+          </li>
+        </ul>
+
+        <div class="ne-cod">
+          <h2 class="ne-caption ne-cod__title">Pago contra entrega</h2>
+          <p class="ne-cod__intro">Comprueba si llegamos a tu ciudad antes de terminar la compra.</p>
+          <div class="ne-cod__field">
+            <label class="ne-caption" for="ciudad">Ciudad</label>
+            <input class="ne-cod__input" id="ciudad" type="text" autocomplete="address-level2">
+            <button class="ne-button ne-button--quiet" type="button">Comprobar</button>
+          </div>
+        </div>
+
+        <footer class="ne-cart__foot">
+          <button class="ne-button ne-button--quiet" type="submit" name="update">Actualizar carrito</button>
+          <div class="ne-cart__totals">
+            <p class="ne-cart__subtotal">
+              <span class="ne-caption">Subtotal</span>
+              <strong><span class="ne-placeholder">PENDIENTE</span></strong>
+            </p>
+            <p class="ne-caption ne-soft">Impuestos incluidos. El envío se calcula en la caja.</p>
+          </div>
+          <button class="ne-button ne-button--accent" type="submit" name="checkout">Finalizar compra</button>
+        </footer>
+      </form>
+    </div>
+  </section>
+</div>
+
+<!-- ===================================================== CONTRASEÑA ====== -->
+<div data-pagina="contrasena" hidden>
+  <section class="ne-section--vast">
+    <div class="ne-shell">
+      <div class="ne-grid">
+        <div class="ne-col-text">
+          <h1 class="ne-colossal">NATHAN &amp; ESTEBAN</h1>
+          <div class="ne-lead ne-password__message">
+            <p>Texto pendiente de definir.</p>
+          </div>
+          <form onsubmit="return false">
+            <div class="ne-password__field">
+              <label class="ne-caption" for="clave">Contraseña</label>
+              <input id="clave" type="password" autocomplete="current-password">
+              <button class="ne-button" type="submit">Entrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- ============================================================ PIE ====== -->
+<footer class="ne-footer ne-section--tight">
+  <hr class="ne-rule">
+  <div class="ne-shell ne-footer__inner">
+    <div class="ne-footer__brand">
+      <span class="ne-footer__wordmark">NATHAN &amp; ESTEBAN</span>
+    </div>
+    <nav class="ne-footer__nav" aria-label="Enlaces del pie">
+      <ul class="ne-footer__list">
+        <li><a class="ne-footer__link" href="#">Historia</a></li>
+        <li><a class="ne-footer__link" href="#">Contacto</a></li>
+      </ul>
+    </nav>
+    <div class="ne-footer__legal ne-caption">
+      <div class="ne-footer__business"><p><span class="ne-placeholder">DATOS DEL NEGOCIO PENDIENTES</span></p></div>
+      <ul class="ne-footer__policies">
+        <li><a class="ne-footer__link" href="#">Política de privacidad</a></li>
+        <li><a class="ne-footer__link" href="#">Política de reembolsos</a></li>
+        <li><a class="ne-footer__link" href="#">Términos del servicio</a></li>
+      </ul>
+      <p>&copy; 2026 NATHAN &amp; ESTEBAN</p>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+  // Las tarjetas se generan para no repetir el mismo marcado seis veces a mano:
+  // una copia a mano se desincroniza y acaba midiendo otra cosa.
+  var TARJETAS = [
+    { titulo: 'Modelo pendiente', agotado: false },
+    { titulo: 'Modelo pendiente dos', agotado: true },
+    { titulo: 'Modelo pendiente tres', agotado: false },
+    { titulo: 'Modelo pendiente cuatro', agotado: false },
+    { titulo: 'Modelo pendiente cinco', agotado: false },
+    { titulo: 'Modelo pendiente seis', agotado: false }
+  ];
+
+  document.querySelectorAll('[data-tarjetas]').forEach(function (lista) {
+    TARJETAS.forEach(function (item) {
+      var li = document.createElement('li');
+      li.className = 'ne-product-grid__cell';
+      li.innerHTML =
+        '<article class="ne-card">' +
+          '<a class="ne-card__link" href="#" data-ir="ficha">' +
+            '<div class="ne-card__media">' +
+              '<div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Fotografía pendiente">' +
+                '<span class="ne-placeholder">Fotografía pendiente</span>' +
+              '</div>' +
+              (item.agotado ? '<p class="ne-card__flag">Agotado</p>' : '') +
+            '</div>' +
+            '<div class="ne-card__meta">' +
+              '<h3 class="ne-card__title">' + item.titulo + '</h3>' +
+              '<div class="ne-price ne-card__price"><span class="ne-placeholder">PRECIO PENDIENTE</span></div>' +
+            '</div>' +
+          '</a>' +
+        '</article>';
+      lista.appendChild(li);
+    });
+  });
+
+  // OJO: `[data-vista]` también casa con los BOTONES de la barra. Seleccionar
+  // así hacía que cambiar de página ocultara los botones y la barra quedaba
+  // inservible tras el primer clic. Las páginas llevan `data-pagina`.
+  var vistas = document.querySelectorAll('[data-pagina]');
+  var stage = document.querySelector('.stage');
+
+  function mostrar(nombre) {
+    vistas.forEach(function (v) { v.hidden = v.dataset.pagina !== nombre; });
+    document.querySelectorAll('.rev__tab[data-vista]').forEach(function (b) {
+      b.setAttribute('aria-current', String(b.dataset.vista === nombre));
+    });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  document.querySelectorAll('.rev__tab[data-vista]').forEach(function (b) {
+    b.addEventListener('click', function () { mostrar(b.dataset.vista); });
+  });
+
+  document.querySelectorAll('.rev__tab[data-ancho]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      stage.dataset.ancho = b.dataset.ancho;
+      document.querySelectorAll('.rev__tab[data-ancho]').forEach(function (o) {
+        o.setAttribute('aria-current', String(o === b));
+      });
+    });
+  });
+
+  // Los enlaces de dentro de la tienda también navegan entre vistas.
+  document.addEventListener('click', function (e) {
+    var ir = e.target.closest ? e.target.closest('[data-ir]') : null;
+    if (ir) { e.preventDefault(); mostrar(ir.dataset.ir); }
+  });
+</script>

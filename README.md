@@ -66,6 +66,7 @@ se pudieron cruzar: [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md).
 | [`docs/STANDARD.md`](docs/STANDARD.md) | El estándar de ejecución, §173–§246. |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos, reversibilidad y auditoría de contradicciones. |
 | [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analítica, riesgos y costos. |
+| [`preview/`](preview/) | Una página con las cinco vistas del storefront, con el CSS REAL del theme, para mirarlas y marcar correcciones sin entrar al admin. |
 | [`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md) | El checklist legal y de accesibilidad, cruzado: qué está hecho y verificado, qué necesita contenido del propietario y qué está fuera del theme. |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cómo poner el theme en Shopify: el orden, lo que pesa después, y qué necesita cada pieza para aparecer. |
 | [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado y qué depende de quién. |
