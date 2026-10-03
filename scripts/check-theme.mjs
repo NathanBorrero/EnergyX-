@@ -107,6 +107,8 @@ const HARNESSES = [
   'cart-empty-harness.html',
   'home-harness.html',
   'collection-harness.html',
+  'password-harness.html',
+  'blog-harness.html',
 ];
 
 const js = await readFile(COMPONENTS, 'utf8');

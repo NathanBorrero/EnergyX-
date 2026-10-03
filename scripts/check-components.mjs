@@ -1032,7 +1032,7 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
   // que no usan. La colección entra aquí porque su panel de filtros es un
   // formulario y un `<details>`: nada de eso necesita una línea de script, y
   // esta comprobación es la que impide que alguien se la añada sin darse cuenta.
-  for (const file of ['home-harness.html', 'collection-harness.html']) {
+  for (const file of ['home-harness.html', 'collection-harness.html', 'password-harness.html', 'blog-harness.html']) {
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -1091,6 +1091,8 @@ await check('no habla con nadie más ni guarda nada en el dispositivo', async ()
     'product-harness.html',
     'cart-harness.html',
     'cart-empty-harness.html',
+    'password-harness.html',
+    'blog-harness.html',
   ]) {
     const context = await browser.newContext(contextOptions());
     const page = await context.newPage();

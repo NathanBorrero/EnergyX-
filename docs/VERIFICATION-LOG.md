@@ -1875,7 +1875,26 @@ lenguaje.** Las comprobaciones propias encuentran lo que el linter no sabe —co
 y script, derivas de banco, presupuestos—, y el linter encuentra lo que ellas no pueden: si el
 archivo es siquiera válido.
 
-### 27.6 Estado
+### 27.6 Y dos páginas que ahora sí se auditan
+
+Las seis plantillas se revisaron leyéndolas. Dos de ellas tienen partes **interactivas** que no
+auditaba nada, así que tienen banco propio:
+
+- **Contraseña.** Es la primera página que verá nadie antes del lanzamiento, y su único control es un
+  campo de contraseña. Un borde por debajo de 3:1 o un área de pulsado por debajo de 24 ahí es un
+  fallo en la única interacción que la página ofrece.
+- **Blog.** Su paginación acaba de nacer, y los enlaces de la lista de artículos
+  —`.ne-article-list__link`— no se habían medido nunca.
+
+La auditoría de accesibilidad pasa de cinco páginas a **siete**, y las dos nuevas entran también en
+«no habla con nadie más ni guarda nada» y en «sin JavaScript». Las dos pasan: **5/5 sobre siete
+páginas.**
+
+Las otras cuatro —artículo, página, 404 y listado de colecciones— son texto en una columna con
+clases ya auditadas en otras páginas. No tienen banco propio, y lo digo en lugar de dar a entender
+que sí.
+
+### 27.7 Estado
 
 | | |
 | --- | --- |

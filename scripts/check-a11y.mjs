@@ -101,6 +101,12 @@ const PAGES = [
   // fuera de la ficha y el carrito: casillas, `select` y botón. Es justo donde
   // el borde del control y el área de pulsado se incumplen sin que se note.
   ['colección con filtros', `http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`],
+  // La página de contraseña es la PRIMERA que verá nadie antes del lanzamiento,
+  // y su único control es un campo de contraseña que no auditaba nada.
+  ['contraseña', `http://127.0.0.1:${port}/scripts/fixtures/password-harness.html`],
+  // Y el blog, cuya paginación acaba de nacer y cuyos enlaces de artículo no se
+  // habían medido nunca.
+  ['blog', `http://127.0.0.1:${port}/scripts/fixtures/blog-harness.html`],
 ];
 
 const browser = await chromium.launch({ executablePath: process.env.NE_CHROMIUM ?? '/opt/pw-browsers/chromium' });

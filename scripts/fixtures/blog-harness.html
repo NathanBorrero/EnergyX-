@@ -1,0 +1,121 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DEL BLOG.
+
+  El blog paginaba SIN paginación. Al darle la que le faltaba hubo que hacerle
+  cargar `ne-collection.css`, donde vive `.ne-pagination`. Este banco existe
+  para medir que esos enlaces nuevos se ven, y que los de la lista de artículos
+  —`.ne-article-list__link`, que nunca se auditó— cumplen el área de pulsado.
+
+  Carga los archivos REALES, no copias. Datos ficticios y etiquetados.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Banco de pruebas · blog</title>
+    <script>
+      document.documentElement.classList.add('ne-js');
+      setTimeout(function () {{
+        var picker = document.querySelector('[data-ne-picker]');
+        if (picker && picker.getAttribute('data-ne-enhanced') !== 'true') {{
+          document.documentElement.classList.remove('ne-js');
+        }}
+      }}, 3000);
+    </script>
+    <link rel="stylesheet" href="/theme/assets/ne-core.css">
+    <link rel="stylesheet" href="/theme/assets/ne-collection.css">
+  </head>
+  <body class="template--blog">
+    <a class="ne-skip-link" href="#ne-main">Saltar al contenido</a>
+
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <div class="ne-shell ne-header__inner">
+          <a class="ne-header__brand" href="/" aria-label="Banco de pruebas">
+            <span class="ne-header__wordmark">BANCO DE PRUEBAS</span>
+          </a>
+          <nav class="ne-header__nav" aria-label="Menú">
+            <ul class="ne-header__list">
+              <li><a class="ne-header__link" href="/collections/all">Colección</a></li>
+              <li><a class="ne-header__link" href="/pages/historia">Historia</a></li>
+              <li><a class="ne-header__link" href="/pages/contacto">Contacto</a></li>
+              <li><a class="ne-header__link" href="/search">Buscar</a></li>
+            </ul>
+          </nav>
+          <a class="ne-header__cart" href="/cart">
+            <span>Carrito</span>
+            <span class="ne-header__count" data-ne-cart-count aria-hidden="true">0</span>
+            <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+          </a>
+        </div>
+        <hr class="ne-rule">
+      </header>
+    </div>
+
+    <main id="ne-main" role="main" tabindex="-1">
+      <section class="ne-section">
+        <div class="ne-shell">
+          <h1 class="ne-display">Diario</h1>
+          <ul class="ne-article-list">
+            <li class="ne-article-list__item">
+              <a class="ne-article-list__link" href="/blogs/diario/uno">
+                <h2 class="ne-title">Título pendiente de definir</h2>
+                <p class="ne-caption ne-soft">03.10.2026</p>
+              </a>
+            </li>
+            <li class="ne-article-list__item">
+              <a class="ne-article-list__link" href="/blogs/diario/dos">
+                <h2 class="ne-title">Otro título pendiente</h2>
+                <p class="ne-caption ne-soft">28.09.2026</p>
+              </a>
+            </li>
+          </ul>
+
+          <nav class="ne-pagination" aria-label="Paginación">
+            <a class="ne-button--text ne-pagination__previous" href="/blogs/diario?page=1" rel="prev">Anterior</a>
+            <p class="ne-pagination__state">Página 2 de 3</p>
+            <a class="ne-button--text ne-pagination__next" href="/blogs/diario?page=3" rel="next">Siguiente</a>
+          </nav>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ne-footer ne-section--tight">
+      <hr class="ne-rule">
+      <div class="ne-shell ne-footer__inner">
+        <div class="ne-footer__brand">
+          <span class="ne-footer__wordmark">BANCO DE PRUEBAS</span>
+        </div>
+
+        <nav class="ne-footer__nav" aria-label="Enlaces del pie">
+          <ul class="ne-footer__list">
+            <li><a class="ne-footer__link" href="/pages/historia">Historia</a></li>
+            <li><a class="ne-footer__link" href="/pages/contacto">Contacto</a></li>
+          </ul>
+        </nav>
+
+        <div class="ne-footer__legal ne-caption">
+          <div class="ne-footer__business">
+            <p>Datos del negocio pendientes</p>
+          </div>
+          <ul class="ne-footer__policies">
+            <li><a class="ne-footer__link" href="/policies/privacy-policy">Política de privacidad</a></li>
+            <li><a class="ne-footer__link" href="/policies/refund-policy">Política de reembolsos</a></li>
+            <li><a class="ne-footer__link" href="/policies/terms-of-service">Términos del servicio</a></li>
+          </ul>
+          <p>&copy; 2026 BANCO DE PRUEBAS</p>
+        </div>
+      </div>
+    </footer>
+
+    <script type="application/json" id="ne-config">
+      { "sizeSelectedEvent": true, "codPrevalidation": false, "codCoverage": [] }
+    </script>
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+    <script type="application/json" id="ne-strings">{}</script>
+  </body>
+</html>
