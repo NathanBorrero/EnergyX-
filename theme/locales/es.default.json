@@ -1,9 +1,6 @@
 {
   "accessibility": {
     "skip_to_content": "Saltar al contenido",
-    "close": "Cerrar",
-    "menu": "Menú",
-    "loading": "Cargando",
     "selected": "seleccionado",
     "unavailable": "agotado",
     "nonexistent": "no se fabrica con tu selección actual, al elegirlo se ajustará"
@@ -28,7 +25,6 @@
     "placeholder": {
       "label": "PENDIENTE",
       "image": "Imagen pendiente",
-      "model": "Modelo 3D pendiente",
       "copy": "Texto pendiente de definir"
     },
     "404": {
@@ -37,29 +33,20 @@
       "back_home": "Ir al inicio"
     },
     "password_page": {
-      "title": "Próximamente",
-      "subtext": "Estamos preparando el lanzamiento.",
       "password_label": "Contraseña",
-      "password_error": "La contraseña no es correcta.",
-      "admin_link": "Entrar con tu cuenta de la tienda",
       "submit": "Entrar"
     }
   },
   "products": {
     "product": {
-      "vendor": "Marca",
       "sku": "Referencia",
-      "price": "Precio",
       "price_from": "Desde {{ price }}",
-      "unavailable": "Agotado",
       "sold_out": "Agotado",
       "add_to_cart": "Añadir al carrito",
       "adding": "Añadiendo",
       "added": "Añadido",
       "select_options": "Elige {{ options }}",
       "choose_option": "Elige {{ option }}",
-      "option_unavailable": "{{ value }} · agotado",
-      "option_nonexistent": "{{ value }} · no se fabrica en este color",
       "view_in_space": "Verlo en tu espacio",
       "view_3d": "Ver en 3D",
       "view_3d_loading": "Cargando el modelo",

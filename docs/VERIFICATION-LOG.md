@@ -1794,3 +1794,98 @@ fingir una razón social es exactamente lo que §191 prohíbe.
 | el theme coincide con Shopify — 64 de 64 | OK |
 
 **18/18. Ninguna `NO EJECUTADA`.**
+
+---
+
+## 27. Seis plantillas que nunca se habían abierto, y lo que escondían
+
+Blog, artículo, página, 404, contraseña y listado de colecciones no se habían auditado nunca.
+Leyéndolas salieron cuatro defectos, y arreglar el primero destapó un quinto.
+
+### 27.1 El blog paginaba sin paginación
+
+```liquid
+{%- paginate blog.articles by 12 -%}
+  ... los doce artículos ...
+{%- endpaginate -%}
+```
+
+Y **ninguna navegación dentro**. Un blog con más de doce artículos mostraba doce y no ofrecía forma
+de llegar al resto. El mismo callejón sin salida que tenía la colección, con otro traje.
+
+### 27.2 Y arreglarlo rompía otra cosa
+
+`.ne-pagination` vive en `ne-collection.css`, que **solo cargan la colección y la búsqueda**. Los
+enlaces nuevos del blog habrían salido sin un solo estilo.
+
+**Un defecto que se arregla creando otro es el peor tipo de arreglo**, así que de ahí salió el
+contrato 19: *cada plantilla carga el CSS de las clases que usa*. Recorre, por plantilla, sus
+secciones, los snippets que renderizan —transitivamente—, las clases `ne-*` literales, y los
+paquetes que la plantilla carga según el layout. Distingue dos averías porque se arreglan distinto:
+
+| Caso | Qué significa | Severidad |
+| --- | --- | --- |
+| La regla existe en un paquete que esta plantilla **no carga** | la página se pinta distinta según por dónde entres | **fallo** |
+| La clase **no tiene reglas en ninguna hoja** | en BEM el nombre del componente es marcado legítimo; lo usan contratos y pruebas | nota |
+
+Validado inyectando los dos: quitarle el blog a la condición del CSS, y quitarle a la ficha su
+propio paquete. Los dos se detectan nombrando la clase y el paquete.
+
+Encontró además que `.ne-price__current` —de un snippet **compartido** por la tarjeta y la ficha—
+vivía solo en el paquete de la ficha. En la tarjeta no rompía nada visible porque el contenedor
+`.ne-card__price` ya da el mismo estilo, pero la clase no significaba lo mismo en todas partes. La
+regla base se movió al paquete que cargan todas las páginas, sin efecto visual.
+
+### 27.3 Diecisiete textos declarados que no leía nadie — y tres eran defectos
+
+| Texto | El defecto que había detrás |
+| --- | --- |
+| `sections.header.search` | **La búsqueda existía —con filtros y orden— y NADA la enlazaba.** Una página inalcanzable es una página que no existe |
+| `general.404.back_home` | El botón del 404 decía el **nombre de la tienda** en lugar de a dónde lleva |
+| `general.password_page.subtext` | La **primera página que ve nadie antes del lanzamiento** no decía nada, y había texto escrito para ella |
+
+La búsqueda ya se enlaza desde la cabecera. El botón del 404 dice a dónde va. Y la página de
+contraseña tiene un campo de texto enriquecido para que el propietario diga lo que quiera: la voz de
+la marca es suya y **no se inventa**; vacío no emite nada.
+
+Los otros trece eran basura y se borraron. Contrato 20 impide que vuelva a acumularse, con una sola
+excepción declarada: las subclaves de pluralización, que Liquid resuelve sin nombrarlas. El control
+de la propia inyección destapó un hueco —una cadena pluralizada **entera** que nadie usa se colaba—
+y se cerró.
+
+### 27.4 Una clase sin una sola regla
+
+`.ne-collection-list__cell` estaba en el marcado del listado de colecciones y no existía en ninguna
+hoja. Fuera.
+
+### 27.5 Y la lección más incómoda del día
+
+Al arreglar lo del blog escribí un comentario de bloque **dentro de una etiqueta `liquid`**. Eso no
+compila: se llevaba por delante el `<head>` entero y el layout dejaba de funcionar.
+
+**Mis veinte contratos daban 20/20.** Leen el layout con expresiones regulares, así que no se
+enteran de si compila. Lo encontró **Theme Check**, el linter oficial.
+
+Y al reescribirlo apareció un segundo detalle: un comentario con almohadilla tampoco puede
+**contener** una etiqueta escrita entera, porque el analizador la tokeniza igual aunque esté dentro
+del comentario. También lo encontró Theme Check.
+
+Las dos cosas refuerzan lo mismo: **un pipeline propio no sustituye al analizador del que define el
+lenguaje.** Las comprobaciones propias encuentran lo que el linter no sabe —contratos entre marcado
+y script, derivas de banco, presupuestos—, y el linter encuentra lo que ellas no pueden: si el
+archivo es siquiera válido.
+
+### 27.6 Estado
+
+| | |
+| --- | --- |
+| 321 pruebas unitarias | OK |
+| **20** contratos de theme | OK |
+| Theme Check de Shopify | OK — 0 infracciones |
+| 21 comprobaciones de componentes en navegador (iPhone) | OK |
+| 5 de accesibilidad sobre la página renderizada | OK |
+| 6 presupuestos de rendimiento | OK |
+| 7 de seguridad del theme | OK |
+| el theme coincide con Shopify — 64 de 64 | OK |
+
+**18/18. Ninguna `NO EJECUTADA`.**

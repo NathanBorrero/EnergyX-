@@ -287,6 +287,15 @@
 
   .ne-card__price { font-variant-numeric: tabular-nums; }
 
+  /* `ne-price.liquid` es un snippet COMPARTIDO: lo pintan la tarjeta —portada,
+     colección, búsqueda— y la ficha. Su clase base tiene que vivir en el
+     paquete que TODAS las páginas cargan, no en el de la ficha, o en tres de
+     cuatro páginas la clase no hace nada.
+     La regla no cambia nada a la vista: en la tarjeta ya la daba el contenedor
+     y en la ficha ya la da su propio selector. Lo que cambia es que ahora la
+     clase significa lo mismo en todas partes. */
+  .ne-price__current { font-variant-numeric: tabular-nums; }
+
 /* === Colección =================================================== */
   .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
   .ne-collection__intro { max-width: var(--ne-measure); }

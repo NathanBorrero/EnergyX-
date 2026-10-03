@@ -47,6 +47,14 @@
               >{{ link.title }}</a>
             </li>
           {%- endfor -%}
+          {%- comment -%}
+            La búsqueda EXISTE —`templates/search.json`, con filtros y orden— y
+            no la enlazaba nada. Una página que no se puede alcanzar es una
+            página que no existe. El texto ya estaba escrito y sin usar.
+          {%- endcomment -%}
+          <li>
+            <a class="ne-header__link" href="{{ routes.search_url }}">{{ 'sections.header.search' | t }}</a>
+          </li>
         </ul>
       </nav>
     {%- endif -%}

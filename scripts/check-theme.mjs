@@ -524,6 +524,231 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
 });
 
 // ---------------------------------------------------------------------------
+// 6octies. Ningún texto declarado y sin usar.
+//
+//   Un texto escrito en el archivo de idioma y que no lee nadie casi nunca es
+//   basura: suele ser la huella de algo que se pensó y se quedó a medias. De los
+//   diecisiete que había, TRES eran defectos de verdad:
+//
+//     · `sections.header.search` — la búsqueda existía, con filtros y orden, y
+//       NADA la enlazaba. Una página inalcanzable es una página que no existe.
+//     · `general.404.back_home` — el botón del 404 decía el nombre de la tienda
+//       en lugar de a dónde lleva.
+//     · `general.password_page.subtext` — la primera página que ve nadie antes
+//       del lanzamiento no decía nada, y había un texto escrito para ella.
+//
+//   Los otros trece eran basura y se borraron. Esta comprobación existe para que
+//   el siguiente se note el día que aparezca, no dos meses después.
+// ---------------------------------------------------------------------------
+await check('ningún texto de idioma declarado y sin usar', async () => {
+  const problems = [];
+
+  /**
+   * Claves que Liquid resuelve SIN nombrarlas.
+   *
+   * La pluralización es la única: `'cart.general.item_count' | t: count: n`
+   * elige `.one` o `.other` según el número, así que esas dos subclaves están
+   * en uso aunque no aparezcan escritas en ninguna parte.
+   */
+  const INDIRECT = /\.(one|other|zero|two|few|many)$/;
+
+  function* leafKeys(node, trail = []) {
+    if (node && typeof node === 'object' && !Array.isArray(node)) {
+      for (const [key, value] of Object.entries(node)) yield* leafKeys(value, [...trail, key]);
+      return;
+    }
+    yield trail.join('.');
+  }
+
+  let locale;
+  try {
+    locale = JSON.parse(await readFile(path.join(THEME, 'locales', 'es.default.json'), 'utf8'));
+  } catch (error) {
+    problems.push(`no se pudo leer el archivo de idioma: ${error.message}`);
+    return problems;
+  }
+
+  // Se busca en el Liquid del theme Y en el JavaScript, porque el puente de
+  // textos de `theme.liquid` nombra algunas claves y el script usa otras.
+  const haystack = `${allLiquid}\n${js}`;
+
+  const used = (key) => haystack.includes(`'${key}'`) || haystack.includes(`"${key}"`);
+  const reported = new Set();
+
+  for (const key of leafKeys(locale)) {
+    if (INDIRECT.test(key)) {
+      // Una subclave de pluralización se usa POR SU PADRE. Pero si el padre
+      // tampoco lo usa nadie, el grupo entero sobra: saltárselo sin más dejaba
+      // un hueco por el que se colaba una cadena pluralizada muerta. Lo
+      // descubrió el control de la propia inyección de fallos.
+      const parent = key.replace(/\.[^.]+$/, '');
+      if (!used(parent) && !reported.has(parent)) {
+        reported.add(parent);
+        problems.push(`locales/es.default.json · ${parent} (pluralizado) está declarado y no lo lee nadie`);
+      }
+      continue;
+    }
+    if (!used(key)) {
+      problems.push(`locales/es.default.json · ${key} está declarado y no lo lee nadie`);
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6septies. Cada plantilla CARGA el CSS de las clases que usa.
+//
+//   El CSS está troceado por página para que nadie pague bytes que no usa. El
+//   precio de trocearlo es este fallo: una sección que usa una clase cuyo
+//   paquete su plantilla NO carga se pinta sin estilo, y no se nota leyendo el
+//   código ni abriendo la página que sí lo carga.
+//
+//   Pasó de verdad, dos veces y seguidas: al dar al blog la paginación que le
+//   faltaba, sus enlaces habrían salido pelados porque `.ne-pagination` vive en
+//   el paquete de la colección. Y `.ne-collection-list__cell` estaba en el
+//   marcado sin una sola regla en ninguna hoja.
+//
+//   Esto recorre, para cada plantilla: sus secciones, los snippets que esas
+//   secciones renderizan —transitivamente—, las clases `ne-*` literales que
+//   aparecen ahí, y los paquetes de CSS que la plantilla carga según
+//   `theme.liquid`. Si una clase no está definida en ninguno de ellos, lo dice.
+// ---------------------------------------------------------------------------
+await check('cada plantilla carga el CSS de las clases que usa', async () => {
+  const problems = [];
+  const notes = [];
+
+  // ── 1 · qué paquete carga cada plantilla, LEÍDO del layout ----------------
+  const always = [...layout.matchAll(/\{\{\s*'(ne-[a-z-]+\.css)'\s*\|\s*asset_url\s*\|\s*stylesheet_tag\s*\}\}/g)]
+    .map((m) => m[1]);
+  /** @type {Map<string, string[]>} paquete -> plantillas que lo cargan */
+  const conditional = new Map();
+  for (const m of layout.matchAll(
+    /if\s+t\s*==\s*([^\n]+)\n\s*echo\s+'(ne-[a-z-]+\.css)'\s*\|\s*asset_url\s*\|\s*stylesheet_tag/g,
+  )) {
+    const templates = [...m[1].matchAll(/'([a-z-]+)'/g)].map((x) => x[1]);
+    conditional.set(m[2], templates);
+  }
+  if (always.length === 0) {
+    problems.push('theme.liquid ya no carga ningún CSS incondicional: no se puede comprobar nada');
+    return { problems, notes };
+  }
+
+  // ── 2 · qué clases define cada paquete, leídas del asset SERVIDO ----------
+  /** @param {string} css */
+  const definedIn = (css) => new Set([...css.matchAll(/\.(ne-[a-z0-9_-]+)/g)].map((m) => m[1]));
+  /** @type {Map<string, Set<string>>} */
+  const bundleClasses = new Map();
+  for (const bundle of [...always, ...conditional.keys()]) {
+    try {
+      bundleClasses.set(bundle, definedIn(await readFile(path.join(THEME, 'assets', bundle), 'utf8')));
+    } catch {
+      problems.push(`theme.liquid carga ${bundle} y ese asset no existe`);
+    }
+  }
+
+  // ── 3 · qué clases usa cada plantilla ------------------------------------
+  /** Clases `ne-*` literales. Las que llevan Liquid dentro dependen del dato. */
+  function usedClasses(text) {
+    const out = new Set();
+    for (const m of text.matchAll(/class="([^"]*)"/g)) {
+      for (const token of m[1].split(/\s+/)) {
+        if (token.startsWith('ne-') && !token.includes('{')) out.add(token);
+      }
+    }
+    return out;
+  }
+
+  /** Clases de una sección y, transitivamente, de los snippets que renderiza. */
+  async function classesOf(file, seen = new Set()) {
+    if (seen.has(file)) return new Set();
+    seen.add(file);
+    const source = liquidCode.get(path.join(ROOT, file));
+    if (source === undefined) return new Set();
+    const out = usedClasses(source);
+    for (const m of source.matchAll(/\{%-?\s*render\s+'([^']+)'/g)) {
+      for (const c of await classesOf(`theme/snippets/${m[1]}.liquid`, seen)) out.add(c);
+    }
+    return out;
+  }
+
+  // La cabecera y el pie salen en TODAS las plantillas, vía grupos de secciones.
+  const shared = new Set();
+  for (const group of ['header-group.json', 'footer-group.json']) {
+    let parsed;
+    try {
+      parsed = JSON.parse(await readFile(path.join(THEME, 'sections', group), 'utf8'));
+    } catch {
+      continue;
+    }
+    for (const section of Object.values(parsed.sections ?? {})) {
+      for (const c of await classesOf(`theme/sections/${section.type}.liquid`)) shared.add(c);
+    }
+  }
+
+  const templateFiles = (await readdir(path.join(THEME, 'templates'))).filter((f) => f.endsWith('.json'));
+  for (const file of templateFiles) {
+    // `page.contact.json` carga el mismo CSS que `page`: Liquid compara con
+    // `template.name`, que ignora el sufijo.
+    const name = file.replace(/\.json$/, '').split('.')[0];
+
+    let parsed;
+    try {
+      parsed = JSON.parse(await readFile(path.join(THEME, 'templates', file), 'utf8'));
+    } catch (error) {
+      problems.push(`templates/${file} no se pudo interpretar: ${error.message}`);
+      continue;
+    }
+
+    const used = new Set(shared);
+    for (const section of Object.values(parsed.sections ?? {})) {
+      for (const c of await classesOf(`theme/sections/${section.type}.liquid`)) used.add(c);
+    }
+
+    const loaded = [...always];
+    for (const [bundle, templates] of conditional) {
+      if (templates.includes(name)) loaded.push(bundle);
+    }
+    const available = new Set();
+    for (const bundle of loaded) {
+      for (const c of bundleClasses.get(bundle) ?? []) available.add(c);
+    }
+
+    for (const klass of [...used].sort()) {
+      if (available.has(klass)) continue;
+      // ¿Está definida en ALGÚN paquete? Distinguir las dos averías importa:
+      // una es «la clase no existe», la otra es «existe y esta página no la
+      // carga», y se arreglan de forma distinta.
+      const elsewhere = [...bundleClasses]
+        .filter(([, classes]) => classes.has(klass))
+        .map(([bundle]) => bundle);
+      if (elsewhere.length > 0) {
+        // AVERÍA DE VERDAD: la regla existe y esta página no la recibe, así que
+        // se pinta distinto según por dónde entres. Es lo que le iba a pasar al
+        // blog con `.ne-pagination`.
+        problems.push(
+          `templates/${file} usa .${klass}, definida en ${elsewhere.join(', ')}, que esta plantilla NO carga`,
+        );
+      } else {
+        // Sin reglas en ninguna hoja. NO es una avería: en BEM el nombre del
+        // componente —`.ne-pdp`, `.ne-buy`, `.ne-footer`— es marcado legítimo
+        // aunque hoy no lo estile nadie, y lo usan los contratos y las pruebas.
+        // Se informa para que sea una decisión y no un descuido.
+        notes.push(`templates/${file}: .${klass} no tiene reglas en ninguna hoja`);
+      }
+    }
+  }
+
+  // Las notas se agrupan: veintitantas líneas de «esta clase no tiene reglas»
+  // repetidas por plantilla enterrarían cualquier problema de verdad.
+  const dead = new Set(notes.map((n) => n.split(': .')[1]?.split(' ')[0]).filter(Boolean));
+  return {
+    problems,
+    notes: dead.size > 0 ? [`${dead.size} clases sin reglas en ninguna hoja: ${[...dead].sort().join(', ')}`] : [],
+  };
+});
+
+// ---------------------------------------------------------------------------
 // 6sexies. Los bancos llevan el ESQUELETO del documento, no solo su contenido.
 //
 //   `theme.liquid` pinta lo mismo en TODAS las páginas: enlace de salto,

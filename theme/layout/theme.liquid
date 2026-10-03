@@ -72,7 +72,17 @@
       if t == 'cart'
         echo 'ne-cart.css' | asset_url | stylesheet_tag
       endif
-      if t == 'collection' or t == 'search'
+      # El blog TAMBIÉN, porque pagina. Al añadirle la paginación que le faltaba,
+      # sus enlaces habrían salido sin un solo estilo: la regla `.ne-pagination`
+      # vive en este paquete. Un defecto que se arregla creando otro es el peor
+      # tipo de arreglo.
+      #
+      # Y el comentario va con almohadilla: dentro de una etiqueta liquid la
+      # forma de bloque NO compila y se lleva por delante el head entero.
+      # Tampoco puede CONTENER una etiqueta escrita entera, ni siquiera dentro
+      # del comentario, porque el analizador la tokeniza igual. Las dos cosas
+      # las encontró Theme Check, no mis contratos.
+      if t == 'collection' or t == 'search' or t == 'blog'
         echo 'ne-collection.css' | asset_url | stylesheet_tag
       endif
     -%}

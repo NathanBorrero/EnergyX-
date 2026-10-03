@@ -12,6 +12,30 @@
           </li>
         {%- endfor -%}
       </ul>
+
+      {%- comment -%}
+        FALTABA. Había un `{% paginate %}` envolviendo el bucle y NINGUNA
+        navegación dentro: un blog con más de doce artículos mostraba doce y no
+        ofrecía forma de llegar al resto. El mismo callejón sin salida que tenía
+        la colección, con otro traje.
+      {%- endcomment -%}
+      {%- if paginate.pages > 1 -%}
+        <nav class="ne-pagination" aria-label="{{ 'general.pagination.label' | t }}">
+          {%- if paginate.previous -%}
+            <a class="ne-button--text ne-pagination__previous" href="{{ paginate.previous.url }}" rel="prev">
+              {{- 'general.pagination.previous' | t -}}
+            </a>
+          {%- endif -%}
+          <p class="ne-pagination__state">
+            {{- 'general.pagination.state' | t: current: paginate.current_page, total: paginate.pages -}}
+          </p>
+          {%- if paginate.next -%}
+            <a class="ne-button--text ne-pagination__next" href="{{ paginate.next.url }}" rel="next">
+              {{- 'general.pagination.next' | t -}}
+            </a>
+          {%- endif -%}
+        </nav>
+      {%- endif -%}
     {%- endpaginate -%}
   </div>
 </section>

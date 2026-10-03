@@ -11,7 +11,12 @@
         <p class="ne-lead">{{ 'general.404.subtext' | t | default: 'El enlace puede haber cambiado. El catálogo sigue donde estaba.' }}</p>
         <p class="ne-404__actions">
           <a class="ne-button" href="{{ routes.all_products_collection_url }}">{{ 'collections.general.view_all' | t }}</a>
-          <a class="ne-button ne-button--quiet" href="{{ routes.root_url }}">{{ shop.name }}</a>
+          {%- comment -%}
+            El botón decía el NOMBRE DE LA TIENDA, que no es lo que hace el
+            botón. Un botón dice a dónde lleva. El texto ya existía y no lo
+            usaba nadie.
+          {%- endcomment -%}
+          <a class="ne-button ne-button--quiet" href="{{ routes.root_url }}">{{ 'general.404.back_home' | t }}</a>
         </p>
       </div>
     </div>

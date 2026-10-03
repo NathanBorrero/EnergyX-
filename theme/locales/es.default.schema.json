@@ -97,6 +97,10 @@
     "custom_liquid": {
       "name": "Liquid personalizado",
       "label": "Código Liquid"
+    },
+    "password": {
+      "message": "Mensaje",
+      "message_info": "Lo que ve quien llega antes del lanzamiento. Si se deja vacío no se muestra nada."
     }
   },
   "blocks": {
