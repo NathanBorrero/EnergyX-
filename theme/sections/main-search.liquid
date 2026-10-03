@@ -1,7 +1,34 @@
-<section class="ne-section">
-  <div class="ne-shell">
-    <h1 class="ne-display">{{ 'general.search.submit' | t }}</h1>
+{%- comment -%}
+  Búsqueda.
 
+  Lo mismo que la colección —filtrar y ordenar, sin JavaScript— más tres cosas
+  propias de buscar:
+
+  · `type=product`. Sin él los resultados traen páginas y artículos que esta
+    rejilla no pinta, así que el recuento diría más de lo que se ve. Verificado
+    en la documentación de búsqueda de Shopify: `type` acepta `product`, `page`
+    y `article`.
+  · `search.terms` viene de la URL y se escapa SIEMPRE antes de emitirlo. Liquid
+    no escapa por defecto, y aquí ya hubo un XSS reflejado de verdad.
+  · El estado inicial no es una página vacía. Buscar sin haber buscado todavía
+    es el estado normal de esta página, no un error.
+{%- endcomment -%}
+
+{%- liquid
+  assign columns = settings.collection_columns | default: 3
+  assign sort_by = search.sort_by | default: 'relevance'
+  assign safe_terms = search.terms | escape
+-%}
+
+<section class="ne-section" aria-labelledby="ne-search-title">
+  <div class="ne-shell">
+    <h1 class="ne-display" id="ne-search-title">{{ 'general.search.heading' | t }}</h1>
+
+    {%- comment -%}
+      El formulario de la consulta va aparte del de los filtros: aquí se escribe
+      y se envía con Enter, y mezclarlo con quince casillas haría que pulsar
+      Enter en el campo aplicase cosas que nadie tocó.
+    {%- endcomment -%}
     <form action="{{ routes.search_url }}" method="get" role="search" class="ne-search__form">
       <label class="ne-visually-hidden" for="ne-search-input">{{ 'general.search.placeholder' | t }}</label>
       <input
@@ -9,17 +36,35 @@
         id="ne-search-input"
         type="search"
         name="q"
-        value="{{ search.terms | escape }}"
+        value="{{ safe_terms }}"
         placeholder="{{ 'general.search.placeholder' | t }}"
+        autocomplete="off"
       >
+      <input type="hidden" name="type" value="product">
+      <input type="hidden" name="options[prefix]" value="last">
       <button class="ne-button" type="submit">{{ 'general.search.submit' | t }}</button>
     </form>
 
     {%- if search.performed -%}
+      {% render 'ne-collection-filters',
+        filters: search.filters,
+        sort_options: search.sort_options,
+        sort_by: sort_by,
+        form_action: routes.search_url,
+        clear_url: routes.search_url,
+        results_count: search.results_count,
+        search_terms: search.terms
+      %}
+
       {%- if search.results.size > 0 -%}
         {%- paginate search.results by 24 -%}
-          <ul class="ne-grid ne-product-grid ne-product-grid--cols-3">
+          <ul class="ne-grid ne-product-grid ne-product-grid--cols-{{ columns }}" role="list">
             {%- for item in search.results -%}
+              {%- comment -%}
+                Se comprueba el tipo aunque `type=product` vaya en el formulario:
+                alguien puede llegar con una URL escrita a mano, y un `article`
+                en una tarjeta de producto reventaría la tarjeta.
+              {%- endcomment -%}
               {%- if item.object_type == 'product' -%}
                 <li class="ne-product-grid__cell">
                   {% render 'ne-product-card', product: item, card_index: forloop.index0 %}
@@ -27,26 +72,46 @@
               {%- endif -%}
             {%- endfor -%}
           </ul>
+
+          {%- if paginate.pages > 1 -%}
+            <nav class="ne-pagination" aria-label="{{ 'general.pagination.label' | t }}">
+              {%- if paginate.previous -%}
+                <a class="ne-button--text ne-pagination__previous" href="{{ paginate.previous.url }}" rel="prev">
+                  {{- 'general.pagination.previous' | t -}}
+                </a>
+              {%- endif -%}
+
+              <p class="ne-pagination__state">
+                {{- 'general.pagination.state' | t: current: paginate.current_page, total: paginate.pages -}}
+              </p>
+
+              {%- if paginate.next -%}
+                <a class="ne-button--text ne-pagination__next" href="{{ paginate.next.url }}" rel="next">
+                  {{- 'general.pagination.next' | t -}}
+                </a>
+              {%- endif -%}
+            </nav>
+          {%- endif -%}
         {%- endpaginate -%}
       {%- else -%}
         {%- comment -%}
-          `search.terms` viene de un parámetro de URL: lo controla cualquiera
-          que consiga que alguien abra un enlace. Se escapa ANTES de
-          interpolarlo, porque la documentación no dice si el filtro `t` escapa
-          sus interpolaciones, y un control de seguridad no se apoya en un
-          comportamiento sin verificar.
+          `search.terms` lo controla cualquiera que consiga que alguien abra un
+          enlace. Se escapa ANTES de interpolarlo, porque la documentación no
+          dice si el filtro `t` escapa sus interpolaciones, y un control de
+          seguridad no se apoya en un comportamiento sin verificar.
         {%- endcomment -%}
-        {%- assign safe_terms = search.terms | escape -%}
         <p class="ne-notice">{{ 'general.search.no_results' | t: terms: safe_terms }}</p>
       {%- endif -%}
     {%- endif -%}
   </div>
 </section>
+
 {%- comment -%}
-  Los estilos de esta pieza viven en `src/theme/css/shell.css`.
+  Los estilos de esta pieza viven en `src/theme/css/shell.css` y, los del panel
+  de filtros, en `src/theme/css/collection.css`.
 
   Razón única y verificable: la auditoría de accesibilidad y las pruebas en
-  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  navegador cargan ESOS archivos, así que lo que miden es el CSS real. Repartido
   por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
   copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
 {%- endcomment -%}

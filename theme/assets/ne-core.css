@@ -487,7 +487,6 @@ button, input, select, textarea {
   .ne-card__price { font-variant-numeric: tabular-nums; }
   .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
   .ne-collection__intro { max-width: var(--ne-measure); }
-  .ne-pagination { display: flex; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
   .ne-search__form { display: flex; gap: var(--ne-space-2xs); margin-block: var(--ne-space-l); }
   .ne-search__input {
     flex: 1;

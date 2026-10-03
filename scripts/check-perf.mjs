@@ -67,6 +67,14 @@ const BUDGET = Object.freeze({
   cssProduct: 1_800,
   /** El CSS extra del carrito. Medido: 802 B. */
   cssCart: 1_100,
+  /**
+   * El CSS extra de la colección y la búsqueda: el panel de filtros.
+   *
+   * Es la pieza nueva y la que más riesgo tiene de engordar, porque un panel de
+   * filtros invita a añadir estados. Medido en la página: cuesta 1,6 KB
+   * transferidos sobre la portada y UNA petición, con CERO JavaScript.
+   */
+  cssCollection: 1_600,
   /** Los componentes del theme. Medido: 7 213 B. */
   componentsJs: 8_000,
   /** Los módulos que la ficha de producto necesita. Medido: 6 282 B. */
@@ -100,10 +108,11 @@ await check('presupuesto de bytes del primer paint', async () => {
   const css = await gz('ne-core.css');
   const cssProduct = await gz('ne-product.css');
   const cssCart = await gz('ne-cart.css');
+  const cssCollection = await gz('ne-collection.css');
   const js = await gz('ne-components.js');
 
   notes.push(`CSS de toda página: ${css} B comprimidos (presupuesto ${BUDGET.cssFirstPaint})`);
-  notes.push(`CSS extra de ficha: ${cssProduct} B · de carrito: ${cssCart} B`);
+  notes.push(`CSS extra de ficha: ${cssProduct} B · de carrito: ${cssCart} B · de colección: ${cssCollection} B`);
   notes.push(`ne-components.js: ${js} B comprimidos (presupuesto ${BUDGET.componentsJs})`);
 
   if (css > BUDGET.cssFirstPaint) {
@@ -114,6 +123,9 @@ await check('presupuesto de bytes del primer paint', async () => {
   }
   if (cssCart > BUDGET.cssCart) {
     problems.push(`el CSS del carrito pesa ${cssCart} B comprimidos, por encima de ${BUDGET.cssCart}`);
+  }
+  if (cssCollection > BUDGET.cssCollection) {
+    problems.push(`el CSS de la colección pesa ${cssCollection} B comprimidos, por encima de ${BUDGET.cssCollection}`);
   }
   if (js > BUDGET.componentsJs) {
     problems.push(`ne-components.js pesa ${js} B comprimidos, por encima de ${BUDGET.componentsJs}`);
@@ -318,6 +330,9 @@ if (chromium) {
       // La colección pesa el 43% de la puntuación de velocidad de la tienda de
       // themes, más que la ficha y mucho más que la portada.
       ['portada y colección', 'home-harness.html'],
+      // Y la colección con filtros aparte, porque el acordeón abierto cambia la
+      // altura del panel y podría empujar la rejilla al cargar.
+      ['colección con filtros', 'collection-harness.html'],
     ]) {
       const page = await browser.newPage();
       await page.addInitScript(() => {

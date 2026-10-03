@@ -222,6 +222,9 @@ const PAGES = [
   // ahí: carga el grafo completo de `ne-components.js`, que incluye la
   // aritmética de tallas, y el carrito no la usa.
   ['carrito', 'cart-harness.html', false],
+  // Y la colección, que es la página que más pesa en la puntuación de velocidad
+  // de la tienda de themes y la única con el panel de filtros.
+  ['colección', 'collection-harness.html', false],
 ];
 
 console.log('');

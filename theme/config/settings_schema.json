@@ -103,6 +103,24 @@
     ]
   },
   {
+    "name": "t:settings.collection.name",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:settings.collection.columns_info"
+      },
+      {
+        "type": "range",
+        "id": "collection_columns",
+        "label": "t:settings.collection.columns",
+        "min": 2,
+        "max": 4,
+        "step": 1,
+        "default": 3
+      }
+    ]
+  },
+  {
     "name": "t:settings.cod.name",
     "settings": [
       {

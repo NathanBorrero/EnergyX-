@@ -72,6 +72,9 @@
       if t == 'cart'
         echo 'ne-cart.css' | asset_url | stylesheet_tag
       endif
+      if t == 'collection' or t == 'search'
+        echo 'ne-collection.css' | asset_url | stylesheet_tag
+      endif
     -%}
 
     {%- comment -%} Las familias tipográficas vienen de los ajustes del theme, así

@@ -235,7 +235,8 @@
 /* === Colección =================================================== */
   .ne-collection__head { margin-bottom: var(--ne-space-xl); display: grid; gap: var(--ne-space-m); }
   .ne-collection__intro { max-width: var(--ne-measure); }
-  .ne-pagination { display: flex; gap: var(--ne-space-m); margin-top: var(--ne-space-xl); }
+  /* `.ne-pagination` se movió a `collection.css`: solo paginan la colección y la
+     búsqueda, y aquí la cargaban también la portada, la ficha y el carrito. */
 
 /* === Búsqueda ==================================================== */
   .ne-search__form { display: flex; gap: var(--ne-space-2xs); margin-block: var(--ne-space-l); }

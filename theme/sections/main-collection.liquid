@@ -1,3 +1,22 @@
+{%- comment -%}
+  Colección.
+
+  Lo que la gobierna:
+
+  · Se navega filtrando, no paginando. Una colección de calzado sin filtro de
+    talla obliga a abrir veinte fichas para encontrar el 42, y la propia guía de
+    rendimiento de Shopify dice lo mismo: filtrar antes que paginar profundo.
+  · Cero JavaScript. El panel es un formulario de verdad y el acordeón es
+    `<details>`. Esta página no descarga ni una línea de script.
+  · La paginación dice dónde estás. «Anterior / Siguiente» sin número deja al
+    comprador sin saber si va por la página 2 o por la 9.
+{%- endcomment -%}
+
+{%- liquid
+  assign columns = settings.collection_columns | default: 3
+  assign sort_by = collection.sort_by | default: collection.default_sort_by
+-%}
+
 <section class="ne-section" aria-labelledby="ne-collection-title">
   <div class="ne-shell">
     <header class="ne-collection__head">
@@ -7,9 +26,28 @@
       {%- endif -%}
     </header>
 
+    {%- comment -%}
+      El panel se pinta aunque la colección esté vacía DESPUÉS de filtrar: si al
+      filtrar no queda nada y el panel desaparece, no hay forma de deshacer el
+      filtro salvo el botón de atrás.
+    {%- endcomment -%}
+    {% render 'ne-collection-filters',
+      filters: collection.filters,
+      sort_options: collection.sort_options,
+      sort_by: sort_by,
+      form_action: collection.url,
+      clear_url: collection.url,
+      results_count: collection.products_count
+    %}
+
     {%- if collection.products.size > 0 -%}
+      {%- comment -%}
+        24 por página. La guía de rendimiento de Shopify pide limitar la
+        profundidad de paginación —los recuentos solo son exactos hasta 25 000—
+        y responder con filtros, que es lo que hay arriba.
+      {%- endcomment -%}
       {%- paginate collection.products by 24 -%}
-        <ul class="ne-grid ne-product-grid ne-product-grid--cols-3">
+        <ul class="ne-grid ne-product-grid ne-product-grid--cols-{{ columns }}" role="list">
           {%- for product in collection.products -%}
             <li class="ne-product-grid__cell">
               {% render 'ne-product-card', product: product, card_index: forloop.index0 %}
@@ -18,27 +56,54 @@
         </ul>
 
         {%- if paginate.pages > 1 -%}
-          <nav class="ne-pagination" aria-label="{{ 'general.pagination.previous' | t }}">
+          <nav class="ne-pagination" aria-label="{{ 'general.pagination.label' | t }}">
             {%- if paginate.previous -%}
-              <a class="ne-button--text" href="{{ paginate.previous.url }}" rel="prev">{{ 'general.pagination.previous' | t }}</a>
+              <a class="ne-button--text ne-pagination__previous" href="{{ paginate.previous.url }}" rel="prev">
+                {{- 'general.pagination.previous' | t -}}
+              </a>
             {%- endif -%}
+
+            <p class="ne-pagination__state">
+              {{- 'general.pagination.state' | t: current: paginate.current_page, total: paginate.pages -}}
+            </p>
+
             {%- if paginate.next -%}
-              <a class="ne-button--text" href="{{ paginate.next.url }}" rel="next">{{ 'general.pagination.next' | t }}</a>
+              <a class="ne-button--text ne-pagination__next" href="{{ paginate.next.url }}" rel="next">
+                {{- 'general.pagination.next' | t -}}
+              </a>
             {%- endif -%}
           </nav>
         {%- endif -%}
       {%- endpaginate -%}
     {%- else -%}
-      <p class="ne-notice">{{ 'collections.general.no_products' | t }}</p>
+      {%- comment -%}
+        Dos vacíos distintos, y confundirlos es lo que hace que una tienda se
+        sienta rota: una colección sin productos no es lo mismo que una colección
+        cuyos filtros no dejaron nada.
+      {%- endcomment -%}
+      {%- liquid
+        assign has_active = false
+        for filter in collection.filters
+          if filter.active_values.size > 0
+            assign has_active = true
+          endif
+        endfor
+      -%}
+      {%- if has_active -%}
+        <p class="ne-notice ne-notice--alert">{{ 'collections.general.no_matches' | t }}</p>
+      {%- else -%}
+        <p class="ne-notice">{{ 'collections.general.no_products' | t }}</p>
+      {%- endif -%}
     {%- endif -%}
   </div>
 </section>
 
 {%- comment -%}
-  Los estilos de esta pieza viven en `src/theme/css/shell.css`.
+  Los estilos de esta pieza viven en `src/theme/css/shell.css` y, los del panel
+  de filtros, en `src/theme/css/collection.css`.
 
   Razón única y verificable: la auditoría de accesibilidad y las pruebas en
-  navegador cargan ESE archivo, así que lo que miden es el CSS real. Repartido
+  navegador cargan ESOS archivos, así que lo que miden es el CSS real. Repartido
   por `{% stylesheet %}` de cada sección, cada banco de pruebas tendría que
   copiarlo, y una copia se desincroniza sin que nada lo diga. Ya pasó.
 {%- endcomment -%}

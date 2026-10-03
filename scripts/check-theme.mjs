@@ -106,6 +106,7 @@ const HARNESSES = [
   'cart-harness.html',
   'cart-empty-harness.html',
   'home-harness.html',
+  'collection-harness.html',
 ];
 
 const js = await readFile(COMPONENTS, 'utf8');
@@ -507,6 +508,40 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
     }
   }
 
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6quinquies. Los bancos maquetan al ANCHO REAL del móvil.
+//
+//   Sin `<meta name="viewport">` un navegador móvil maqueta a 980px y luego lo
+//   encoge. Los puntos de ruptura de escritorio se aplican en un teléfono.
+//
+//   `theme.liquid` lo lleva. Los cinco bancos NO lo llevaban. Así que las
+//   dieciséis comprobaciones de comportamiento «en iPhone 390×844», la
+//   auditoría de accesibilidad y el desplazamiento acumulado se midieron todos
+//   sobre una maqueta de ESCRITORIO con el ratio de píxeles de un teléfono.
+//
+//   Es la QUINTA deriva de banco de este proyecto, y la más cara: las otras
+//   cuatro medían el CSS, los textos o el marcado equivocados; esta medía otra
+//   anchura de página, que cambia qué reglas se aplican.
+// ---------------------------------------------------------------------------
+await check('los bancos maquetan al ancho real del móvil', async () => {
+  const problems = [];
+  const wanted = layout.match(/<meta\s+name="viewport"\s+content="([^"]+)"\s*>/);
+  if (!wanted) {
+    problems.push('theme.liquid ya no declara `<meta name="viewport">`: el theme maquetaría a 980px en un móvil');
+    return problems;
+  }
+  for (const name of HARNESSES) {
+    const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+    const found = text.match(/<meta\s+name="viewport"\s+content="([^"]+)"\s*>/);
+    if (!found) {
+      problems.push(`${name} no declara viewport: maquetaría a 980px y mediría una página de escritorio`);
+    } else if (found[1] !== wanted[1]) {
+      problems.push(`${name} declara viewport "${found[1]}" y theme.liquid "${wanted[1]}": miden anchuras distintas`);
+    }
+  }
   return problems;
 });
 

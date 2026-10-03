@@ -15,12 +15,15 @@
     },
     "pagination": {
       "previous": "Anterior",
-      "next": "Siguiente"
+      "next": "Siguiente",
+      "label": "Paginación",
+      "state": "Página {{ current }} de {{ total }}"
     },
     "search": {
       "placeholder": "Buscar",
       "submit": "Buscar",
-      "no_results": "No encontramos nada para «{{ terms }}»."
+      "no_results": "No encontramos nada para «{{ terms }}».",
+      "heading": "Buscar"
     },
     "placeholder": {
       "label": "PENDIENTE",
@@ -121,7 +124,19 @@
   "collections": {
     "general": {
       "no_products": "Todavía no hay productos en esta colección.",
-      "view_all": "Ver todo"
+      "view_all": "Ver todo",
+      "count": "{{ count }} productos",
+      "no_matches": "Ningún producto coincide con los filtros. Prueba quitando alguno."
+    },
+    "sorting": {
+      "title": "Ordenar"
+    },
+    "filters": {
+      "title": "Filtrar",
+      "apply": "Aplicar",
+      "clear_all": "Quitar todo",
+      "value_empty": "sin resultados con los filtros actuales",
+      "price_from_url": "El rango de precio se aplica desde el enlace."
     }
   },
   "sections": {

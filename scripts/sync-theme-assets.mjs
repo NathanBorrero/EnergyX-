@@ -80,6 +80,7 @@ const CSS_BUNDLES = Object.freeze({
   'ne-core.css': ['tokens.css', 'base.css', 'shell.css'],
   'ne-product.css': ['product.css'],
   'ne-cart.css': ['cart.css'],
+  'ne-collection.css': ['collection.css'],
 });
 
 /**

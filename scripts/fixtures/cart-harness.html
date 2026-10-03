@@ -15,6 +15,16 @@
 <html lang="es">
   <head>
     <meta charset="utf-8">
+    <!--
+      ESTE META NO ES DECORACIÓN. Sin él el navegador móvil maqueta a 980px y
+      luego lo encoge, así que los puntos de ruptura de escritorio se aplican en
+      un teléfono. Faltaba en los cinco bancos mientras `theme.liquid` sí lo
+      llevaba, de modo que las dieciséis comprobaciones «en iPhone 390×844», la
+      auditoría de accesibilidad y el desplazamiento acumulado se midieron todos
+      sobre una maqueta de ESCRITORIO. Es la quinta deriva de banco del
+      proyecto, y la que más caro salía: medía otra página.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="data:,">
     <title>Banco de pruebas · carrito</title>
     <!--

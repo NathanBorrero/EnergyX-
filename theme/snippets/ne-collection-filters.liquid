@@ -1,0 +1,265 @@
+{%- comment -%}
+  Filtrar y ordenar. Vale para colección y para búsqueda.
+
+  POR QUÉ ESTO EXISTE
+  Una colección de calzado sin filtro de talla obliga a abrir veinte fichas para
+  encontrar la única que está en el 42. Es el mecanismo central de navegar una
+  tienda de zapatos, y Shopify lo da nativo.
+
+  POR QUÉ SIN JAVASCRIPT
+  Es un `<form method="get">` de verdad. Shopify documenta que al enviarlo la
+  página se recarga con los filtros aplicados, y que el envío automático por
+  script es OPCIONAL. Con varias casillas marcadas a la vez además es mejor:
+  enviar en cada clic serían cinco recargas para elegir cinco tallas.
+  La colección sigue sirviendo 0 KB de JavaScript.
+
+  LO QUE NO HACE, Y NO ES UN OLVIDO
+  Los filtros se crean en el admin de Shopify (app Search & Discovery). Si no
+  hay ninguno creado, `filters` viene vacío y esto no pinta nada: no hay panel
+  roto ni hueco. Por defecto Shopify habilita disponibilidad y precio.
+  Y una colección de más de 5 000 productos no muestra filtros: es un límite de
+  la plataforma, no del theme.
+
+  PARÁMETROS
+  · filters        `collection.filters` o `search.filters`
+  · sort_options   `collection.sort_options` o `search.sort_options`
+  · sort_by        el orden activo, ya resuelto por quien llama
+  · clear_url      a dónde lleva «quitar todo»
+  · search_terms   solo en búsqueda: se reenvía para no perder la consulta
+  · results_count  para el recuento
+{%- endcomment -%}
+
+{%- liquid
+  assign has_filters = false
+  if filters != blank and filters.size > 0
+    assign has_filters = true
+  endif
+  assign has_sort = false
+  if sort_options != blank and sort_options.size > 0
+    assign has_sort = true
+  endif
+  assign is_search = false
+  if search_terms != blank
+    assign is_search = true
+  endif
+
+  assign active_count = 0
+  for filter in filters
+    assign active_count = active_count | plus: filter.active_values.size
+    if filter.type == 'price_range'
+      if filter.min_value.value != nil or filter.max_value.value != nil
+        assign active_count = active_count | plus: 1
+      endif
+    endif
+  endfor
+-%}
+
+{%- if has_filters or has_sort -%}
+  {%- comment -%}
+    UN SOLO formulario para filtrar y ordenar. Dos formularios separados harían
+    que ordenar borrase los filtros, porque cada envío manda solo sus propios
+    campos.
+
+    `page` NO se reenvía a propósito: al cambiar un filtro el resultado es otro,
+    y conservar «página 7» deja al comprador en una página que puede no existir.
+  {%- endcomment -%}
+  {%- comment -%} Sin gancho `data-ne-*`: no hay script que lo lea, y un atributo
+    que nadie usa son bytes en cada página de colección. {%- endcomment -%}
+  <form class="ne-filters" method="get" action="{{ form_action }}">
+    {%- if is_search -%}
+      {%- comment -%}
+        En búsqueda hay que reenviar la consulta y el tipo, o el formulario de
+        filtros convertiría la búsqueda en una búsqueda vacía. `type=product`
+        mantiene honesto el recuento: sin él los resultados traen páginas y
+        artículos que esta rejilla no pinta, y el total diría más de lo que se ve.
+      {%- endcomment -%}
+      <input type="hidden" name="q" value="{{ search_terms | escape }}">
+      <input type="hidden" name="type" value="product">
+      <input type="hidden" name="options[prefix]" value="last">
+    {%- endif -%}
+
+    <div class="ne-controls">
+      <p class="ne-controls__count">
+        {{ 'collections.general.count' | t: count: results_count }}
+      </p>
+
+      {%- if has_sort -%}
+        <div class="ne-controls__sort">
+          <label class="ne-controls__sort-label" for="ne-sort">{{ 'collections.sorting.title' | t }}</label>
+          <select class="ne-select" id="ne-sort" name="sort_by">
+            {%- for option in sort_options -%}
+              <option value="{{ option.value }}"{% if option.value == sort_by %} selected{% endif %}>
+                {{- option.name -}}
+              </option>
+            {%- endfor -%}
+          </select>
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- if has_filters -%}
+      <div class="ne-filters__head">
+        <h2 class="ne-filters__title">{{ 'collections.filters.title' | t }}</h2>
+        {%- if active_count > 0 -%}
+          <a class="ne-button--text" href="{{ clear_url }}">{{ 'collections.filters.clear_all' | t }}</a>
+        {%- endif -%}
+      </div>
+
+      {%- for filter in filters -%}
+        {%- comment -%}
+          Se abre el grupo que ya tiene algo elegido. Cerrado escondería la
+          decisión del comprador, que es lo que hace que uno crea que se le
+          perdió el filtro.
+        {%- endcomment -%}
+        {%- liquid
+          assign is_active = false
+          if filter.active_values.size > 0
+            assign is_active = true
+          endif
+          if filter.type == 'price_range'
+            if filter.min_value.value != nil or filter.max_value.value != nil
+              assign is_active = true
+            endif
+          endif
+        -%}
+        <details class="ne-filter"{% if is_active %} open{% endif %}>
+          <summary class="ne-filter__summary">
+            <span class="ne-filter__sign" aria-hidden="true"></span>
+            <span>{{ filter.label }}</span>
+            {%- if filter.active_values.size > 0 -%}
+              <span class="ne-filter__count">{{ filter.active_values.size }}</span>
+            {%- endif -%}
+          </summary>
+
+          <div class="ne-filter__body">
+            {%- case filter.type -%}
+              {%- when 'price_range' -%}
+                {%- comment -%}
+                  AQUÍ NO SE PINTAN CAMPOS, Y ES DELIBERADO.
+
+                  El parámetro de URL del precio (`filter.v.price.gte`) espera el
+                  precio en UNIDADES. `filter.min_value.value` es un número, y la
+                  documentación no dice si está en unidades o en subunidades: el
+                  ejemplo oficial le aplica `money_without_currency`, que espera
+                  subunidades, pero eso no lo convierte en un hecho.
+
+                  Y el ejemplo oficial además NO es seguro fuera de inglés: hace
+                  `money_without_currency | replace: ',', ''`, que en es-CO
+                  convierte «10,00» en «1000». Un filtro de precio equivocado por
+                  100× no avisa: devuelve resultados, solo que los de otro rango.
+
+                  No se puede comprobar desde aquí —la política de red del entorno
+                  deniega el dominio de la tienda—, así que queda como hueco
+                  declarado en lugar de como suposición. `NO VERIFICADO`, en
+                  `VERIFICATION-LOG.md` §21.
+
+                  Lo que sí se hace: si alguien llega con un rango en la URL, se
+                  muestra y se puede QUITAR, en los chips de abajo. `money` ahí es
+                  solo presentación, y presentar no puede equivocarse por 100×.
+                {%- endcomment -%}
+                <p class="ne-filter__note ne-soft">{{ 'collections.filters.price_from_url' | t }}</p>
+
+              {%- when 'boolean' -%}
+                {%- if filter.true_value != blank -%}
+                  <label class="ne-filter__value" for="ne-filter-{{ filter.param_name | escape }}">
+                    <input
+                      class="ne-filter__box"
+                      id="ne-filter-{{ filter.param_name | escape }}"
+                      type="checkbox"
+                      name="{{ filter.param_name }}"
+                      value="{{ filter.true_value.value }}"
+                      {% if filter.true_value.active %}checked{% endif %}
+                    >
+                    <span>{{ filter.true_value.label }}</span>
+                    {%- if filter.true_value.count -%}
+                      <span class="ne-filter__value-count">{{ filter.true_value.count }}</span>
+                    {%- endif -%}
+                  </label>
+                {%- endif -%}
+
+              {%- else -%}
+                {%- comment -%}
+                  `list`. Una casilla por valor, todas con el MISMO `name`: así
+                  Shopify recibe la lista separada por comas que documenta, y
+                  marcar 40 y 41 devuelve los dos, no el último.
+                {%- endcomment -%}
+                {%- for value in filter.values -%}
+                  {%- liquid
+                    assign is_empty = false
+                    if value.count == 0
+                      assign is_empty = true
+                    endif
+                  -%}
+                  <label
+                    class="ne-filter__value"
+                    for="ne-filter-{{ filter.param_name | escape }}-{{ forloop.index }}"
+                    data-ne-empty="{{ is_empty }}"
+                  >
+                    <input
+                      class="ne-filter__box"
+                      id="ne-filter-{{ filter.param_name | escape }}-{{ forloop.index }}"
+                      type="checkbox"
+                      name="{{ value.param_name }}"
+                      value="{{ value.value }}"
+                      {% if value.active %}checked{% endif %}
+                    >
+                    <span>{{ value.label }}</span>
+                    {%- comment -%}
+                      Un valor con cero resultados NO se desactiva, aunque el
+                      ejemplo oficial lo desactive. Los recuentos son relativos a
+                      los filtros ya puestos: el 42 puede dar cero en «negro» y
+                      tener existencias en «cuero», así que desactivarlo encierra
+                      al comprador en la elección que ya hizo. Es el mismo fallo
+                      que ya se corrigió en el selector de la ficha, con otro traje.
+
+                      Se marca. Y se marca también para quien no ve el gris: el
+                      color por sí solo no es información accesible.
+                    {%- endcomment -%}
+                    <span class="ne-filter__value-count">{{ value.count }}</span>
+                    {%- if is_empty -%}
+                      <span class="ne-visually-hidden">{{ 'collections.filters.value_empty' | t }}</span>
+                    {%- endif -%}
+                  </label>
+                {%- endfor -%}
+            {%- endcase -%}
+          </div>
+        </details>
+      {%- endfor -%}
+    {%- endif -%}
+
+    <div class="ne-filters__apply">
+      <button class="ne-button" type="submit">{{ 'collections.filters.apply' | t }}</button>
+    </div>
+
+    {%- if active_count > 0 -%}
+      {%- comment -%}
+        Lo elegido, a la vista y quitable de uno en uno. Son ENLACES a
+        `url_to_remove`, no botones: funcionan sin script, se pueden abrir en
+        otra pestaña y el botón de atrás del navegador hace lo que se espera.
+      {%- endcomment -%}
+      <div class="ne-filters__active">
+        {%- for filter in filters -%}
+          {%- if filter.type == 'price_range' -%}
+            {%- if filter.min_value.value != nil or filter.max_value.value != nil -%}
+              {%- liquid
+                assign low = filter.min_value.value | default: 0
+                assign high = filter.max_value.value | default: filter.range_max
+              -%}
+              <a class="ne-chip-remove" href="{{ filter.url_to_remove }}">
+                <span>{{ filter.label }}: {{ low | money }} – {{ high | money }}</span>
+                <span class="ne-chip-remove__x" aria-hidden="true">&times;</span>
+              </a>
+            {%- endif -%}
+          {%- else -%}
+            {%- for value in filter.active_values -%}
+              <a class="ne-chip-remove" href="{{ value.url_to_remove }}">
+                <span>{{ filter.label }}: {{ value.label }}</span>
+                <span class="ne-chip-remove__x" aria-hidden="true">&times;</span>
+              </a>
+            {%- endfor -%}
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+  </form>
+{%- endif -%}

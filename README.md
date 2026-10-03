@@ -3,7 +3,7 @@
 > **Estado: el theme existe y está verificado.** Stack decidido, theme de Shopify escrito de cero,
 > y **18 comprobaciones** que pasan sin ninguna sin ejecutar: 321 pruebas, el linter oficial de
 > Shopify sin infracciones, comportamiento, accesibilidad, rendimiento y seguridad medidos en un
-> navegador real, y los 62 archivos del theme verificados contra lo que hay en Shopify.
+> navegador real, y los 64 archivos del theme verificados contra lo que hay en Shopify.
 > **Cero dependencias de runtime.**
 
 **Objetivo:** el storefront de Nathan & Esteban, una experiencia de footwear premium sobre un

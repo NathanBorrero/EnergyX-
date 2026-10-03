@@ -1,9 +1,9 @@
 # Estado del repositorio
 
-**Fecha:** 2026-10-02 · tras subir el theme optimizado a Shopify y cerrar el hueco que lo permitió.
-**Comprobaciones:** 321 pruebas + 16 contratos de theme + 16 en navegador (iPhone) + 5 de
+**Fecha:** 2026-10-03 · tras añadir filtrar y ordenar en la colección.
+**Comprobaciones:** 321 pruebas + 17 contratos de theme + 18 en navegador (iPhone de verdad) + 5 de
 accesibilidad + 6 de rendimiento + 6 de seguridad + Theme Check (0 infracciones) + el theme coincide
-con Shopify (62 de 62 archivos). **18/18 pasan, ninguna sin ejecutar.**
+con Shopify (64 de 64 archivos). **18/18 pasan, ninguna sin ejecutar.**
 **Dependencias de runtime:** 0. **Dependencias opcionales de verificación:** 2, no versionadas.
 
 ---
@@ -65,8 +65,8 @@ theme/                                  THEME DE SHOPIFY, Online Store 2.0, escr
 
 scripts/
   check.mjs                             18 comprobaciones con código de salida
-  check-theme.mjs                       16 contratos entre marcado, script y ajustes
-  check-components.mjs                  16 comprobaciones de comportamiento en Chromium (iPhone)
+  check-theme.mjs                       17 contratos entre marcado, script y ajustes
+  check-components.mjs                  18 comprobaciones de comportamiento en Chromium (iPhone)
   check-a11y.mjs                        5 de accesibilidad sobre la página renderizada
   check-perf.mjs                        6 de presupuesto y carga, medidas
   theme-diff.mjs                        ¿lo que hay en Shopify es lo que hay aquí?

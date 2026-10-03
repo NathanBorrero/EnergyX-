@@ -1372,3 +1372,194 @@ Por primera vez la pirámide entera corre en verde, incluido el linter oficial d
 | **el theme coincide con Shopify — 62 de 62 archivos** | **OK** |
 
 **18/18. Ninguna `NO EJECUTADA`.**
+
+---
+
+## 21. La colección: filtrar por talla, y lo que costó en bytes
+
+### 21.1 El problema real, antes de tocar nada
+
+Una colección de calzado **sin filtro de talla** obliga a abrir veinte fichas para encontrar la
+única que está en el 42. Es el mecanismo central de navegar una tienda de zapatos, y no estaba.
+
+La colección tampoco ordenaba. Y su rejilla tenía las tres columnas **escritas a mano** en el
+marcado, así que el ajuste del theme no llegaba a la página que más productos muestra.
+
+No es una optimización: es una página a la que le faltaba su función principal.
+
+### 21.2 Shopify lo da nativo, y los hechos están verificados
+
+| Hecho | Estado |
+| --- | --- |
+| `collection.filters` y `search.filters` devuelven los filtros | `VERIFICADO` en la documentación de Liquid |
+| Tipos: `boolean`, `list`, `price_range` | `VERIFICADO` |
+| `filter_value` tiene `param_name`, `value`, `active`, `count`, `label`, `url_to_remove` | `VERIFICADO` en el ejemplo oficial |
+| Los filtros se crean en el admin (app Search & Discovery) | `VERIFICADO` |
+| Por defecto Shopify habilita disponibilidad y precio | `DOCUMENTADO` |
+| Una colección de más de **5 000 productos no muestra filtros** | `DOCUMENTADO`. Límite de plataforma |
+| Máximo **25 filtros** | `DOCUMENTADO` |
+| Entre filtros la lógica es **AND**; entre valores del mismo filtro, **OR** | `DOCUMENTADO` |
+| El envío del formulario recarga con los filtros puestos; el envío por script es **opcional** | `VERIFICADO` en la guía oficial |
+| Búsqueda: `q`, `type` (`product,page,article`), `page`, `options[prefix]`, `options[unavailable_products]`, `sort_by` | `VERIFICADO` |
+| `part.url` para «anterior / siguiente» | `DOCUMENTADO`. La página del objeto `part` no se pudo recuperar por el canal disponible, así que no se marca como verificado aunque el theme de referencia de Shopify lo use |
+
+**Un aviso que hay que anotar:** la propia documentación de búsqueda de Shopify describe
+`price-ascending` como «de mayor a menor» y `price-descending` como «de menor a mayor», que está
+invertido. Por eso el theme **no escribe ninguna dirección**: toma los nombres de
+`search.sort_options`, que es lo que el comerciante ve y edita.
+
+### 21.3 Cero JavaScript, y es una decisión medida
+
+El panel es un `<form method="get">` de verdad y el acordeón es `<details>`. Nada de eso necesita
+una línea de script.
+
+Y con varias casillas marcadas **además es mejor**: enviar en cada clic serían cinco recargas para
+elegir cinco tallas. El botón «Aplicar» manda las cinco de una vez.
+
+Lo que cuesta, medido en la página con CPU 4× y 4G lento, iPhone 390×844, servido comprimido:
+
+| | Portada | **Colección con filtros** |
+| --- | --- | --- |
+| LCP | 448 ms | **464 ms** |
+| CLS | 0.0000 | **0.0000** |
+| TBT | 2 ms | 15 ms |
+| Peticiones | 3 | **4** |
+| **Transferido** | 6,3 KB | **7,9 KB** |
+| **JavaScript** | **0 KB** | **0 KB** |
+
+**El panel entero cuesta 1,6 KB transferidos y UNA petición.** El CSS son 1 092 B comprimidos, en
+su propio paquete, que solo cargan la colección y la búsqueda: la portada, la ficha y el carrito no
+pagan un byte. Y hay presupuesto de regresión (1 600 B) para que no engorde sin que algo lo cante.
+
+### 21.4 Tres decisiones que NO siguieron al ejemplo oficial
+
+**1. Un valor con cero resultados no se desactiva.** El ejemplo de Shopify lo desactiva. Pero los
+recuentos son relativos a los filtros YA puestos: el 42 puede dar cero en «negro» y tener
+existencias en «cuero». Desactivarlo encierra al comprador en la elección que ya hizo — **es el
+mismo fallo que ya se corrigió en el selector de la ficha, con otro traje**. Se marca en gris, y se
+marca también con texto para quien no ve el gris, porque el color por sí solo no es información
+accesible.
+
+**2. El rango de precio no pinta campos. `NO VERIFICADO`, y declarado.**
+El parámetro de URL espera el precio en unidades. `filter.min_value.value` es un número, y la
+documentación **no dice** si está en unidades o en subunidades. El ejemplo oficial hace
+`money_without_currency | replace: ',', ''`, que en en-US funciona y **en es-CO convierte «10,00» en
+«1000»**: un filtro de precio equivocado por 100× que no avisa, porque devuelve resultados, solo
+que los de otro rango. No se puede comprobar desde aquí —la política de red deniega el dominio de la
+tienda—, así que queda como hueco declarado en lugar de como suposición. Si alguien llega con un
+rango en la URL, se muestra y se puede quitar: presentar con `money` no puede equivocarse por 100×.
+
+**3. `type="text"` con `inputmode`, nunca `type="number"`,** en cualquier campo numérico del panel.
+Ya se verificó en Chromium que un campo numérico se come la coma y «25,9» se convierte en 259
+**declarándose válido**.
+
+### 21.5 Dos vacíos distintos
+
+Una colección sin productos no es lo mismo que una colección cuyos filtros no dejaron nada.
+Confundirlos es lo que hace que una tienda se sienta rota. Y el panel se sigue pintando cuando no
+queda nada: si desapareciera, no habría forma de deshacer el filtro salvo el botón de atrás.
+
+### 21.6 Y la paginación ahora dice dónde estás
+
+«Anterior / Siguiente» sin número deja al comprador sin saber si va por la página 2 o por la 9.
+Ahora hay «Página 2 de 4». Y el `aria-label` del `<nav>` decía **«Anterior»**, que etiquetaba la
+navegación entera con el nombre de uno de sus enlaces.
+
+24 por página, que es lo que pide la guía de rendimiento de Shopify: limitar la profundidad de
+paginación —los recuentos solo son exactos hasta 25 000— y responder con filtros.
+
+---
+
+## 22. La quinta deriva de banco, y la más cara: faltaba el viewport
+
+Esta la encontró una prueba nueva al fallar por un motivo equivocado, que es la mejor forma de
+encontrar algo.
+
+### 22.1 Lo que pasaba
+
+`theme.liquid` lleva `<meta name="viewport" content="width=device-width, initial-scale=1">`.
+**Los cinco bancos de pruebas no lo llevaban.**
+
+Sin ese meta, un navegador móvil maqueta a **980px** y luego lo encoge. Así que:
+
+- las dieciséis —ahora dieciocho— comprobaciones de comportamiento «en iPhone 390×844»,
+- la auditoría de accesibilidad sobre la página renderizada,
+- y el desplazamiento acumulado,
+
+**se midieron todas sobre una maqueta de ESCRITORIO** con el ratio de píxeles de un teléfono. Los
+puntos de ruptura de móvil no se aplicaban. La mejora del ciclo anterior —«las 16 pasan ahora en un
+contexto de iPhone»— estaba midiendo una página de escritorio.
+
+Las otras cuatro derivas medían el CSS, los textos o el marcado equivocados. Esta medía **otra
+anchura de página**, que cambia qué reglas se aplican. Es la más cara de las cinco.
+
+### 22.2 Cómo salió
+
+Escribí una prueba de que el acordeón de filtros abre sin JavaScript. Falló. Al diagnosticarla, el
+`<summary>` medía **905px de ancho dentro de un viewport de 390**.
+
+### 22.3 Y el fallo era de la prueba, no de la página
+
+Perseguir ese fallo dio además un segundo hallazgo, de método:
+
+```js
+const closed = page.locator('details:not([open])').first();
+await closed.locator('summary').click();
+await closed.evaluate((el) => el.open);   // false
+```
+
+**Un `locator` de Playwright es una CONSULTA, no una referencia.** Se vuelve a evaluar en cada uso.
+El clic abría el grupo correcto, y la lectura posterior ya resolvía al **siguiente** grupo cerrado,
+que lógicamente seguía cerrado. La prueba fallaba con la página buena.
+
+Se arregla resolviendo a un handle antes de pulsar. Lo anoto porque **el mismo error, en otra
+comprobación, podría hacerla pasar con la página mala**, y eso no se nota.
+
+### 22.4 Medición después de arreglar el viewport
+
+Mediana de cinco, CPU 4× + 4G lento, iPhone 390×844@3×, comprimido como Shopify:
+
+| | Portada | Ficha | Carrito | Colección |
+| --- | --- | --- | --- | --- |
+| **LCP** | **448 ms** | **504 ms** | **460 ms** | **464 ms** |
+| **CLS** | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| INP | — | 40 ms | — | — |
+| TBT | 2 ms | 6 ms | 0 ms | 15 ms |
+| load | 383 ms | 617 ms | 555 ms | 453 ms |
+| Peticiones | 3 | 10 | 11 | 4 |
+| Transferido | 6,3 KB | 24,1 KB | 22,2 KB | 7,9 KB |
+
+**Contra la base que había que proteger**, y que estaba tomada a 980px:
+
+| | Antes | Ahora | |
+| --- | --- | --- | --- |
+| Portada LCP | 472 ms | **448 ms** | mejor |
+| Ficha LCP | 500 ms | 504 ms | igual, dentro del ruido |
+| Carrito LCP | 488 ms | **460 ms** | mejor |
+| CLS, las tres | 0 | **0** | igual |
+| TBT ficha | 18 ms | **6 ms** | mejor |
+
+La base está protegida. Y ahora las cifras describen el navegador que el theme sirve primero.
+
+### 22.5 La comprobación que lo impide
+
+Contrato 17: **los bancos maquetan al ancho real del móvil.** Compara el meta de cada banco con el
+de `theme.liquid` y falla si falta o si difiere. Validada inyectando los dos fallos: sin meta, y con
+un meta distinto.
+
+### 22.6 Estado: 18 de 18, y la colección medida
+
+| | |
+| --- | --- |
+| 321 pruebas unitarias | OK |
+| **17** contratos de theme | OK |
+| Theme Check de Shopify | OK — 0 infracciones |
+| **18** comprobaciones de componentes en navegador (iPhone de verdad) | OK |
+| 5 de accesibilidad sobre la página renderizada | OK |
+| 6 presupuestos de rendimiento | OK |
+| 6 de seguridad del theme | OK |
+| el theme coincide con Shopify — **64 de 64** archivos | OK |
+
+**18/18. Ninguna `NO EJECUTADA`.** Y los nueve archivos del panel de filtros están en
+`NATHAN & ESTEBAN — ACTUAL (no publicar)`, verificados byte a byte: el `ETag` de Google y el
+`checksumMd5` de Shopify coinciden los dos con el md5 local.

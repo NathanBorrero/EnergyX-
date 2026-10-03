@@ -1,7 +1,7 @@
 {
   "theme": "NATHAN & ESTEBAN — ACTUAL (no publicar)",
   "themeId": "gid://shopify/OnlineStoreTheme/213916090621",
-  "takenAt": "2026-10-02T22:10:00Z",
+  "takenAt": "2026-10-03T00:35:00Z",
   "note": "Retrato del theme en Shopify. `md5` es el checksum tal cual; `canonicalMd5` es la huella de la plantilla JSON tras deshacer el reformateo de Shopify, porque su checksum no se puede reproducir en local.",
   "files": {
     "assets/ne-a11y-contrast.js": {
@@ -19,11 +19,14 @@
     "assets/ne-cod-guard.js": {
       "md5": "4de9484cb04a1093097520594af6ca01"
     },
+    "assets/ne-collection.css": {
+      "md5": "08029edcc6f0c68326ef276d9c8bba4b"
+    },
     "assets/ne-components.js": {
       "md5": "69ca7ee369dbee3c445e118deb69a045"
     },
     "assets/ne-core.css": {
-      "md5": "cc01cf8798d5fc24e1e14f596fbbec0a"
+      "md5": "93eca4b101c91467e414e082b989136a"
     },
     "assets/ne-product-contract.js": {
       "md5": "07e79a987f52f524d46d6e982f35401f"
@@ -56,16 +59,16 @@
       "md5": "9c1231bf87758be2f51a8bfebc67e7ab"
     },
     "config/settings_schema.json": {
-      "md5": "46ae1a1e5b8c701daf3a913434b39645"
+      "md5": "ac66a66d34a25fce60289cf965a07936"
     },
     "layout/theme.liquid": {
-      "md5": "1114318efe43b85d02b4893c73b9f043"
+      "md5": "a5143b26a2f2085c467cafd792226f53"
     },
     "locales/es.default.json": {
-      "md5": "604963aa8afdb75a5fe3ea6d441322a6"
+      "md5": "5d103ea3ff0babdecd1b39502ce708a2"
     },
     "locales/es.default.schema.json": {
-      "md5": "a9b1f604deebc96f9b0a564cf958b81e"
+      "md5": "cd7d8caa3f57354030f248f33b157efa"
     },
     "sections/custom-liquid.liquid": {
       "md5": "08ac361fcbb5ca3dbfb92f07d1db4d40"
@@ -98,7 +101,7 @@
       "md5": "6ac42195934599c7068fe70442898e3e"
     },
     "sections/main-collection.liquid": {
-      "md5": "3d299475eb06ddbecee98339275f795b"
+      "md5": "284f0452302c58ac7882913480dd5db8"
     },
     "sections/main-list-collections.liquid": {
       "md5": "0cd11be1071f49981e9c9420313b3888"
@@ -113,7 +116,7 @@
       "md5": "d31e41412175ac94b34d2c83175b99d2"
     },
     "sections/main-search.liquid": {
-      "md5": "71cf39e0b5cda3d958144df164e938df"
+      "md5": "92b4c0b4d186bde8fc877c031291d226"
     },
     "sections/product-grid.liquid": {
       "md5": "b1b180b629ad7025536833e32a26daa7"
@@ -126,6 +129,9 @@
     },
     "snippets/ne-cod-coverage.liquid": {
       "md5": "e9dabb8206a6226f701693ff7c78c230"
+    },
+    "snippets/ne-collection-filters.liquid": {
+      "md5": "af58604ea2696c28749118d0c7688205"
     },
     "snippets/ne-image-preload.liquid": {
       "md5": "a377524baa1770bf872022cccf086360"

@@ -97,6 +97,10 @@ const PAGES = [
   // La portada es la única página con superficie INVERSA: los pares de color se
   // validaron a nivel de token, pero medir tokens no es medir lo que se ve.
   ['portada y colección', `http://127.0.0.1:${port}/scripts/fixtures/home-harness.html`],
+  // La colección con filtros es la única página con CONTROLES DE FORMULARIO
+  // fuera de la ficha y el carrito: casillas, `select` y botón. Es justo donde
+  // el borde del control y el área de pulsado se incumplen sin que se note.
+  ['colección con filtros', `http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`],
 ];
 
 const browser = await chromium.launch({ executablePath: process.env.NE_CHROMIUM ?? '/opt/pw-browsers/chromium' });

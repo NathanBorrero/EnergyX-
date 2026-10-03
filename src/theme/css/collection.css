@@ -1,0 +1,268 @@
+/* ---------------------------------------------------------------------------
+   NATHAN & ESTEBAN — filtrar y ordenar
+
+   Se carga SOLO en colección y búsqueda. No está en `ne-core.css` a propósito:
+   este CSS bloquea el primer paint, y la portada, la ficha y el carrito no
+   tienen filtros. Meterlo en el paquete de todas las páginas sería cobrarle a
+   la portada unos bytes que no usa, que es justo lo contrario de lo que se
+   midió en FASE 2.
+
+   DIRECCIÓN DE ARTE. Un panel de filtros es donde casi todas las tiendas se
+   vuelven un formulario de administración: cajas, sombras, acordeones azules.
+   Aquí se compone como un índice impreso —reglas finas, versalitas, mucho aire,
+   cero relleno de color— y el recuento va a la derecha, alineado, como en un
+   sumario. Sin radios, sin sombras, sin iconos de librería.
+   --------------------------------------------------------------------------- */
+
+/* === Barra de control ============================================= */
+
+/* La barra lleva el recuento a la izquierda y el orden a la derecha. En móvil
+   se apilan, porque en 390px no caben lado a lado sin apretar el texto. */
+.ne-controls {
+  display: grid;
+  gap: var(--ne-space-s);
+  padding-block: var(--ne-space-s);
+  border-block: var(--ne-hairline) solid var(--ne-rule);
+  margin-bottom: var(--ne-space-l);
+}
+
+@media (min-width: 48em) {
+  .ne-controls {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--ne-space-m);
+  }
+}
+
+.ne-controls__count {
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  color: var(--ne-text-soft);
+}
+
+.ne-controls__sort {
+  display: flex;
+  align-items: center;
+  gap: var(--ne-space-2xs);
+}
+
+.ne-controls__sort-label {
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  color: var(--ne-text-soft);
+  white-space: nowrap;
+}
+
+/* El `select` nativo. No se reemplaza por un menú propio: el nativo ya es
+   accesible, ya funciona con teclado, ya se comporta como el sistema espera en
+   un móvil, y cuesta cero bytes de JavaScript. Lo único que se cambia es que
+   parezca de esta marca. */
+.ne-select {
+  min-height: var(--ne-touch);
+  padding: var(--ne-space-2xs) var(--ne-space-s);
+  border: var(--ne-hairline) solid var(--ne-border);
+  border-radius: var(--ne-radius);
+  background: var(--ne-paper);
+  color: var(--ne-text);
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+}
+
+/* === Panel de filtros ============================================= */
+
+.ne-filters { margin-bottom: var(--ne-space-l); }
+
+.ne-filters__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ne-space-m);
+  margin-bottom: var(--ne-space-xs);
+}
+
+.ne-filters__title {
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+}
+
+/* Un grupo por filtro. `<details>` es el acordeón del navegador: abre, cierra,
+   responde al teclado y se anuncia solo. No hace falta una línea de script. */
+.ne-filter {
+  border-top: var(--ne-hairline) solid var(--ne-rule);
+}
+.ne-filter:last-of-type {
+  border-bottom: var(--ne-hairline) solid var(--ne-rule);
+}
+
+.ne-filter__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ne-space-s);
+  min-height: var(--ne-touch);
+  padding-block: var(--ne-space-2xs);
+  cursor: pointer;
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  /* Se quita el triángulo del navegador para poner el signo de la marca. */
+  list-style: none;
+}
+.ne-filter__summary::-webkit-details-marker { display: none; }
+
+/* El indicador: una cruz que se convierte en raya al abrir. Es la señal más
+   pequeña posible que dice «esto se abre», y no depende de una fuente de
+   iconos ni de un SVG. */
+.ne-filter__sign {
+  position: relative;
+  flex: none;
+  width: 11px;
+  height: 11px;
+}
+.ne-filter__sign::before,
+.ne-filter__sign::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: var(--ne-hairline);
+  background: currentcolor;
+  transition: transform var(--ne-dur-fast) var(--ne-ease);
+}
+.ne-filter__sign::after { transform: rotate(90deg); }
+.ne-filter[open] .ne-filter__sign::after { transform: rotate(0deg); }
+
+.ne-filter__count {
+  margin-left: auto;
+  color: var(--ne-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.ne-filter__body {
+  padding-block: var(--ne-space-2xs) var(--ne-space-s);
+  display: grid;
+  gap: var(--ne-space-3xs);
+}
+
+/* Cada valor. El recuento va a la derecha y alineado por tabulación numérica,
+   como un sumario, para que la columna de números quede recta. */
+.ne-filter__value {
+  display: flex;
+  align-items: center;
+  gap: var(--ne-space-2xs);
+  min-height: var(--ne-touch-min);
+  font-size: var(--ne-size-body);
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+/* La casilla nativa, con el color de la marca. `accent-color` es una línea de
+   CSS y evita construir una casilla propia con `appearance: none`, que es
+   donde se pierde el foco y el estado indeterminado. */
+/* 24px, NO 16px. La auditoría midió la casilla que había y daba 16×16, por
+   debajo del mínimo de 24×24 que este proyecto se fijó. Y no era un tecnicismo:
+   una casilla de 16px en un móvil se falla con el pulgar, y en un filtro de
+   tallas se falla DIEZ veces seguidas.
+
+   No vale el argumento de que la etiqueta entera es pulsable: el control es la
+   casilla, y quien apunta a la casilla tiene derecho a acertar. */
+.ne-filter__box {
+  flex: none;
+  width: var(--ne-touch-min);
+  height: var(--ne-touch-min);
+  margin: 0;
+  accent-color: var(--ne-accent);
+}
+
+.ne-filter__value-count {
+  margin-left: auto;
+  color: var(--ne-text-soft);
+  font-size: var(--ne-size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Un valor con cero resultados sigue visible y sigue pulsable: ocultarlo hace
+   que el panel cambie de tamaño al filtrar y que el comprador no entienda por
+   qué desapareció su talla. Se marca, no se esconde. */
+.ne-filter__value[data-ne-empty='true'] { color: var(--ne-text-soft); }
+
+/* === Nota de hueco declarado ====================================== */
+
+/* El rango de precio no pinta campos: la conversión del valor a lo que espera
+   el parámetro de URL no está verificada, y equivocarse ahí filtra por otro
+   precio sin avisar. Está escrito en `ne-collection-filters.liquid`. */
+.ne-filter__note {
+  font-size: var(--ne-size-caption);
+  letter-spacing: 0;
+  text-transform: none;
+  max-width: var(--ne-measure-narrow);
+}
+
+/* === Filtros activos ============================================== */
+
+.ne-filters__active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ne-space-2xs);
+  margin-top: var(--ne-space-s);
+}
+
+/* Se quita con un enlace, no con un botón de JavaScript: `url_to_remove` es una
+   URL de verdad, así que esto funciona con el script desactivado, se puede
+   abrir en otra pestaña y el historial del navegador hace lo que se espera. */
+.ne-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ne-space-3xs);
+  min-height: var(--ne-touch-min);
+  padding: var(--ne-space-3xs) var(--ne-space-2xs);
+  border: var(--ne-hairline) solid var(--ne-border);
+  color: var(--ne-text);
+  text-decoration: none;
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+}
+.ne-chip-remove:hover { border-color: var(--ne-accent); color: var(--ne-accent); }
+
+/* La aspa. Es un carácter, no un icono: hereda el color, escala con el texto y
+   no añade una petición. Se oculta a la tecnología asistiva porque el texto del
+   enlace ya dice qué se quita. */
+.ne-chip-remove__x { font-size: 1.1em; line-height: 1; }
+
+/* === Aplicar ====================================================== */
+
+/* El botón existe porque el formulario se envía DE VERDAD, sin JavaScript. Y
+   porque con varias casillas marcadas de una vez es mejor: un envío por
+   casilla serían cinco recargas para elegir cinco tallas. */
+.ne-filters__apply { margin-top: var(--ne-space-s); }
+
+/* === Paginación =================================================== */
+
+/* Vive aquí y no en `shell.css` porque solo paginan la colección y la búsqueda.
+   La regla antigua estaba en el paquete de todas las páginas. */
+.ne-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--ne-space-m);
+  margin-top: var(--ne-space-xl);
+  padding-top: var(--ne-space-m);
+  border-top: var(--ne-hairline) solid var(--ne-rule);
+}
+
+.ne-pagination__state {
+  font-size: var(--ne-size-caption);
+  letter-spacing: var(--ne-tracking-caption);
+  text-transform: uppercase;
+  color: var(--ne-text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* El siguiente a la derecha, el anterior a la izquierda y el estado en medio:
+   el orden físico coincide con el orden de lectura, así que el foco del teclado
+   recorre lo mismo que ve el ojo. */
+.ne-pagination__next { margin-left: auto; }

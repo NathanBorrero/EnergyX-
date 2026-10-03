@@ -920,9 +920,12 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
     }
   }
 
-  // La portada: sin errores, sin módulo y SIN NINGÚN componente definido. Si
-  // alguno apareciera, significaría que está cargando JavaScript que no usa.
-  {
+  // La portada Y LA COLECCIÓN: sin errores, sin módulo y SIN NINGÚN componente
+  // definido. Si alguno apareciera, significaría que están cargando JavaScript
+  // que no usan. La colección entra aquí porque su panel de filtros es un
+  // formulario y un `<details>`: nada de eso necesita una línea de script, y
+  // esta comprobación es la que impide que alguien se la añada sin darse cuenta.
+  for (const file of ['home-harness.html', 'collection-harness.html']) {
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -934,7 +937,7 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
       const name = r.url().split('/').pop() ?? '';
       if (name.endsWith('.js')) scripts.push(name);
     });
-    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/home-harness.html`, { waitUntil: 'load' });
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/${file}`, { waitUntil: 'load' });
     await page.waitForTimeout(400);
     const defined = await page.evaluate(
       (tags) => tags.filter((t) => !!customElements.get(t)),
@@ -942,15 +945,137 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
     );
     await page.close();
 
-    if (errors.length > 0) problems.push(`home-harness.html: ${errors.join(' | ')}`);
+    if (errors.length > 0) problems.push(`${file}: ${errors.join(' | ')}`);
     if (scripts.length > 0) {
-      problems.push(`la portada descargó JavaScript que no usa: ${scripts.join(', ')}`);
+      problems.push(`${file} descargó JavaScript que no usa: ${scripts.join(', ')}`);
     }
     if (defined.length > 0) {
-      problems.push(`la portada definió componentes que no tiene: ${defined.join(', ')}`);
+      problems.push(`${file} definió componentes que no tiene: ${defined.join(', ')}`);
     }
   }
 
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 8bis · El panel de filtros envía EXACTAMENTE lo que Shopify espera.
+//
+//   Un panel de filtros que se ve bien y manda mal los parámetros devuelve
+//   resultados —los equivocados—, y eso no se nota mirando la página. Lo que se
+//   comprueba aquí es la peticion que el navegador va a hacer de verdad.
+//
+//   Tres cosas que, si se rompen, rompen la navegación entera:
+//
+//     · Marcar dos tallas tiene que mandar LAS DOS. Es el fallo clásico de un
+//       panel de casillas: si cada una lleva su propio `name`, la última gana.
+//     · El orden tiene que viajar CON los filtros. Dos formularios separados
+//       harían que ordenar borrase lo filtrado.
+//     · `page` NO puede viajar. Al cambiar un filtro el resultado es otro, y
+//       conservar «página 7» deja al comprador en una página que no existe.
+// ---------------------------------------------------------------------------
+await check('el panel de filtros envía lo que Shopify espera', async () => {
+  const problems = [];
+  const context = await browser.newContext(contextOptions());
+  const page = await context.newPage();
+  await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`, { waitUntil: 'load' });
+
+  // Se lee la petición de navegación que el formulario provoca, no una
+  // reconstrucción nuestra de lo que creemos que provoca.
+  const sent = async () => {
+    const [request] = await Promise.all([
+      page.waitForRequest((r) => r.isNavigationRequest() && r.url().includes('/collections/all'), { timeout: 4000 }),
+      page.locator('.ne-filters button[type="submit"]').click(),
+    ]);
+    return new URL(request.url());
+  };
+
+  // La 41 ya viene marcada en el banco. Se marca también la 40.
+  await page.locator('#ne-filter-filter\\.v\\.option\\.talla-1').check();
+  let url = await sent();
+  let talla = url.searchParams.getAll('filter.v.option.talla');
+
+  if (!(talla.includes('40') && talla.includes('41'))) {
+    problems.push(`marcar dos tallas mandó ${JSON.stringify(talla)}: se pierde una, así que filtraría por la otra`);
+  }
+  if (url.searchParams.get('sort_by') !== 'manual') {
+    problems.push(`el orden no viajó con los filtros: sort_by=${url.searchParams.get('sort_by')}`);
+  }
+  if (url.searchParams.has('page')) {
+    problems.push('el formulario reenvió `page`: al filtrar dejaría al comprador en una página que puede no existir');
+  }
+
+  // Y al desmarcarlo todo, el parámetro tiene que DESAPARECER, no quedarse
+  // vacío: `filter.v.option.talla=` filtraría por la talla «nada».
+  await page.goBack({ waitUntil: 'load' }).catch(() => {});
+  await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`, { waitUntil: 'load' });
+  await page.locator('#ne-filter-filter\\.v\\.option\\.talla-2').uncheck();
+  url = await sent();
+  talla = url.searchParams.getAll('filter.v.option.talla');
+  if (talla.length > 0) {
+    problems.push(`sin ninguna talla marcada todavía mandó ${JSON.stringify(talla)}`);
+  }
+
+  await page.close();
+  await context.close();
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 8ter · Y funciona con JavaScript DESACTIVADO, porque no lo usa.
+//
+//   El acordeón es `<details>` y quitar un filtro es un `<a href>`. Las dos
+//   cosas son del navegador, no del theme. Esta comprobación existe para que
+//   nadie las sustituya por un botón con `onclick` sin que algo lo cante: ese
+//   cambio no rompe nada visible, y rompe la página entera sin script.
+// ---------------------------------------------------------------------------
+await check('el panel de filtros funciona sin JavaScript', async () => {
+  const problems = [];
+  const context = await browser.newContext({ ...contextOptions(), javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/collection-harness.html`, { waitUntil: 'load' });
+
+  // El grupo con algo elegido viene abierto: la decisión del comprador no se
+  // esconde detrás de un acordeón cerrado.
+  const openGroups = await page.locator('details.ne-filter[open]').count();
+  if (openGroups < 1) {
+    problems.push('ningún grupo de filtros viene abierto: lo ya elegido quedaría escondido');
+  }
+
+  // Y un grupo cerrado se abre pulsando su resumen. Sin una línea de script.
+  //
+  // Se resuelve a un HANDLE antes de pulsar, no a un `locator`. Un `locator` es
+  // una CONSULTA que se vuelve a evaluar en cada uso: con
+  // `details:not([open])` el clic abría el grupo correcto y la lectura
+  // posterior ya apuntaba al SIGUIENTE grupo cerrado, que lógicamente seguía
+  // cerrado. La prueba fallaba con la página buena. Y el mismo error, en otra
+  // comprobación, podría hacerla pasar con la página mala.
+  const closed = await page.locator('details.ne-filter:not([open])').first().elementHandle();
+  if (!closed) {
+    problems.push('no hay ningún grupo de filtros cerrado: no se puede comprobar que el acordeón abra');
+  } else {
+    await (await closed.$('summary')).click();
+    if (!(await closed.evaluate((el) => el.open))) {
+      problems.push('el acordeón no abrió sin JavaScript: alguien lo cambió por un control que necesita script');
+    }
+  }
+
+  // Quitar un filtro es un enlace de verdad, con destino de verdad.
+  const chip = page.locator('a.ne-chip-remove').first();
+  const href = await chip.getAttribute('href');
+  if (!href || href === '#' || href.startsWith('javascript:')) {
+    problems.push(`quitar un filtro no es un enlace navegable: href=${JSON.stringify(href)}`);
+  }
+
+  // El formulario es GET y el botón es un submit de verdad.
+  const form = await page.locator('form.ne-filters').evaluate((el) => ({
+    method: el.method,
+    hasSubmit: !!el.querySelector('button[type="submit"]'),
+  }));
+  if (form.method !== 'get') problems.push(`el formulario de filtros no es GET: ${form.method}`);
+  if (!form.hasSubmit) problems.push('el formulario de filtros no tiene botón de envío: sin script no se podría aplicar');
+
+  await page.close();
+  await context.close();
   return problems;
 });
 

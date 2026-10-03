@@ -1,0 +1,272 @@
+<!doctype html>
+<!--
+  BANCO DE PRUEBAS DE LA COLECCIÓN CON FILTROS.
+
+  POR QUÉ HACE FALTA UNO PROPIO
+
+  El banco de la portada ya medía la rejilla y las tarjetas, pero NO el panel de
+  filtros, que es la pieza nueva y la única de esta página con:
+
+    · controles de formulario de verdad —casillas, `select`, botón—, que son los
+      elementos donde el contraste de borde y el área de pulsado se incumplen;
+    · un acordeón `<details>`, cuyo estado abierto cambia la altura de la página
+      y por tanto puede desplazar la rejilla;
+    · su propio paquete de CSS, `ne-collection.css`, que ninguna otra página
+      carga y que por tanto ningún otro banco verifica.
+
+  CARGA LOS DOS ARCHIVOS REALES, no una copia. Ya pasó cuatro veces que una
+  copia se desincronizara y la medición saliera MEJOR que la realidad.
+
+  Y NO CARGA JAVASCRIPT, igual que la plantilla real: esta página no tiene
+  selector, ni guía de tallas, ni galería, ni carrito. Si el banco cargara el
+  módulo, mediría una página que no existe.
+
+  Datos ficticios y etiquetados. Los recuentos y los precios son inventados.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <!--
+      ESTE META NO ES DECORACIÓN. Sin él el navegador móvil maqueta a 980px y
+      luego lo encoge, así que los puntos de ruptura de escritorio se aplican en
+      un teléfono. Faltaba en los cinco bancos mientras `theme.liquid` sí lo
+      llevaba, de modo que las dieciséis comprobaciones «en iPhone 390×844», la
+      auditoría de accesibilidad y el desplazamiento acumulado se midieron todos
+      sobre una maqueta de ESCRITORIO. Es la quinta deriva de banco del
+      proyecto, y la que más caro salía: medía otra página.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Banco de pruebas · colección con filtros</title>
+    <script>
+      document.documentElement.classList.add('ne-js');
+      setTimeout(function () {
+        var picker = document.querySelector('[data-ne-picker]');
+        if (picker && picker.getAttribute('data-ne-enhanced') !== 'true') {
+          document.documentElement.classList.remove('ne-js');
+        }
+      }, 3000);
+    </script>
+    <link rel="stylesheet" href="/theme/assets/ne-core.css">
+    <link rel="stylesheet" href="/theme/assets/ne-collection.css">
+  </head>
+  <body class="template--collection">
+    <a class="ne-skip-link" href="#ne-main">Saltar al contenido</a>
+
+    <div id="shopify-section-sections--banco__header">
+      <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
+        <div class="ne-shell ne-header__inner">
+          <a class="ne-header__brand" href="/" aria-label="Banco de pruebas">
+            <span class="ne-header__wordmark">BANCO DE PRUEBAS</span>
+          </a>
+          <nav class="ne-header__nav" aria-label="Menú">
+            <ul class="ne-header__list">
+              <li><a class="ne-header__link" href="/collections/all">Colección</a></li>
+            </ul>
+          </nav>
+          <a class="ne-header__cart" href="/cart">
+            <span>Carrito</span>
+            <span class="ne-header__count" data-ne-cart-count aria-hidden="true">0</span>
+            <span class="ne-visually-hidden" data-ne-cart-count-label>0 artículos</span>
+          </a>
+        </div>
+        <hr class="ne-rule">
+      </header>
+    </div>
+
+    <main id="ne-main">
+      <section class="ne-section" aria-labelledby="ne-collection-title">
+        <div class="ne-shell">
+          <header class="ne-collection__head">
+            <h1 class="ne-display" id="ne-collection-title">BANCO DE PRUEBAS</h1>
+            <div class="ne-lead ne-collection__intro">Texto pendiente de definir.</div>
+          </header>
+
+          <form class="ne-filters" method="get" action="/collections/all">
+            <div class="ne-controls">
+              <p class="ne-controls__count">24 productos</p>
+              <div class="ne-controls__sort">
+                <label class="ne-controls__sort-label" for="ne-sort">Ordenar</label>
+                <select class="ne-select" id="ne-sort" name="sort_by">
+                  <option value="manual" selected>Destacados</option>
+                  <option value="price-ascending">Precio: de menor a mayor</option>
+                  <option value="price-descending">Precio: de mayor a menor</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ne-filters__head">
+              <h2 class="ne-filters__title">Filtrar</h2>
+              <a class="ne-button--text" href="/collections/all">Quitar todo</a>
+            </div>
+
+            <!-- Filtro de lista CON algo elegido: se abre, y lleva el recuento. -->
+            <details class="ne-filter" open>
+              <summary class="ne-filter__summary">
+                <span class="ne-filter__sign" aria-hidden="true"></span>
+                <span>Talla</span>
+                <span class="ne-filter__count">1</span>
+              </summary>
+              <div class="ne-filter__body">
+                <label class="ne-filter__value" for="ne-filter-filter.v.option.talla-1" data-ne-empty="false">
+                  <input class="ne-filter__box" id="ne-filter-filter.v.option.talla-1" type="checkbox"
+                         name="filter.v.option.talla" value="40">
+                  <span>40</span>
+                  <span class="ne-filter__value-count">6</span>
+                </label>
+                <label class="ne-filter__value" for="ne-filter-filter.v.option.talla-2" data-ne-empty="false">
+                  <input class="ne-filter__box" id="ne-filter-filter.v.option.talla-2" type="checkbox"
+                         name="filter.v.option.talla" value="41" checked>
+                  <span>41</span>
+                  <span class="ne-filter__value-count">4</span>
+                </label>
+                <!-- Valor SIN resultados: se marca, NO se desactiva, y la nota
+                     va también para quien no ve el gris. -->
+                <label class="ne-filter__value" for="ne-filter-filter.v.option.talla-3" data-ne-empty="true">
+                  <input class="ne-filter__box" id="ne-filter-filter.v.option.talla-3" type="checkbox"
+                         name="filter.v.option.talla" value="46">
+                  <span>46</span>
+                  <span class="ne-filter__value-count">0</span>
+                  <span class="ne-visually-hidden">sin resultados con los filtros actuales</span>
+                </label>
+              </div>
+            </details>
+
+            <!-- Filtro de lista sin nada elegido: cerrado. -->
+            <details class="ne-filter">
+              <summary class="ne-filter__summary">
+                <span class="ne-filter__sign" aria-hidden="true"></span>
+                <span>Color</span>
+              </summary>
+              <div class="ne-filter__body">
+                <label class="ne-filter__value" for="ne-filter-filter.v.option.color-1" data-ne-empty="false">
+                  <input class="ne-filter__box" id="ne-filter-filter.v.option.color-1" type="checkbox"
+                         name="filter.v.option.color" value="negro">
+                  <span>Negro</span>
+                  <span class="ne-filter__value-count">12</span>
+                </label>
+              </div>
+            </details>
+
+            <!-- Filtro booleano. -->
+            <details class="ne-filter">
+              <summary class="ne-filter__summary">
+                <span class="ne-filter__sign" aria-hidden="true"></span>
+                <span>Disponibilidad</span>
+              </summary>
+              <div class="ne-filter__body">
+                <label class="ne-filter__value" for="ne-filter-filter.v.availability">
+                  <input class="ne-filter__box" id="ne-filter-filter.v.availability" type="checkbox"
+                         name="filter.v.availability" value="1">
+                  <span>En existencia</span>
+                  <span class="ne-filter__value-count">18</span>
+                </label>
+              </div>
+            </details>
+
+            <!-- Rango de precio: hueco DECLARADO, sin campos. -->
+            <details class="ne-filter">
+              <summary class="ne-filter__summary">
+                <span class="ne-filter__sign" aria-hidden="true"></span>
+                <span>Precio</span>
+              </summary>
+              <div class="ne-filter__body">
+                <p class="ne-filter__note ne-soft">El rango de precio se aplica desde el enlace.</p>
+              </div>
+            </details>
+
+            <div class="ne-filters__apply">
+              <button class="ne-button" type="submit">Aplicar</button>
+            </div>
+
+            <div class="ne-filters__active">
+              <a class="ne-chip-remove" href="/collections/all">
+                <span>Talla: 41</span>
+                <span class="ne-chip-remove__x" aria-hidden="true">&times;</span>
+              </a>
+            </div>
+          </form>
+
+          <ul class="ne-grid ne-product-grid ne-product-grid--cols-3" role="list">
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco">
+                  <div class="ne-card__media">
+                    <img class="ne-image ne-card__image" src="/scripts/fixtures/pixel.png" alt="BANCO DE PRUEBAS"
+                         width="480" height="600" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-price__current" data-ne-price-current>$100.000</span>
+                      <s class="ne-price__compare ne-soft" hidden></s>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco-2">
+                  <div class="ne-card__media">
+                    <img class="ne-image ne-card__image" src="/scripts/fixtures/pixel.png" alt="BANCO DE PRUEBAS DOS"
+                         width="480" height="600" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+                    <p class="ne-card__flag">Agotado</p>
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS DOS</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-price__current" data-ne-price-current>$130.000</span>
+                      <s class="ne-price__compare ne-soft">$160.000</s>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+            <li class="ne-product-grid__cell">
+              <article class="ne-card">
+                <a class="ne-card__link" href="/products/banco-3">
+                  <div class="ne-card__media">
+                    <div class="ne-media-placeholder" style="--ne-media-ratio: 4 / 5" role="img" aria-label="Imagen pendiente">
+                      <span class="ne-placeholder">Imagen pendiente</span>
+                    </div>
+                  </div>
+                  <div class="ne-card__meta">
+                    <h3 class="ne-card__title">BANCO DE PRUEBAS TRES</h3>
+                    <div class="ne-price ne-card__price" data-ne-price>
+                      <span class="ne-placeholder">PENDIENTE</span>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            </li>
+          </ul>
+
+          <nav class="ne-pagination" aria-label="Paginación">
+            <a class="ne-button--text ne-pagination__previous" href="/collections/all?page=1" rel="prev">Anterior</a>
+            <p class="ne-pagination__state">Página 2 de 4</p>
+            <a class="ne-button--text ne-pagination__next" href="/collections/all?page=3" rel="next">Siguiente</a>
+          </nav>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ne-footer">
+      <div class="ne-shell">
+        <nav class="ne-footer__nav" aria-label="Enlaces del pie">
+          <ul class="ne-footer__list">
+            <li><a class="ne-footer__link" href="/policies/legal">Legal</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+
+    <script type="application/json" id="ne-config">
+      { "sizeSelectedEvent": true, "codPrevalidation": false, "codCoverage": [] }
+    </script>
+    <script type="application/json" id="ne-routes">
+      { "cart": "/cart", "cart_add": "/cart/add", "cart_change": "/cart/change", "predictive_search": "/search/suggest" }
+    </script>
+    <script type="application/json" id="ne-strings">{}</script>
+  </body>
+</html>
