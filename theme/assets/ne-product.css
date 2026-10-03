@@ -124,6 +124,12 @@
     font-weight: 400;
   }
   .ne-sizeguide__how summary { min-height: var(--ne-touch-min); cursor: pointer; }
+  .ne-sizeguide__privacy {
+    text-transform: none;
+    letter-spacing: 0;
+    max-width: var(--ne-measure-narrow);
+    margin-top: var(--ne-space-2xs);
+  }
   .ne-buy__form { display: grid; gap: var(--ne-space-2xs); }
   .ne-buy__row { display: flex; gap: var(--ne-space-2xs); }
   .ne-buy__qty {

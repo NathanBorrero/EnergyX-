@@ -4,6 +4,7 @@
 > y **18 comprobaciones** que pasan sin ninguna sin ejecutar: 321 pruebas, el linter oficial de
 > Shopify sin infracciones, comportamiento, accesibilidad, rendimiento y seguridad medidos en un
 > navegador real, y los 64 archivos del theme verificados contra lo que hay en Shopify.
+> **Cero cookies, cero almacenamiento local y cero peticiones a terceros**, medido en las cinco páginas.
 > **Cero dependencias de runtime.**
 
 **Objetivo:** el storefront de Nathan & Esteban, una experiencia de footwear premium sobre un
@@ -65,6 +66,7 @@ se pudieron cruzar: [`docs/VERIFICATION-LOG.md`](docs/VERIFICATION-LOG.md).
 | [`docs/STANDARD.md`](docs/STANDARD.md) | El estándar de ejecución, §173–§246. |
 | [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Requisitos, reversibilidad y auditoría de contradicciones. |
 | [`docs/STRATEGY.md`](docs/STRATEGY.md) | Estrategias por área: footwear y RTO, 3D/AR, accesibilidad, SEO, analítica, riesgos y costos. |
+| [`docs/CUMPLIMIENTO.md`](docs/CUMPLIMIENTO.md) | El checklist legal y de accesibilidad, cruzado: qué está hecho y verificado, qué necesita contenido del propietario y qué está fuera del theme. |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cómo poner el theme en Shopify: el orden, lo que pesa después, y qué necesita cada pieza para aparecer. |
 | [`docs/REPO-STATE.md`](docs/REPO-STATE.md) | Qué existe, qué está terminado y qué depende de quién. |
 | [`docs/THIRD-OPTION-ANALYSIS.md`](docs/THIRD-OPTION-ANALYSIS.md) | Las cuatro vías para la tercera opción de producto, sin decisión. |

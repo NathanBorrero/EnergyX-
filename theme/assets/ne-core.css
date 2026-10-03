@@ -426,6 +426,11 @@ button, input, select, textarea {
   }
   .ne-footer__link:hover { border-bottom-color: var(--ne-accent); }
   .ne-footer__legal { display: grid; gap: var(--ne-space-s); }
+  .ne-footer__business {
+    max-width: var(--ne-measure-narrow);
+    margin-bottom: var(--ne-space-2xs);
+  }
+  .ne-footer__business p { margin: 0; }
   .ne-hero {
     background: var(--ne-paper);
     color: var(--ne-text);

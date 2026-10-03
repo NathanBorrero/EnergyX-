@@ -157,6 +157,14 @@
 
   .ne-footer__legal { display: grid; gap: var(--ne-space-s); }
 
+  /* Los datos del negocio, cuando el propietario los ponga. Medida de lectura
+     corta: es un bloque de identificación, no un párrafo. */
+  .ne-footer__business {
+    max-width: var(--ne-measure-narrow);
+    margin-bottom: var(--ne-space-2xs);
+  }
+  .ne-footer__business p { margin: 0; }
+
 /* === Portada editorial =========================================== */
   .ne-hero {
     background: var(--ne-paper);

@@ -256,6 +256,76 @@ await check('el Liquid personalizado está acotado a su bloque', () => {
 // ---------------------------------------------------------------------------
 // Informe
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// 7 · El theme no AFIRMA nada que nadie pueda respaldar.
+//
+//   Un theme no debería contener afirmaciones comerciales: los claims son del
+//   catálogo y del propietario, y responden ante la autoridad de consumo del
+//   país. Pero es facilísimo que se cuelen en los textos de la interfaz —«envío
+//   garantizado», «100% cuero», «el mejor calzado»— porque se escriben una vez
+//   y ya nadie vuelve a mirarlas.
+//
+//   Aquí no hay ninguna, y esto existe para que siga sin haberla. El theme dice
+//   qué hace un botón, no qué de bueno tiene la marca.
+//
+//   NO sustituye a una revisión legal. Comprueba una cosa concreta: que los
+//   textos propios del theme no afirmen hechos sobre el producto, el envío o la
+//   empresa.
+// ---------------------------------------------------------------------------
+await check('los textos del theme no afirman nada sin respaldo', async () => {
+  const problems = [];
+
+  /**
+   * Afirmaciones que un theme no puede sostener. Cada una exige una prueba que
+   * vive fuera del código: un certificado, un contrato de transporte, una
+   * política, un estudio.
+   */
+  const CLAIMS = [
+    [/\b100\s*%/iu, 'un porcentaje absoluto'],
+    [/\bgarantizad[oa]s?\b/iu, 'una garantía'],
+    [/\bcertificad[oa]s?\b/iu, 'una certificación'],
+    [/\bel\s+mejor\b|\bla\s+mejor\b|\blos\s+mejores\b|\blas\s+mejores\b/iu, 'un superlativo'],
+    [/\bgratis\b|\bgratuit[oa]s?\b/iu, 'una gratuidad'],
+    [/\bauténtic[oa]s?\b|\bgenuin[oa]s?\b/iu, 'una autenticidad'],
+    [/\bexclusiv[oa]s?\b/iu, 'una exclusividad'],
+    [/\bpremium\b/iu, 'una categoría comercial'],
+    [/\bhech[oa]\s+a\s+mano\b/iu, 'un método de fabricación'],
+    [/\bcuero\s+genuino\b|\bpiel\s+genuina\b/iu, 'un material'],
+    [/\benvío\s+(gratis|gratuito|en\s+\d)/iu, 'una condición de envío'],
+    [/\bdevoluci(ón|ones)\s+(gratis|gratuita|sin\s+coste)/iu, 'una condición de devolución'],
+  ];
+
+  /** Recorre un árbol de traducciones y devuelve [ruta, texto]. */
+  function* strings(node, trail = []) {
+    if (typeof node === 'string') {
+      yield [trail.join('.'), node];
+      return;
+    }
+    if (node && typeof node === 'object') {
+      for (const [key, value] of Object.entries(node)) yield* strings(value, [...trail, key]);
+    }
+  }
+
+  for (const file of ['locales/es.default.json', 'locales/es.default.schema.json']) {
+    let parsed;
+    try {
+      parsed = JSON.parse(await readFile(path.join(THEME, file), 'utf8'));
+    } catch (error) {
+      problems.push(`${file} no se pudo leer: ${error.message}`);
+      continue;
+    }
+    for (const [key, text] of strings(parsed)) {
+      for (const [pattern, what] of CLAIMS) {
+        if (pattern.test(text)) {
+          problems.push(`${file} · ${key}: «${text.slice(0, 70)}» afirma ${what}, y el theme no puede respaldarlo`);
+        }
+      }
+    }
+  }
+
+  return problems;
+});
+
 const failed = results.filter((r) => r.problems.length > 0);
 console.log('');
 for (const r of results) {

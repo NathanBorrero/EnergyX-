@@ -426,7 +426,19 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
     'theme/sections/main-cart.liquid',
     'theme/snippets/ne-cod-coverage.liquid',
     'theme/sections/header.liquid',
+    'theme/sections/footer.liquid',
     'theme/layout/theme.liquid',
+    // La portada y la colección también se reproducen, y faltaban: una clase
+    // nueva en el héroe, en la rejilla, en la tarjeta o en el panel de filtros
+    // no la notaba nadie. El guardián cubría nueve archivos de los quince que
+    // los bancos pintan, que es un guardián con un agujero del tamaño de media
+    // tienda.
+    'theme/sections/editorial-hero.liquid',
+    'theme/sections/statement.liquid',
+    'theme/sections/product-grid.liquid',
+    'theme/snippets/ne-product-card.liquid',
+    'theme/sections/main-collection.liquid',
+    'theme/snippets/ne-collection-filters.liquid',
   ];
 
   /**
@@ -505,6 +517,50 @@ await check('el banco de pruebas lleva las clases del marcado real', async () =>
       if (!/fetchpriority="low"/.test(text)) {
         problems.push(`${name} precarga sin fetchpriority="low": competiría con el CSS bloqueante y mediría un FCP peor`);
       }
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
+// 6sexies. Los bancos llevan el ESQUELETO del documento, no solo su contenido.
+//
+//   `theme.liquid` pinta lo mismo en TODAS las páginas: enlace de salto,
+//   cabecera, `<main id="ne-main">` y pie. Tres de los cinco bancos no tenían
+//   ni enlace de salto, ni `<main>`, ni pie.
+//
+//   Consecuencia medida: el pie REAL no se auditó nunca —ni su contraste, ni su
+//   área de pulsado, ni el orden de foco al final de la página— y el enlace de
+//   salto, que es la primera parada de quien navega con teclado, solo se
+//   comprobaba en dos páginas de cinco.
+//
+//   Es la sexta deriva de banco del proyecto. Las anteriores cambiaban el CSS,
+//   los textos, el marcado, los assets o la anchura; esta quitaba partes
+//   enteras del documento.
+// ---------------------------------------------------------------------------
+await check('los bancos llevan el esqueleto del documento', async () => {
+  const problems = [];
+
+  // Lo que el layout real pinta en todas las páginas, y cómo reconocerlo.
+  const SKELETON = [
+    ['enlace de salto', /class="ne-skip-link"[^>]*href="#ne-main"/],
+    ['punto de referencia principal', /<main[^>]*id="ne-main"/],
+    ['cabecera', /<header class="ne-header"/],
+    ['pie', /<footer class="ne-footer/],
+  ];
+
+  for (const name of HARNESSES) {
+    const text = await readFile(path.join(ROOT, 'scripts', 'fixtures', name), 'utf8');
+    for (const [label, pattern] of SKELETON) {
+      if (!pattern.test(text)) {
+        problems.push(`${name} no lleva ${label}, que el layout real pinta en todas las páginas`);
+      }
+    }
+    // Un enlace de salto que apunta a un destino inexistente es peor que no
+    // tenerlo: anuncia una ayuda que no funciona.
+    if (/class="ne-skip-link"/.test(text) && !/id="ne-main"/.test(text)) {
+      problems.push(`${name}: el enlace de salto apunta a #ne-main y ese destino no existe`);
     }
   }
 

@@ -1065,6 +1065,95 @@ await check('todos los bancos definen sus componentes sin errores', async () => 
 });
 
 // ---------------------------------------------------------------------------
+// 8ante · NI HABLA CON NADIE MÁS, NI GUARDA NADA EN EL DISPOSITIVO.
+//
+//   Hay una comprobación estática que busca dominios de terceros en el Liquid.
+//   No basta: un `@import` dentro del CSS, una fuente remota, un píxel en una
+//   imagen o una llamada desde el script no aparecen leyendo el marcado. Lo
+//   único que lo demuestra es mirar las peticiones que el navegador hace de
+//   verdad.
+//
+//   Y lo mismo con el almacenamiento. Una cookie, un `localStorage` o un
+//   `sessionStorage` escritos antes de que nadie acepte nada convierten al
+//   theme en parte del problema de consentimiento, en lugar de dejar ese asunto
+//   donde le corresponde: en el banner de Shopify y en la API de privacidad.
+//
+//   Lo que este theme guarda hoy es NADA. Esta comprobación existe para que
+//   siga siendo nada, y para que el día que deje de serlo sea una decisión
+//   consciente y no un efecto secundario.
+// ---------------------------------------------------------------------------
+await check('no habla con nadie más ni guarda nada en el dispositivo', async () => {
+  const problems = [];
+
+  for (const file of [
+    'home-harness.html',
+    'collection-harness.html',
+    'product-harness.html',
+    'cart-harness.html',
+    'cart-empty-harness.html',
+  ]) {
+    const context = await browser.newContext(contextOptions());
+    const page = await context.newPage();
+    const foreign = new Set();
+    page.on('request', (r) => {
+      let url;
+      try {
+        url = new URL(r.url());
+      } catch {
+        return;
+      }
+      // `data:` y `blob:` no salen a la red. Todo lo demás que no sea el propio
+      // banco es una conexión a otro sitio.
+      if (url.protocol === 'data:' || url.protocol === 'blob:') return;
+      if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') foreign.add(url.origin);
+    });
+    await page.addInitScript(() => {
+      globalThis.Shopify = { analytics: { publish() {} } };
+    });
+    await page.goto(`http://127.0.0.1:${port}/scripts/fixtures/${file}`, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+
+    const stored = await page.evaluate(() => {
+      const read = (store) => {
+        try {
+          return Array.from({ length: store.length }, (_, i) => store.key(i));
+        } catch {
+          return [];
+        }
+      };
+      let cookie = '';
+      try {
+        cookie = document.cookie;
+      } catch {
+        /* bloqueado: nada que informar */
+      }
+      return {
+        local: read(globalThis.localStorage ?? { length: 0 }),
+        session: read(globalThis.sessionStorage ?? { length: 0 }),
+        cookie,
+      };
+    });
+    await page.close();
+    await context.close();
+
+    if (foreign.size > 0) {
+      problems.push(`${file}: pidió recursos a ${[...foreign].join(', ')}`);
+    }
+    if (stored.local.length > 0) {
+      problems.push(`${file}: escribió en localStorage (${stored.local.join(', ')}) sin que nadie lo aceptara`);
+    }
+    if (stored.session.length > 0) {
+      problems.push(`${file}: escribió en sessionStorage (${stored.session.join(', ')})`);
+    }
+    if (stored.cookie.length > 0) {
+      problems.push(`${file}: puso cookies desde el theme (${stored.cookie.slice(0, 80)})`);
+    }
+  }
+
+  return problems;
+});
+
+// ---------------------------------------------------------------------------
 // 8pre · LA NAVEGACIÓN EXISTE EN EL TELÉFONO.
 //
 //   Esto parece una obviedad y fue un defecto real de este theme durante todo

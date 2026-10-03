@@ -1678,3 +1678,119 @@ Validada inyectando los tres fallos posibles, uno por cada mitad del contrato:
 
 **Estado: 20 comprobaciones de componentes, 17 contratos de theme, 18/18 en total, ninguna sin
 ejecutar.** Y los 64 archivos coinciden con `NATHAN & ESTEBAN — ACTUAL (no publicar)`.
+
+---
+
+## 25. La sexta deriva de banco: faltaban partes enteras del documento
+
+El guardián de clases cubría **nueve** archivos. Los bancos pintan **quince**. Al ampliarlo salieron
+nueve clases del marcado real que **ningún banco llevaba**, y tirando de ahí, algo peor.
+
+### 25.1 Lo que faltaba
+
+| Qué | Dónde |
+| --- | --- |
+| El **pie real** | Los bancos de portada y colección llevaban uno simplificado de tres líneas; los de ficha, carrito y carrito vacío **no tenían pie en absoluto** |
+| El **enlace de salto** | Faltaba en ficha, carrito y carrito vacío |
+| **`<main id="ne-main">`** | Faltaba en los mismos tres |
+| `.ne-grid-head` | El banco de portada usaba `.ne-product-grid__head`, **una clase que no existe en ninguna hoja**: ese encabezado se medía SIN ESTILO |
+| `.ne-hero__caption` | El pie de foto del héroe no estaba |
+
+Consecuencia: el **pie de la tienda no se auditó nunca** —ni su contraste, ni sus áreas de pulsado,
+ni el orden de foco al final de la página— y el **enlace de salto**, que es la primera parada de
+quien navega con teclado, solo se comprobaba en dos páginas de cinco.
+
+Las cinco derivas anteriores cambiaban el CSS, los textos, el marcado, los assets o la anchura.
+**Esta quitaba partes enteras del documento.**
+
+### 25.2 Arreglado y con dos guardianes nuevos
+
+- `MIRRORED` pasa de **9 a 15** archivos: el pie, el héroe, la declaración, la rejilla, la tarjeta,
+  la colección y el panel de filtros entran.
+- Contrato 18: **los bancos llevan el esqueleto del documento.** Exige enlace de salto, `<main>` con
+  el id correcto, cabecera y pie en los cinco; y falla si el enlace de salto apunta a un destino que
+  no existe, que es peor que no tenerlo porque anuncia una ayuda que no funciona.
+
+Validado inyectando los tres fallos: sin pie, sin `<main>`, y con el enlace de salto roto.
+
+### 25.3 Lo que costó en números, y por qué el coste es bueno
+
+Mediana de cinco, mismo método:
+
+| | Portada | Ficha | Carrito | Colección |
+| --- | --- | --- | --- | --- |
+| LCP antes (banco incompleto) | 444 ms | 484 ms | 480 ms | 464 ms |
+| **LCP ahora (documento real)** | **452 ms** | **508 ms** | **476 ms** | **488 ms** |
+| Transferido antes | 6,4 KB | 24,2 KB | 22,3 KB | 8,0 KB |
+| **Transferido ahora** | **7,0 KB** | **25,0 KB** | **22,9 KB** | **8,5 KB** |
+| CLS | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+
+**Los números empeoran, y hay que decirlo así.** No porque la tienda se haya vuelto más lenta: porque
+la medición ahora incluye marcado que la página real **siempre** pinta y el banco se estaba
+saltando. Es exactamente el tipo de corrección que §25 del estándar pide —validar que la página
+funciona de verdad ANTES de medir— aplicada a su propio banco de pruebas.
+
+Sigue muy dentro del umbral de Google: el peor LCP es **508 ms contra 2 500**, el CLS es cero en las
+cuatro páginas y el INP de la ficha son 48 ms contra 200.
+
+---
+
+## 26. El checklist legal, cruzado con la realidad
+
+Llegó un checklist de cumplimiento de 19 puntos. Lo crucé entero con lo que hay. El detalle está en
+[`CUMPLIMIENTO.md`](CUMPLIMIENTO.md); aquí lo que cambió en el código.
+
+### 26.1 Lo que ya estaba, y ahora tiene guardián
+
+Cero cookies, cero `localStorage`, cero `sessionStorage`, cero orígenes ajenos. Eso ya era cierto y
+**no estaba comprobado en ejecución**: la comprobación estática busca dominios en el Liquid, y un
+`@import` dentro del CSS, una fuente remota o una llamada desde el script no aparecen leyendo el
+marcado.
+
+Componentes 8ante lo mide ahora en las cinco páginas. Validado inyectando tres fallos: una hoja de
+estilos de Google Fonts, un `localStorage.setItem`, y una cookie.
+
+### 26.2 Un dato personal que recoge el theme, y nadie se lo decía al comprador
+
+La guía de tallas pide la medida del pie, y si el comprador pide recomendación esa medida **viaja
+con el pedido** en `_ne_foot_length_cm`.
+
+El guion bajo del nombre hace que Shopify lo **oculte** en el carrito y en la caja. Así que la
+medida del cuerpo de alguien acababa guardada en su pedido **sin que se lo dijeran y sin que pudiera
+verla**.
+
+Ahora hay una frase donde se escribe, antes de pedirla. El texto legal —qué se hace con el dato,
+cuánto se conserva, cómo se pide que se borre— es de la política de privacidad, que es del
+propietario y **no se inventa**.
+
+### 26.3 Un guardián contra las afirmaciones sin respaldo
+
+Seguridad 7 prohíbe en los textos del theme: porcentajes absolutos, garantías, certificaciones,
+superlativos, gratuidades, autenticidades, exclusividades, categorías comerciales, métodos de
+fabricación, materiales y condiciones de envío o devolución.
+
+Un theme no debería contener afirmaciones comerciales —son del catálogo y responden ante la
+autoridad de consumo— pero se cuelan con facilidad porque se escriben una vez y nadie vuelve a
+mirarlas. Validado con cuatro inyecciones: «Envío garantizado en 24 horas», «El mejor calzado de
+Colombia», «100% cuero genuino» y «Devoluciones gratis siempre». Las cuatro se detectan.
+
+### 26.4 Y un sitio para los datos del negocio
+
+El pie tiene un campo de texto enriquecido para la razón social, la identificación fiscal, el
+domicilio y el contacto. **Se pinta solo si el propietario lo rellena**; vacío no emite nada, porque
+fingir una razón social es exactamente lo que §191 prohíbe.
+
+### 26.5 Estado
+
+| | |
+| --- | --- |
+| 321 pruebas unitarias | OK |
+| **18** contratos de theme | OK |
+| Theme Check de Shopify | OK — 0 infracciones |
+| **21** comprobaciones de componentes en navegador (iPhone) | OK |
+| 5 de accesibilidad sobre la página renderizada | OK |
+| 6 presupuestos de rendimiento | OK |
+| **7** de seguridad del theme | OK |
+| el theme coincide con Shopify — 64 de 64 | OK |
+
+**18/18. Ninguna `NO EJECUTADA`.**

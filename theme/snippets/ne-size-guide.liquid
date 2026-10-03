@@ -93,6 +93,25 @@
 
             <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
 
+            {%- comment -%}
+              SE DICE DÓNDE VA EL DATO, ANTES DE PEDIRLO.
+
+              La medida del pie viaja con el pedido en un atributo de línea
+              (`_ne_foot_length_cm`). Es el único canal fiable para saber si la
+              talla recomendada evitó una devolución, y por eso existe.
+
+              Pero el guion bajo del nombre hace que Shopify lo OCULTE en el
+              carrito y en la caja. Así que, sin esta línea, el comprador
+              escribía una medida de su cuerpo en lo que parece una
+              calculadora, y acababa guardada en su pedido sin que se lo
+              dijeran y sin poder verla. Decirlo cuesta una frase.
+
+              El texto legal —qué se hace con el dato, cuánto se conserva, cómo
+              se pide que se borre— es de la política de privacidad, que es del
+              propietario y NO se inventa aquí.
+            {%- endcomment -%}
+            <p class="ne-sizeguide__privacy ne-caption">{{ 'products.size_guide.measurement_notice' | t }}</p>
+
             <details class="ne-sizeguide__how">
               <summary><span class="ne-caption">{{ 'products.size_guide.how_to_measure' | t }}</span></summary>
               <p class="ne-soft">{{ 'products.size_guide.how_to_measure_steps' | t }}</p>

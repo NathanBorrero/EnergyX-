@@ -198,6 +198,15 @@
 
   .ne-sizeguide__how summary { min-height: var(--ne-touch-min); cursor: pointer; }
 
+  /* El aviso de qué pasa con la medida. Discreto, pero legible: bajarle el
+     contraste hasta que no se lea sería escribirlo para no decirlo. */
+  .ne-sizeguide__privacy {
+    text-transform: none;
+    letter-spacing: 0;
+    max-width: var(--ne-measure-narrow);
+    margin-top: var(--ne-space-2xs);
+  }
+
 /* === Formulario de compra ======================================== */
   .ne-buy__form { display: grid; gap: var(--ne-space-2xs); }
 

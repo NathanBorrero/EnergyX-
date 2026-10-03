@@ -97,6 +97,12 @@
   </head>
 
   <body>
+    <!-- El enlace de salto y el punto de referencia `<main>` que
+         `theme.liquid` pinta en TODAS las páginas. Faltaban en tres bancos, así
+         que la navegación por teclado al principio del documento solo se
+         auditaba en dos de cinco páginas. -->
+    <a class="ne-skip-link" href="#ne-main">Saltar al contenido</a>
+
     <div id="shopify-section-sections--banco__header">
       <header class="ne-header" data-ne-header data-ne-section-id="sections--banco__header">
         <div class="ne-shell ne-header__inner">
@@ -122,6 +128,8 @@
         <hr class="ne-rule">
       </header>
     </div>
+
+    <main id="ne-main" role="main" tabindex="-1">
 
     <section
       class="ne-pdp"
@@ -265,6 +273,9 @@
                   <button class="ne-button ne-button--quiet" type="button" data-ne-recommend>Ver mi talla</button>
                 </div>
                 <p class="ne-notice" data-ne-recommendation hidden role="status" aria-live="polite"></p>
+                <!-- El aviso de qué pasa con la medida. Va aquí porque su
+                     contraste y su ancho se miden en la auditoría. -->
+                <p class="ne-sizeguide__privacy ne-caption">Si pides una recomendación, la medida se guarda con tu pedido para saber si acertamos con la talla.</p>
                 <details class="ne-sizeguide__how">
                   <summary><span class="ne-caption">Cómo medir</span></summary>
                   <p class="ne-soft">Apoya el talón contra una pared y mide del talón a la punta.</p>
@@ -313,6 +324,42 @@
         </dl>
       </div>
     </section>
+
+    </main>
+
+    <!--
+      EL PIE REAL. Estos tres bancos NO TENÍAN PIE, y tampoco `<main>`: el
+      esqueleto del documento que `theme.liquid` pinta SIEMPRE no se estaba
+      midiendo en la ficha ni en el carrito. Ni su contraste, ni su área de
+      pulsado, ni el orden de foco al final de la página.
+    -->
+    <footer class="ne-footer ne-section--tight">
+      <hr class="ne-rule">
+      <div class="ne-shell ne-footer__inner">
+        <div class="ne-footer__brand">
+          <span class="ne-footer__wordmark">BANCO DE PRUEBAS</span>
+        </div>
+
+        <nav class="ne-footer__nav" aria-label="Enlaces del pie">
+          <ul class="ne-footer__list">
+            <li><a class="ne-footer__link" href="/pages/historia">Historia</a></li>
+            <li><a class="ne-footer__link" href="/pages/contacto">Contacto</a></li>
+          </ul>
+        </nav>
+
+        <div class="ne-footer__legal ne-caption">
+          <div class="ne-footer__business">
+            <p>Datos del negocio pendientes</p>
+          </div>
+          <ul class="ne-footer__policies">
+            <li><a class="ne-footer__link" href="/policies/privacy-policy">Política de privacidad</a></li>
+            <li><a class="ne-footer__link" href="/policies/refund-policy">Política de reembolsos</a></li>
+            <li><a class="ne-footer__link" href="/policies/terms-of-service">Términos del servicio</a></li>
+          </ul>
+          <p>&copy; 2026 BANCO DE PRUEBAS</p>
+        </div>
+      </div>
+    </footer>
 
     <script type="application/json" id="ne-config">
       { "sizeSelectedEvent": true, "codPrevalidation": false, "codCoverage": [] }

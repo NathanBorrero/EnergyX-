@@ -1,8 +1,8 @@
 # Estado del repositorio
 
-**Fecha:** 2026-10-03 · tras dar navegación móvil a la tienda, que no tenía.
-**Comprobaciones:** 321 pruebas + 17 contratos de theme + 20 en navegador (iPhone de verdad) + 5 de
-accesibilidad + 6 de rendimiento + 6 de seguridad + Theme Check (0 infracciones) + el theme coincide
+**Fecha:** 2026-10-03 · tras cruzar el checklist legal y cerrar la sexta deriva de banco.
+**Comprobaciones:** 321 pruebas + 18 contratos de theme + 21 en navegador (iPhone de verdad) + 5 de
+accesibilidad + 6 de rendimiento + 7 de seguridad + Theme Check (0 infracciones) + el theme coincide
 con Shopify (64 de 64 archivos). **18/18 pasan, ninguna sin ejecutar.**
 **Dependencias de runtime:** 0. **Dependencias opcionales de verificación:** 2, no versionadas.
 
@@ -65,8 +65,8 @@ theme/                                  THEME DE SHOPIFY, Online Store 2.0, escr
 
 scripts/
   check.mjs                             18 comprobaciones con código de salida
-  check-theme.mjs                       17 contratos entre marcado, script y ajustes
-  check-components.mjs                  20 comprobaciones de comportamiento en Chromium (iPhone)
+  check-theme.mjs                       18 contratos entre marcado, script y ajustes
+  check-components.mjs                  21 comprobaciones de comportamiento en Chromium (iPhone)
   check-a11y.mjs                        5 de accesibilidad sobre la página renderizada
   check-perf.mjs                        6 de presupuesto y carga, medidas
   theme-diff.mjs                        ¿lo que hay en Shopify es lo que hay aquí?

@@ -91,6 +91,7 @@
             <figure class="ne-hero__figure">
               <img class="ne-image ne-hero__image" src="/scripts/fixtures/pixel.png" alt="Fotografía pendiente"
                    width="960" height="1200" style="width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;">
+              <figcaption class="ne-caption ne-hero__caption">MARCA PENDIENTE</figcaption>
             </figure>
           </div>
         </div>
@@ -111,7 +112,10 @@
       <!-- Rejilla de producto, como en la colección: tres columnas y tarjetas. -->
       <section class="ne-section" aria-labelledby="ne-grid-banco">
         <div class="ne-shell">
-          <header class="ne-product-grid__head">
+          <!-- `.ne-grid-head` es la clase REAL. El banco usaba
+               `.ne-product-grid__head`, que no existe en ninguna hoja: ese
+               encabezado se medía SIN ESTILO. -->
+          <header class="ne-grid-head">
             <h2 class="ne-title" id="ne-grid-banco">Colección</h2>
             <a class="ne-button--text" href="/collections/all">Ver todo</a>
           </header>
@@ -173,13 +177,39 @@
       </section>
     </main>
 
-    <footer class="ne-footer">
-      <div class="ne-shell">
+    <!--
+      EL PIE REAL, no una versión simplificada.
+
+      Los bancos llevaban un pie de tres líneas que no existe en la tienda, así
+      que el contraste, el área de pulsado y la maqueta del pie DE VERDAD no se
+      midieron nunca. Es la sexta deriva de banco del proyecto, y salió al
+      ampliar el guardián de clases de nueve archivos a quince.
+    -->
+    <footer class="ne-footer ne-section--tight">
+      <hr class="ne-rule">
+      <div class="ne-shell ne-footer__inner">
+        <div class="ne-footer__brand">
+          <span class="ne-footer__wordmark">BANCO DE PRUEBAS</span>
+        </div>
+
         <nav class="ne-footer__nav" aria-label="Enlaces del pie">
           <ul class="ne-footer__list">
-            <li><a class="ne-footer__link" href="/policies/legal">Legal</a></li>
+            <li><a class="ne-footer__link" href="/pages/historia">Historia</a></li>
+            <li><a class="ne-footer__link" href="/pages/contacto">Contacto</a></li>
           </ul>
         </nav>
+
+        <div class="ne-footer__legal ne-caption">
+          <div class="ne-footer__business">
+            <p>Datos del negocio pendientes</p>
+          </div>
+          <ul class="ne-footer__policies">
+            <li><a class="ne-footer__link" href="/policies/privacy-policy">Política de privacidad</a></li>
+            <li><a class="ne-footer__link" href="/policies/refund-policy">Política de reembolsos</a></li>
+            <li><a class="ne-footer__link" href="/policies/terms-of-service">Términos del servicio</a></li>
+          </ul>
+          <p>&copy; 2026 BANCO DE PRUEBAS</p>
+        </div>
       </div>
     </footer>
 

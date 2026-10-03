@@ -1,7 +1,7 @@
 {
   "theme": "NATHAN & ESTEBAN — ACTUAL (no publicar)",
   "themeId": "gid://shopify/OnlineStoreTheme/213916090621",
-  "takenAt": "2026-10-03T01:16:00Z",
+  "takenAt": "2026-10-03T02:08:00Z",
   "note": "Retrato del theme en Shopify. `md5` es el checksum tal cual; `canonicalMd5` es la huella de la plantilla JSON tras deshacer el reformateo de Shopify, porque su checksum no se puede reproducir en local.",
   "files": {
     "assets/ne-a11y-contrast.js": {
@@ -26,7 +26,7 @@
       "md5": "69ca7ee369dbee3c445e118deb69a045"
     },
     "assets/ne-core.css": {
-      "md5": "e188fcb268fe83c3be63a8ddb62a42ba"
+      "md5": "f1118f78fd593bfd756c0e143547a178"
     },
     "assets/ne-product-contract.js": {
       "md5": "07e79a987f52f524d46d6e982f35401f"
@@ -35,7 +35,7 @@
       "md5": "d38e4e18fda5e50f279197632b76ac0b"
     },
     "assets/ne-product.css": {
-      "md5": "d0ab90faa051900bfeffe1db6b10b727"
+      "md5": "30cb0e1bd84f5c401c30012ce7704d9a"
     },
     "assets/ne-responsive-image.js": {
       "md5": "6047a343e8ab229eacf2cdb93acfc771"
@@ -65,10 +65,10 @@
       "md5": "a5143b26a2f2085c467cafd792226f53"
     },
     "locales/es.default.json": {
-      "md5": "5d103ea3ff0babdecd1b39502ce708a2"
+      "md5": "663a594b382e10def166ab8ddaeb3376"
     },
     "locales/es.default.schema.json": {
-      "md5": "cd7d8caa3f57354030f248f33b157efa"
+      "md5": "c44b9a0c65ddaccfde091b7c40c92995"
     },
     "sections/custom-liquid.liquid": {
       "md5": "08ac361fcbb5ca3dbfb92f07d1db4d40"
@@ -80,7 +80,7 @@
       "md5": "9b14ccf46d39b884027e8f1bbaa9ab8a"
     },
     "sections/footer.liquid": {
-      "md5": "d13357ff0fe1b617722b972b5b6944a1"
+      "md5": "208af47f860829ede01f2bb40defea79"
     },
     "sections/header-group.json": {
       "md5": "0f177ce338fe50f393f2dd1a6cecf3ea"
@@ -155,7 +155,7 @@
       "md5": "5c4fbcaeb114d2ea0f4d5e875cd7d402"
     },
     "snippets/ne-size-guide.liquid": {
-      "md5": "eded8fac146bf32eecd5f12906de8da1"
+      "md5": "748953d5bee14ee3d4e396df771dd0c3"
     },
     "snippets/ne-variant-picker.liquid": {
       "md5": "0f6aed52da47dbcfcc2ada4f06bf1e13"

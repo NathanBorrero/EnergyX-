@@ -54,7 +54,9 @@
     "footer": {
       "name": "Pie",
       "menu": "Menú",
-      "note": "Texto legal"
+      "note": "Texto legal",
+      "business_details": "Datos del negocio",
+      "business_details_info": "Razón social, identificación fiscal, domicilio y contacto. Si se deja vacío no se muestra nada: el theme no inventa datos del negocio."
     },
     "editorial_hero": {
       "name": "Hero editorial",

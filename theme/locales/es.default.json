@@ -92,7 +92,8 @@
       "fit_note": "Horma",
       "invalid_measurement": "Escribe tu medida en centímetros, por ejemplo 26,5.",
       "recommended_out_of_stock": "Tu talla está agotada en este color. Prueba otro color o avísanos.",
-      "choose_size": "Elegir la talla {{ size }}"
+      "choose_size": "Elegir la talla {{ size }}",
+      "measurement_notice": "Si pides una recomendación, la medida se guarda con tu pedido para saber si acertamos con la talla."
     }
   },
   "cart": {

@@ -21,6 +21,17 @@
         Los textos legales son datos del propietario. No se inventan (§191): si no
         hay políticas publicadas, no se finge que existen.
       {%- endcomment -%}
+      {%- comment -%}
+        Los datos del negocio —razón social, identificación fiscal, domicilio,
+        contacto— los exige la normativa de comercio de casi cualquier país, y
+        son DATOS DEL PROPIETARIO. Aquí hay sitio para ponerlos y nada escrito:
+        si el ajuste está vacío no se pinta nada, porque fingir una razón social
+        es exactamente lo que §191 prohíbe.
+      {%- endcomment -%}
+      {%- if section.settings.business_details != blank -%}
+        <div class="ne-footer__business">{{ section.settings.business_details }}</div>
+      {%- endif -%}
+
       {%- if shop.policies.size > 0 -%}
         <ul class="ne-footer__policies">
           {%- for policy in shop.policies -%}
@@ -51,6 +62,12 @@
       "type": "link_list",
       "id": "menu",
       "label": "t:sections.footer.menu"
+    },
+    {
+      "type": "richtext",
+      "id": "business_details",
+      "label": "t:sections.footer.business_details",
+      "info": "t:sections.footer.business_details_info"
     }
   ]
 }

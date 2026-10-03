@@ -256,13 +256,39 @@
       </section>
     </main>
 
-    <footer class="ne-footer">
-      <div class="ne-shell">
+    <!--
+      EL PIE REAL, no una versión simplificada.
+
+      Los bancos llevaban un pie de tres líneas que no existe en la tienda, así
+      que el contraste, el área de pulsado y la maqueta del pie DE VERDAD no se
+      midieron nunca. Es la sexta deriva de banco del proyecto, y salió al
+      ampliar el guardián de clases de nueve archivos a quince.
+    -->
+    <footer class="ne-footer ne-section--tight">
+      <hr class="ne-rule">
+      <div class="ne-shell ne-footer__inner">
+        <div class="ne-footer__brand">
+          <span class="ne-footer__wordmark">BANCO DE PRUEBAS</span>
+        </div>
+
         <nav class="ne-footer__nav" aria-label="Enlaces del pie">
           <ul class="ne-footer__list">
-            <li><a class="ne-footer__link" href="/policies/legal">Legal</a></li>
+            <li><a class="ne-footer__link" href="/pages/historia">Historia</a></li>
+            <li><a class="ne-footer__link" href="/pages/contacto">Contacto</a></li>
           </ul>
         </nav>
+
+        <div class="ne-footer__legal ne-caption">
+          <div class="ne-footer__business">
+            <p>Datos del negocio pendientes</p>
+          </div>
+          <ul class="ne-footer__policies">
+            <li><a class="ne-footer__link" href="/policies/privacy-policy">Política de privacidad</a></li>
+            <li><a class="ne-footer__link" href="/policies/refund-policy">Política de reembolsos</a></li>
+            <li><a class="ne-footer__link" href="/policies/terms-of-service">Términos del servicio</a></li>
+          </ul>
+          <p>&copy; 2026 BANCO DE PRUEBAS</p>
+        </div>
       </div>
     </footer>
 
